@@ -99,6 +99,17 @@
             font-weight: 600;
             color: #334155; /* text-slate-700 */
         }
+        .progress-bar {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            border-radius: 9999px;
+            height: 1rem;
+            overflow: hidden;
+        }
+        .progress-bar-inner {
+            background-color: #2563eb; /* bg-blue-600 */
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body class="antialiased text-slate-800">
@@ -116,6 +127,35 @@
             
             <!-- VIEW: Cronômetro -->
             <div id="view-cronometro" class="view active">
+                 <!-- Seção Ciclo de Estudo -->
+                <div id="study-cycle-container" class="mb-6">
+                    <h2 class="text-xl font-bold mb-3">Meu Ciclo de Estudo</h2>
+                    <div class="bg-white p-4 rounded-lg shadow space-y-3">
+                        <div id="cycle-setup">
+                             <label for="cycle-goal-input" class="block text-sm font-medium text-slate-700">Definir meta de horas para o ciclo:</label>
+                             <div class="flex items-center gap-2 mt-1">
+                                <input type="number" id="cycle-goal-input" placeholder="Ex: 100" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                <button id="set-cycle-goal-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Definir</button>
+                             </div>
+                        </div>
+                        <div id="cycle-progress" class="hidden space-y-2">
+                            <div>
+                                <div class="flex justify-between items-center text-sm font-medium text-slate-600">
+                                    <span>Progresso</span>
+                                    <span id="cycle-progress-percentage">0%</span>
+                                </div>
+                                <div class="progress-bar mt-1">
+                                    <div id="cycle-progress-bar-inner" class="progress-bar-inner" style="width: 0%;"></div>
+                                </div>
+                                <p id="cycle-progress-text" class="text-xs text-slate-500 text-right mt-1">0h 0m / 0h</p>
+                            </div>
+                            <div id="cycle-completed-box" class="hidden bg-green-100 border border-green-200 text-green-700 text-center p-3 rounded-lg">
+                                <p class="font-bold">🎉 Parabéns! Meta do ciclo concluída! 🎉</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Seção do Timer -->
                 <div class="bg-slate-100 rounded-2xl p-6 text-center shadow-inner">
                     <p id="current-subject-display" class="text-lg font-semibold text-slate-600 mb-2 h-12 flex items-center justify-center text-center">Nenhuma disciplina selecionada</p>
@@ -136,7 +176,7 @@
 
                 <!-- Seção de Disciplinas -->
                 <div>
-                    <h2 class="text-xl font-bold mb-3">Minhas Disciplinas</h2>
+                    <h2 class="text-xl font-bold mb-3 mt-6">Minhas Disciplinas</h2>
                     <div class="bg-white rounded-lg">
                         <ul id="subjects-list" class="divide-y divide-slate-200">
                             <!-- Disciplinas e assuntos serão inseridos aqui via JS -->
@@ -163,6 +203,14 @@
                             <span>Adicionar</span>
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- VIEW: Revisões -->
+            <div id="view-revisoes" class="view">
+                <h2 class="text-xl font-bold mb-4">Revisões Agendadas</h2>
+                <div id="reviews-list" class="space-y-3">
+                    <!-- Lista de revisões pendentes será inserida aqui -->
                 </div>
             </div>
 
@@ -243,6 +291,11 @@
                 <i data-lucide="timer" class="w-6 h-6 mb-1"></i>
                 <span class="text-xs">Cronômetro</span>
             </button>
+            <button class="nav-item relative flex flex-col items-center text-slate-500 p-2" data-view="revisoes">
+                <i data-lucide="repeat" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Revisões</span>
+                <span id="review-badge" class="hidden absolute top-1 right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"></span>
+            </button>
             <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="salas">
                 <i data-lucide="users" class="w-6 h-6 mb-1"></i>
                 <span class="text-xs">Salas</span>
@@ -279,7 +332,9 @@
 
             const appState = {
                 subjects: [],
-                currentUser: null, // { name, email, isOnline }
+                currentUser: null,
+                studyCycle: { goalSeconds: 0, completedSeconds: 0 },
+                reviews: [],
                 timer: {
                     instance: null,
                     startTime: 0,
@@ -316,7 +371,20 @@
             const closeSummaryModalBtn = document.getElementById('close-summary-modal');
             const headerSubtitle = document.getElementById('header-subtitle');
             
-            // Elementos de Autenticação
+            // Ciclo de Estudo
+            const cycleGoalInput = document.getElementById('cycle-goal-input');
+            const setCycleGoalBtn = document.getElementById('set-cycle-goal-btn');
+            const cycleProgress = document.getElementById('cycle-progress');
+            const cycleProgressText = document.getElementById('cycle-progress-text');
+            const cycleProgressBarInner = document.getElementById('cycle-progress-bar-inner');
+            const cycleProgressPercentage = document.getElementById('cycle-progress-percentage');
+            const cycleCompletedBox = document.getElementById('cycle-completed-box');
+            
+            // Revisões
+            const reviewsList = document.getElementById('reviews-list');
+            const reviewBadge = document.getElementById('review-badge');
+            
+            // Autenticação
             const profileContainer = document.getElementById('profile-container');
             const authContainer = document.getElementById('auth-container');
             const loginFormContainer = document.getElementById('login-form-container');
@@ -331,6 +399,16 @@
 
             // --- Funções de Lógica ---
             function formatTime(seconds) {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = Math.floor(seconds % 60);
+                if (h > 0) {
+                    return `${h.toString()}h ${m.toString().padStart(2, '0')}m`;
+                }
+                return `${m.toString()}m ${s.toString().padStart(2, '0')}s`;
+            }
+            
+             function formatTimeHMS(seconds) {
                 const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
                 const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
                 const s = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -343,17 +421,27 @@
             
             function saveState() {
                 if (appState.currentUser) {
-                    localStorage.setItem(getDbKey(appState.currentUser.email), JSON.stringify({ subjects: appState.subjects }));
+                    localStorage.setItem(getDbKey(appState.currentUser.email), JSON.stringify({ 
+                        subjects: appState.subjects,
+                        studyCycle: appState.studyCycle,
+                        reviews: appState.reviews
+                    }));
                 }
             }
 
             function loadState() {
                 if (appState.currentUser) {
                     const savedState = localStorage.getItem(getDbKey(appState.currentUser.email));
-                    appState.subjects = savedState ? JSON.parse(savedState).subjects : [];
+                    const data = savedState ? JSON.parse(savedState) : {};
+                    appState.subjects = data.subjects || [];
+                    appState.studyCycle = data.studyCycle || { goalSeconds: 0, completedSeconds: 0 };
+                    appState.reviews = data.reviews || [];
                 } else {
                     appState.subjects = [];
+                    appState.studyCycle = { goalSeconds: 0, completedSeconds: 0 };
+                    appState.reviews = [];
                 }
+                renderStudyCycle();
             }
             
             function renderSubjects() {
@@ -361,10 +449,12 @@
                 if (!appState.currentUser) {
                      subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Faça login para ver e adicionar suas disciplinas.</li>`;
                      addSubjectContainer.classList.add('hidden');
+                     document.getElementById('study-cycle-container').classList.add('hidden');
                      return;
                 }
                 
                 addSubjectContainer.classList.remove('hidden');
+                document.getElementById('study-cycle-container').classList.remove('hidden');
 
                 if (appState.subjects.length === 0) {
                     subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Adicione sua primeira disciplina.</li>`;
@@ -384,7 +474,7 @@
                             <li class="flex justify-between items-center p-3 transition ${isSelectedTopic ? 'bg-blue-50' : 'hover:bg-slate-50'}">
                                 <div class="cursor-pointer flex-grow" data-select-topic-id="${topic.id}" data-parent-id="${subject.id}">
                                     <span class="font-medium text-sm">${topic.name}</span>
-                                    <span class="block text-xs text-slate-500">Total: ${formatTime(topic.totalTime)}</span>
+                                    <span class="block text-xs text-slate-500">Total: ${formatTimeHMS(topic.totalTime)}</span>
                                 </div>
                                 <div class="flex items-center space-x-1 pl-1">
                                     <button data-practice-topic-id="${topic.id}" data-parent-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full flex items-center text-xs font-semibold"><i data-lucide="file-question" class="w-3 h-3 mr-1"></i> Praticar</button>
@@ -398,7 +488,7 @@
                         <div class="p-4 flex justify-between items-center transition cursor-pointer ${isSelectedSubject ? 'bg-blue-100' : 'hover:bg-slate-50'}">
                             <div class="flex-grow" data-select-subject-id="${subject.id}" data-toggle-topics-id="${subject.id}">
                                 <span class="font-semibold">${subject.name}</span>
-                                <span class="block text-sm text-slate-500">Total: ${formatTime(subject.totalTime)}</span>
+                                <span class="block text-sm text-slate-500">Total: ${formatTimeHMS(subject.totalTime)}</span>
                             </div>
                             <div class="flex items-center space-x-2 pl-2">
                                <button data-summary-subject-name="${subject.name}" class="text-indigo-600 hover:text-indigo-800 p-1 rounded-full" title="Ver Resumo"><i data-lucide="book-open" class="w-4 h-4"></i></button>
@@ -437,7 +527,7 @@
                         const topicsData = questionsDB[normalizedName];
                         if (topicsData) {
                             const topicNames = new Set(topicsData.map(topicObj => topicObj.topic));
-                            topics = [...topicNames].map(topicName => ({ id: Date.now() + Math.random(), name: topicName, totalTime: 0 }));
+                            topics = [...topicNames].map(topicName => ({ id: Date.now() + Math.random(), name: topicName, totalTime: 0, studyLog: [] }));
                         }
                     }
                     appState.subjects.push({ id: Date.now(), name, totalTime: 0, topics });
@@ -453,7 +543,7 @@
             function addTopic(subjectId, topicName) {
                 const subject = appState.subjects.find(s => s.id === subjectId);
                 if (subject && topicName) {
-                    subject.topics.push({ id: Date.now(), name: topicName, totalTime: 0 });
+                    subject.topics.push({ id: Date.now(), name: topicName, totalTime: 0, studyLog: [] });
                     saveState();
                     renderSubjects();
                     document.querySelector(`[data-subject-id='${subjectId}']`)?.classList.add('is-expanded');
@@ -464,6 +554,8 @@
                 if (appState.timer.isRunning && appState.timer.currentItem?.subjectId === id) stopTimer();
                 if (appState.selectedItem?.subjectId === id) appState.selectedItem = null;
                 appState.subjects = appState.subjects.filter(s => s.id !== id);
+                // Also delete related reviews
+                appState.reviews = appState.reviews.filter(r => r.subjectId !== id);
                 saveState();
                 renderSubjects();
                 updateCurrentSubjectDisplay();
@@ -475,6 +567,8 @@
                 const subject = appState.subjects.find(s => s.id === subjectId);
                 if(subject) {
                     subject.topics = subject.topics.filter(t => t.id !== topicId);
+                    // Also delete related reviews
+                    appState.reviews = appState.reviews.filter(r => r.topicId !== topicId);
                     saveState();
                     renderSubjects();
                     updateCurrentSubjectDisplay();
@@ -533,7 +627,7 @@
             // --- Lógica do Cronômetro ---
             function updateDisplay() {
                 const elapsed = (Date.now() - appState.timer.startTime) / 1000;
-                timerDisplay.textContent = formatTime(appState.timer.accumulated + elapsed);
+                timerDisplay.textContent = formatTimeHMS(appState.timer.accumulated + elapsed);
             }
 
             function startTimer() {
@@ -560,33 +654,192 @@
                 if (!appState.timer.currentItem) return;
                 let finalTime = appState.timer.accumulated;
                 if(appState.timer.isRunning) finalTime += (Date.now() - appState.timer.startTime) / 1000;
+                
                 const { type, subjectId, topicId } = appState.timer.currentItem;
                 const subject = appState.subjects.find(s => s.id === subjectId);
                 if (subject) {
                     subject.totalTime += finalTime;
+                    // Add to study cycle
+                    appState.studyCycle.completedSeconds += finalTime;
+                    
                     if (type === 'topic') {
                         const topic = subject.topics.find(t => t.id === topicId);
-                        if (topic) topic.totalTime += finalTime;
+                        if (topic) {
+                           topic.totalTime += finalTime;
+                           scheduleReviews(subject, topic);
+                        }
                     }
                 }
+                
                 appState.timer.isRunning = false;
                 clearInterval(appState.timer.instance);
                 appState.timer.accumulated = 0;
                 appState.timer.currentItem = null;
-                timerDisplay.textContent = formatTime(0);
+                
+                timerDisplay.textContent = formatTimeHMS(0);
                 startPauseBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 mr-2"></i><span>Iniciar</span>`;
                 lucide.createIcons();
                 saveState();
                 renderSubjects();
+                renderStudyCycle();
+                updateReviewNotification();
             }
             
+            // --- Lógica do Ciclo de Estudo e Revisões ---
+            function setStudyCycleGoal() {
+                const hours = parseFloat(cycleGoalInput.value);
+                if (hours && hours > 0) {
+                    appState.studyCycle.goalSeconds = hours * 3600;
+                    appState.studyCycle.completedSeconds = 0; // Reset progress
+                    saveState();
+                    renderStudyCycle();
+                } else {
+                    alert("Por favor, insira um número de horas válido.");
+                }
+            }
+
+            function renderStudyCycle() {
+                if (!appState.currentUser || appState.studyCycle.goalSeconds === 0) {
+                    cycleProgress.classList.add('hidden');
+                    return;
+                }
+                cycleProgress.classList.remove('hidden');
+
+                const { goalSeconds, completedSeconds } = appState.studyCycle;
+                const percentage = Math.min(100, (completedSeconds / goalSeconds) * 100);
+                
+                cycleProgressBarInner.style.width = `${percentage}%`;
+                cycleProgressPercentage.textContent = `${Math.floor(percentage)}%`;
+                
+                const completedHours = (completedSeconds / 3600).toFixed(1);
+                const goalHours = (goalSeconds / 3600).toFixed(1);
+                cycleProgressText.textContent = `${formatTime(completedSeconds)} / ${goalHours}h`;
+                
+                cycleCompletedBox.classList.toggle('hidden', percentage < 100);
+            }
+
+            function scheduleReviews(subject, topic) {
+                const today = new Date().toISOString().split('T')[0];
+                const reviewPeriods = [1, 7, 21, 30];
+
+                const hasExistingReviewToday = appState.reviews.some(r => 
+                    r.topicId === topic.id && r.studyDate === today
+                );
+                
+                if (!hasExistingReviewToday) {
+                    reviewPeriods.forEach(days => {
+                        const studyDate = new Date();
+                        const dueDate = new Date();
+                        dueDate.setDate(studyDate.getDate() + days);
+                        
+                        const newReview = {
+                            id: Date.now() + Math.random(),
+                            subjectId: subject.id,
+                            topicId: topic.id,
+                            subjectName: subject.name,
+                            topicName: topic.name,
+                            studyDate: today,
+                            days,
+                            dueDate: dueDate.toISOString().split('T')[0],
+                            isCompleted: false
+                        };
+                        appState.reviews.push(newReview);
+                    });
+                }
+            }
+            
+            function renderReviews() {
+                if (!appState.currentUser) {
+                    reviewsList.innerHTML = `<li class="p-4 text-center text-slate-500">Faça login para ver suas revisões.</li>`;
+                    return;
+                }
+
+                const pendingReviews = appState.reviews
+                    .filter(r => !r.isCompleted)
+                    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                
+                if (pendingReviews.length === 0) {
+                     reviewsList.innerHTML = `<div class="p-4 text-center bg-green-100 text-green-700 rounded-lg"><p class="font-semibold">Nenhuma revisão pendente!</p><p class="text-sm">Quando você estudar um assunto, as revisões aparecerão aqui.</p></div>`;
+                     return;
+                }
+
+                const today = new Date();
+                today.setHours(0,0,0,0);
+
+                reviewsList.innerHTML = pendingReviews.map(review => {
+                    const dueDate = new Date(review.dueDate + 'T00:00:00');
+                    const diffTime = dueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let dateInfo;
+                    if (diffDays < 0) {
+                        dateInfo = `<span class="font-bold text-red-600">Atrasada ${Math.abs(diffDays)}d</span>`;
+                    } else if (diffDays === 0) {
+                        dateInfo = `<span class="font-bold text-yellow-600">Para Hoje</span>`;
+                    } else {
+                        dateInfo = `<span>Em ${diffDays}d</span>`;
+                    }
+
+                    return `
+                        <div class="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center">
+                            <div>
+                                <p class="font-semibold text-slate-800">${review.topicName}</p>
+                                <p class="text-sm text-slate-500">${review.subjectName} - Rev. de ${review.days} dias</p>
+                                <p class="text-xs text-slate-400 mt-1">Vence em: ${new Date(review.dueDate + 'T00:00:00').toLocaleDateString('pt-BR')} (${dateInfo})</p>
+                            </div>
+                            <button data-review-id="${review.id}" class="complete-review-btn bg-green-500 text-white px-3 py-1 rounded-md font-semibold text-sm hover:bg-green-600 transition">Concluir</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            function completeReview(reviewId) {
+                const minutesStr = prompt("Quantos minutos você gastou nesta revisão?");
+                if (minutesStr === null) return; // User cancelled
+
+                const minutes = parseInt(minutesStr, 10);
+                if (isNaN(minutes) || minutes < 0) {
+                    alert("Por favor, insira um número válido de minutos.");
+                    return;
+                }
+
+                const review = appState.reviews.find(r => r.id === reviewId);
+                if (review) {
+                    review.isCompleted = true;
+                    appState.studyCycle.completedSeconds += minutes * 60;
+                    saveState();
+                    renderReviews();
+                    renderStudyCycle();
+                    updateReviewNotification();
+                }
+            }
+            
+            function updateReviewNotification() {
+                if (!appState.currentUser) {
+                    reviewBadge.classList.add('hidden');
+                    return;
+                }
+                const pendingCount = appState.reviews.filter(r => !r.isCompleted).length;
+                if (pendingCount > 0) {
+                    reviewBadge.textContent = pendingCount;
+                    reviewBadge.classList.remove('hidden');
+                } else {
+                    reviewBadge.classList.add('hidden');
+                }
+            }
+
             // --- Navegação ---
             function switchView(viewName) {
                 views.forEach(view => view.classList.toggle('active', view.id === `view-${viewName}`));
-                navItems.forEach(item => item.classList.toggle('active', item.dataset.view === viewName));
+                navItems.forEach(item => {
+                    const icon = item.querySelector('i');
+                    item.classList.toggle('active', item.dataset.view === viewName);
+                });
+                lucide.createIcons();
                 if (viewName === 'questoes') renderQuizView();
                 if (viewName === 'salas') renderStudyRoom();
                 if (viewName === 'ranking') renderRanking();
+                if (viewName === 'revisoes') renderReviews();
             }
 
             // --- Gerenciamento de Usuários ---
@@ -635,12 +888,12 @@
                 }
                 localStorage.removeItem('gfconcursos_currentUser');
                 appState.currentUser = null;
-                appState.subjects = [];
-                appState.selectedItem = null;
                 if(appState.timer.isRunning) stopTimer();
+                loadState(); // Clears app state
                 updateCurrentSubjectDisplay();
                 updateUIForLogout();
-                switchView('perfil'); // Garante que a tela de login seja exibida
+                updateReviewNotification();
+                switchView('perfil');
             }
 
             function updateUIForLogin() {
@@ -651,6 +904,7 @@
                 loadState();
                 renderSubjects();
                 updateTimerControls();
+                updateReviewNotification();
                 switchView('cronometro');
             }
             
@@ -660,13 +914,13 @@
                 headerSubtitle.textContent = 'Seu parceiro rumo à aprovação';
                 renderSubjects();
                 updateTimerControls();
+                renderStudyCycle();
             }
             
             function checkLoggedInUser() {
                 const storedUser = localStorage.getItem('gfconcursos_currentUser');
                 if (storedUser) {
                     appState.currentUser = JSON.parse(storedUser);
-                    // Garante que o estado online esteja correto no DB principal
                     const users = getUsers();
                     const userInDB = users.find(u => u.email === appState.currentUser.email);
                     if (userInDB && !userInDB.isOnline) {
@@ -717,9 +971,8 @@
                     let totalTime = 0;
                     if (userState) {
                         const parsedState = JSON.parse(userState);
-                        if (parsedState.subjects && Array.isArray(parsedState.subjects)) {
-                            totalTime = parsedState.subjects.reduce((acc, subject) => acc + (subject.totalTime || 0), 0);
-                        }
+                        const cycleTime = parsedState.studyCycle?.completedSeconds || 0;
+                        totalTime = cycleTime;
                     }
                     return { name: user.name, email: user.email, totalTime };
                 }).sort((a, b) => b.totalTime - a.totalTime);
@@ -1132,6 +1385,7 @@
 
             // --- Event Listeners ---
             addSubjectBtn.addEventListener('click', addSubject);
+            setCycleGoalBtn.addEventListener('click', setStudyCycleGoal);
             
             subjectsList.addEventListener('click', (e) => {
                 const target = e.target;
@@ -1170,12 +1424,18 @@
             startPauseBtn.addEventListener('click', () => appState.timer.isRunning ? pauseTimer() : startTimer());
             stopBtn.addEventListener('click', stopTimer);
             
+            reviewsList.addEventListener('click', (e) => {
+                const target = e.target.closest('.complete-review-btn');
+                if (target) {
+                    completeReview(parseFloat(target.dataset.reviewId));
+                }
+            });
+
             // Listener de navegação otimizado
             document.querySelector('nav').addEventListener('click', (e) => {
                 const navItem = e.target.closest('.nav-item');
                 if (navItem && navItem.dataset.view) {
                     const viewName = navItem.dataset.view;
-                    // Lógica aprimorada para o botão Questões
                     if (viewName === 'questoes' && appState.selectedItem) {
                         const { subjectId, topicId } = appState.selectedItem;
                         startQuiz(subjectId, topicId);
