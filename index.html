@@ -131,8 +131,14 @@
                 <div id="study-cycle-container" class="mb-6">
                     <h2 class="text-xl font-bold mb-3">Meu Ciclo de Estudo</h2>
                     <div class="bg-white p-4 rounded-lg shadow space-y-3">
+                        <div id="cycle-display" class="hidden text-center">
+                            <h3 id="cycle-name-display" class="text-lg font-semibold text-blue-800"></h3>
+                        </div>
                         <div id="cycle-setup">
-                             <label for="cycle-goal-input" class="block text-sm font-medium text-slate-700">Definir meta de horas para o ciclo:</label>
+                             <label for="cycle-name-input" class="block text-sm font-medium text-slate-700">Nome do Ciclo:</label>
+                             <input type="text" id="cycle-name-input" placeholder="Ex: Pós-Edital ALE-RO" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                             
+                             <label for="cycle-goal-input" class="block text-sm font-medium text-slate-700 mt-3">Meta de horas para o ciclo:</label>
                              <div class="flex items-center gap-2 mt-1">
                                 <input type="number" id="cycle-goal-input" placeholder="Ex: 100" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                                 <button id="set-cycle-goal-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Definir</button>
@@ -149,6 +155,7 @@
                                 </div>
                                 <p id="cycle-progress-text" class="text-xs text-slate-500 text-right mt-1">0h 0m / 0h</p>
                             </div>
+                             <button id="reset-cycle-btn" class="w-full mt-2 text-sm text-center text-slate-500 hover:text-red-600 transition">Redefinir Ciclo</button>
                             <div id="cycle-completed-box" class="hidden bg-green-100 border border-green-200 text-green-700 text-center p-3 rounded-lg">
                                 <p class="font-bold">🎉 Parabéns! Meta do ciclo concluída! 🎉</p>
                             </div>
@@ -333,7 +340,7 @@
             const appState = {
                 subjects: [],
                 currentUser: null,
-                studyCycle: { goalSeconds: 0, completedSeconds: 0 },
+                studyCycle: { name: '', goalSeconds: 0, completedSeconds: 0 },
                 reviews: [],
                 timer: {
                     instance: null,
@@ -379,6 +386,11 @@
             const cycleProgressBarInner = document.getElementById('cycle-progress-bar-inner');
             const cycleProgressPercentage = document.getElementById('cycle-progress-percentage');
             const cycleCompletedBox = document.getElementById('cycle-completed-box');
+            const cycleNameInput = document.getElementById('cycle-name-input');
+            const cycleNameDisplay = document.getElementById('cycle-name-display');
+            const cycleSetup = document.getElementById('cycle-setup');
+            const cycleDisplay = document.getElementById('cycle-display');
+            const resetCycleBtn = document.getElementById('reset-cycle-btn');
             
             // Revisões
             const reviewsList = document.getElementById('reviews-list');
@@ -434,11 +446,11 @@
                     const savedState = localStorage.getItem(getDbKey(appState.currentUser.email));
                     const data = savedState ? JSON.parse(savedState) : {};
                     appState.subjects = data.subjects || [];
-                    appState.studyCycle = data.studyCycle || { goalSeconds: 0, completedSeconds: 0 };
+                    appState.studyCycle = data.studyCycle || { name: '', goalSeconds: 0, completedSeconds: 0 };
                     appState.reviews = data.reviews || [];
                 } else {
                     appState.subjects = [];
-                    appState.studyCycle = { goalSeconds: 0, completedSeconds: 0 };
+                    appState.studyCycle = { name: '', goalSeconds: 0, completedSeconds: 0 };
                     appState.reviews = [];
                 }
                 renderStudyCycle();
@@ -686,11 +698,21 @@
             }
             
             // --- Lógica do Ciclo de Estudo e Revisões ---
-            function setStudyCycleGoal() {
+            function setStudyCycle() {
+                const name = cycleNameInput.value.trim();
                 const hours = parseFloat(cycleGoalInput.value);
+
+                if (!name) {
+                    alert("Por favor, dê um nome ao seu ciclo de estudo.");
+                    return;
+                }
+
                 if (hours && hours > 0) {
-                    appState.studyCycle.goalSeconds = hours * 3600;
-                    appState.studyCycle.completedSeconds = 0; // Reset progress
+                    appState.studyCycle = {
+                        name: name,
+                        goalSeconds: hours * 3600,
+                        completedSeconds: 0 
+                    };
                     saveState();
                     renderStudyCycle();
                 } else {
@@ -698,24 +720,45 @@
                 }
             }
 
+            function resetStudyCycle() {
+                if (confirm("Tem certeza que deseja apagar o ciclo atual e seu progresso?")) {
+                    appState.studyCycle = { name: '', goalSeconds: 0, completedSeconds: 0 };
+                    saveState();
+                    renderStudyCycle();
+                }
+            }
+
             function renderStudyCycle() {
-                if (!appState.currentUser || appState.studyCycle.goalSeconds === 0) {
-                    cycleProgress.classList.add('hidden');
+                if (!appState.currentUser) {
+                    document.getElementById('study-cycle-container').classList.add('hidden');
                     return;
                 }
-                cycleProgress.classList.remove('hidden');
+                
+                document.getElementById('study-cycle-container').classList.remove('hidden');
 
-                const { goalSeconds, completedSeconds } = appState.studyCycle;
-                const percentage = Math.min(100, (completedSeconds / goalSeconds) * 100);
-                
-                cycleProgressBarInner.style.width = `${percentage}%`;
-                cycleProgressPercentage.textContent = `${Math.floor(percentage)}%`;
-                
-                const completedHours = (completedSeconds / 3600).toFixed(1);
-                const goalHours = (goalSeconds / 3600).toFixed(1);
-                cycleProgressText.textContent = `${formatTime(completedSeconds)} / ${goalHours}h`;
-                
-                cycleCompletedBox.classList.toggle('hidden', percentage < 100);
+                const { name, goalSeconds, completedSeconds } = appState.studyCycle;
+
+                if (goalSeconds > 0 && name) {
+                    cycleSetup.classList.add('hidden');
+                    cycleProgress.classList.remove('hidden');
+                    cycleDisplay.classList.remove('hidden');
+                    cycleNameDisplay.textContent = name;
+                    
+                    const percentage = Math.min(100, (completedSeconds / goalSeconds) * 100);
+                    
+                    cycleProgressBarInner.style.width = `${percentage}%`;
+                    cycleProgressPercentage.textContent = `${Math.floor(percentage)}%`;
+                    
+                    cycleProgressText.textContent = `${formatTime(completedSeconds)} / ${formatTime(goalSeconds)}`;
+                    
+                    cycleCompletedBox.classList.toggle('hidden', percentage < 100);
+                } else {
+                    cycleSetup.classList.remove('hidden');
+                    cycleProgress.classList.add('hidden');
+                    cycleDisplay.classList.add('hidden');
+                    cycleNameInput.value = '';
+                    cycleGoalInput.value = '';
+                }
             }
 
             function scheduleReviews(subject, topic) {
@@ -1385,7 +1428,8 @@
 
             // --- Event Listeners ---
             addSubjectBtn.addEventListener('click', addSubject);
-            setCycleGoalBtn.addEventListener('click', setStudyCycleGoal);
+            setCycleGoalBtn.addEventListener('click', setStudyCycle);
+            resetCycleBtn.addEventListener('click', resetStudyCycle);
             
             subjectsList.addEventListener('click', (e) => {
                 const target = e.target;
@@ -1484,4 +1528,6 @@
     </script>
 </body>
 </html>
+" selected in the Canvas.
+I want to name my study cycle
 
