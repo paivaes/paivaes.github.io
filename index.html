@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GFConcursos - Foco na Aprovação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .timer-digits {
+            font-variant-numeric: tabular-nums;
+        }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+        .nav-item.active {
+            color: #2563eb; /* text-blue-600 */
+        }
+        .nav-item.active svg {
+            stroke: #2563eb;
+        }
+        .topics-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .subject-item.is-expanded .topics-container {
+            max-height: 1000px; /* valor alto para permitir expansão */
+        }
+        .subject-item.is-expanded .chevron {
+            transform: rotate(180deg);
+        }
+        /* Estilos do Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.is-open {
+            display: flex;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            max-width: 90%;
+            width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slide-up 0.3s ease-out;
+        }
+        @keyframes slide-up {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .summary-content h3 {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #1e3a8a; /* text-blue-900 */
+          margin-top: 1.5rem;
+          margin-bottom: 0.5rem;
+          border-bottom: 2px solid #93c5fd; /* border-blue-300 */
+          padding-bottom: 0.25rem;
+        }
+        .summary-content h4 {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #1e293b; /* text-slate-800 */
+          margin-top: 1.25rem;
+          margin-bottom: 0.5rem;
+        }
+        .summary-content p {
+          color: #475569; /* text-slate-600 */
+          line-height: 1.6;
+          margin-bottom: 0.75rem;
+        }
+        .summary-content strong {
+            font-weight: 600;
+            color: #334155; /* text-slate-700 */
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800">
+
+    <div id="app" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg flex flex-col">
+        
+        <!-- Cabeçalho -->
+        <header class="bg-blue-600 text-white p-4 text-center shadow-md">
+            <h1 class="text-2xl font-bold">GFConcursos</h1>
+            <p id="header-subtitle" class="text-sm opacity-90">Seu parceiro rumo à aprovação</p>
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <main class="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto pb-24">
+            
+            <!-- VIEW: Cronômetro -->
+            <div id="view-cronometro" class="view active">
+                <!-- Seção do Timer -->
+                <div class="bg-slate-100 rounded-2xl p-6 text-center shadow-inner">
+                    <p id="current-subject-display" class="text-lg font-semibold text-slate-600 mb-2 h-12 flex items-center justify-center text-center">Nenhuma disciplina selecionada</p>
+                    <div id="timer-display" class="text-6xl md:text-7xl font-bold text-slate-800 timer-digits tracking-wider">
+                        00:00:00
+                    </div>
+                    <div class="mt-6 flex justify-center space-x-3">
+                        <button id="start-pause-btn" class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            <i data-lucide="play" class="w-5 h-5 mr-2"></i>
+                            <span id="start-pause-text">Iniciar</span>
+                        </button>
+                        <button id="stop-btn" class="bg-red-500 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-red-600 transition-all transform hover:scale-105 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            <i data-lucide="square" class="w-5 h-5 mr-2"></i>
+                            <span>Parar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Seção de Disciplinas -->
+                <div>
+                    <h2 class="text-xl font-bold mb-3">Minhas Disciplinas</h2>
+                    <div class="bg-white rounded-lg">
+                        <ul id="subjects-list" class="divide-y divide-slate-200">
+                            <!-- Disciplinas e assuntos serão inseridos aqui via JS -->
+                        </ul>
+                    </div>
+                     <div id="add-subject-container" class="mt-4 space-y-2">
+                        <select id="new-subject-select" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white">
+                            <option value="">Selecione uma disciplina do edital...</option>
+                            <option value="Língua Portuguesa">Língua Portuguesa</option>
+                            <option value="Raciocínio Lógico-Matemático">Raciocínio Lógico-Matemático</option>
+                            <option value="História e Geografia de Rondônia">História e Geografia de Rondônia</option>
+                            <option value="Direito Constitucional">Direito Constitucional</option>
+                            <option value="Direito Administrativo">Direito Administrativo</option>
+                            <option value="Legislação Específica">Legislação Específica</option>
+                        </select>
+                        <div class="flex items-center gap-2">
+                           <hr class="flex-grow border-slate-200">
+                           <span class="text-xs text-slate-500">OU</span>
+                           <hr class="flex-grow border-slate-200">
+                        </div>
+                        <input type="text" id="custom-subject-input" placeholder="Digite uma disciplina personalizada" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <button id="add-subject-btn" class="w-full mt-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-900 transition flex items-center justify-center gap-2">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                            <span>Adicionar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: Salas de Estudo -->
+            <div id="view-salas" class="view">
+                <h2 class="text-xl font-bold mb-4">Comunidade de Estudos</h2>
+                <div id="study-room-list" class="space-y-2">
+                    <!-- Usuários reais serão inseridos aqui -->
+                </div>
+            </div>
+
+            <!-- VIEW: Ranking -->
+            <div id="view-ranking" class="view">
+                <h2 class="text-xl font-bold mb-4">Ranking Semanal 🏆</h2>
+                <div class="bg-white rounded-lg shadow">
+                    <ul id="ranking-list" class="divide-y divide-slate-200">
+                       <!-- Ranking dinâmico será inserido aqui -->
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- VIEW: Questões -->
+            <div id="view-questoes" class="view">
+                <h2 class="text-xl font-bold mb-4">Banco de Questões</h2>
+                <div id="quiz-container" class="bg-slate-100 p-4 rounded-lg">
+                    <!-- O conteúdo do quiz será renderizado aqui -->
+                </div>
+            </div>
+
+             <!-- VIEW: Perfil -->
+            <div id="view-perfil" class="view">
+                <!-- Container para usuário LOGADO -->
+                <div id="profile-container" class="hidden">
+                    <h2 class="text-2xl font-bold text-center" id="welcome-message"></h2>
+                    <p class="text-center text-slate-600 mt-2">Seus dados de estudo estão seguros.</p>
+                    <button id="logout-btn" class="w-full mt-8 bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition flex items-center justify-center gap-2">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                        <span>Sair da Conta</span>
+                    </button>
+                </div>
+
+                <!-- Container para usuário DESLOGADO -->
+                <div id="auth-container">
+                    <!-- Formulário de Login -->
+                    <div id="login-form-container">
+                        <h2 class="text-2xl font-bold text-center">Acesse sua Conta</h2>
+                        <form id="login-form" class="mt-6 space-y-4">
+                            <input type="email" id="login-email" placeholder="Seu e-mail" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <input type="password" id="login-password" placeholder="Sua senha" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Entrar</button>
+                        </form>
+                        <p class="text-center text-sm mt-4">
+                            Não tem uma conta? <a href="#" id="show-register-form" class="font-semibold text-blue-600 hover:underline">Cadastre-se</a>
+                        </p>
+                    </div>
+
+                    <!-- Formulário de Cadastro -->
+                    <div id="register-form-container" class="hidden">
+                        <h2 class="text-2xl font-bold text-center">Crie sua Conta</h2>
+                        <form id="register-form" class="mt-6 space-y-4">
+                            <input type="text" id="register-name" placeholder="Seu nome completo" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <input type="email" id="register-email" placeholder="Seu e-mail" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <input type="password" id="register-password" placeholder="Crie uma senha" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Criar Conta</button>
+                        </form>
+                        <p class="text-center text-sm mt-4">
+                            Já tem uma conta? <a href="#" id="show-login-form" class="font-semibold text-blue-600 hover:underline">Faça login</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Navegação Inferior -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white border-t border-slate-200 flex justify-around p-2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+            <button class="nav-item active flex flex-col items-center text-slate-500 p-2" data-view="cronometro">
+                <i data-lucide="timer" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Cronômetro</span>
+            </button>
+            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="salas">
+                <i data-lucide="users" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Salas</span>
+            </button>
+            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="ranking">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Ranking</span>
+            </button>
+            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="questoes">
+                <i data-lucide="file-question" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Questões</span>
+            </button>
+             <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="perfil">
+                <i data-lucide="user-circle" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Perfil</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal para Resumos -->
+    <div id="summary-modal" class="modal-overlay">
+        <div class="modal-content relative">
+            <button id="close-summary-modal" class="absolute top-2 right-2 text-slate-500 hover:text-slate-800">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h2 id="summary-modal-title" class="text-2xl font-bold text-blue-700 mb-4"></h2>
+            <div id="summary-modal-body" class="summary-content"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            const appState = {
+                subjects: [],
+                currentUser: null, // { name, email, isOnline }
+                timer: {
+                    instance: null,
+                    startTime: 0,
+                    accumulated: 0,
+                    isRunning: false,
+                    currentItem: null,
+                },
+                selectedItem: null,
+                quiz: {
+                    active: false,
+                    subjectName: null,
+                    topicName: null,
+                    questions: [],
+                    currentIndex: 0,
+                }
+            };
+
+            // --- Elementos do DOM ---
+            const timerDisplay = document.getElementById('timer-display');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const newSubjectSelect = document.getElementById('new-subject-select');
+            const customSubjectInput = document.getElementById('custom-subject-input');
+            const addSubjectBtn = document.getElementById('add-subject-btn');
+            const addSubjectContainer = document.getElementById('add-subject-container');
+            const subjectsList = document.getElementById('subjects-list');
+            const currentSubjectDisplay = document.getElementById('current-subject-display');
+            const navItems = document.querySelectorAll('.nav-item');
+            const views = document.querySelectorAll('.view');
+            const quizContainer = document.getElementById('quiz-container');
+            const summaryModal = document.getElementById('summary-modal');
+            const summaryModalTitle = document.getElementById('summary-modal-title');
+            const summaryModalBody = document.getElementById('summary-modal-body');
+            const closeSummaryModalBtn = document.getElementById('close-summary-modal');
+            const headerSubtitle = document.getElementById('header-subtitle');
+            
+            // Elementos de Autenticação
+            const profileContainer = document.getElementById('profile-container');
+            const authContainer = document.getElementById('auth-container');
+            const loginFormContainer = document.getElementById('login-form-container');
+            const registerFormContainer = document.getElementById('register-form-container');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const showRegisterBtn = document.getElementById('show-register-form');
+            const showLoginBtn = document.getElementById('show-login-form');
+            const logoutBtn = document.getElementById('logout-btn');
+            const welcomeMessage = document.getElementById('welcome-message');
+            const studyRoomList = document.getElementById('study-room-list');
+
+            // --- Funções de Lógica ---
+            function formatTime(seconds) {
+                const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+                const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+                const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+                return `${h}:${m}:${s}`;
+            }
+
+            function getDbKey(email) {
+                return `gfconcursos_state_${email}`;
+            }
+            
+            function saveState() {
+                if (appState.currentUser) {
+                    localStorage.setItem(getDbKey(appState.currentUser.email), JSON.stringify({ subjects: appState.subjects }));
+                }
+            }
+
+            function loadState() {
+                if (appState.currentUser) {
+                    const savedState = localStorage.getItem(getDbKey(appState.currentUser.email));
+                    appState.subjects = savedState ? JSON.parse(savedState).subjects : [];
+                } else {
+                    appState.subjects = [];
+                }
+            }
+            
+            function renderSubjects() {
+                subjectsList.innerHTML = '';
+                if (!appState.currentUser) {
+                     subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Faça login para ver e adicionar suas disciplinas.</li>`;
+                     addSubjectContainer.classList.add('hidden');
+                     return;
+                }
+                
+                addSubjectContainer.classList.remove('hidden');
+
+                if (appState.subjects.length === 0) {
+                    subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Adicione sua primeira disciplina.</li>`;
+                    return;
+                }
+                
+                appState.subjects.forEach(subject => {
+                    const isSelectedSubject = appState.selectedItem?.type === 'subject' && appState.selectedItem.subjectId === subject.id;
+                    const li = document.createElement('li');
+                    li.className = 'subject-item';
+                    li.dataset.subjectId = subject.id;
+                    li.dataset.subjectName = subject.name;
+
+                    const topicsHTML = subject.topics.map(topic => {
+                        const isSelectedTopic = appState.selectedItem?.type === 'topic' && appState.selectedItem.topicId === topic.id;
+                        return `
+                            <li class="flex justify-between items-center p-3 transition ${isSelectedTopic ? 'bg-blue-50' : 'hover:bg-slate-50'}">
+                                <div class="cursor-pointer flex-grow" data-select-topic-id="${topic.id}" data-parent-id="${subject.id}">
+                                    <span class="font-medium text-sm">${topic.name}</span>
+                                    <span class="block text-xs text-slate-500">Total: ${formatTime(topic.totalTime)}</span>
+                                </div>
+                                <div class="flex items-center space-x-1 pl-1">
+                                    <button data-practice-topic-id="${topic.id}" data-parent-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full flex items-center text-xs font-semibold"><i data-lucide="file-question" class="w-3 h-3 mr-1"></i> Praticar</button>
+                                    <button data-delete-topic-id="${topic.id}" data-parent-id="${subject.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                                </div>
+                            </li>
+                        `;
+                    }).join('');
+
+                    li.innerHTML = `
+                        <div class="p-4 flex justify-between items-center transition cursor-pointer ${isSelectedSubject ? 'bg-blue-100' : 'hover:bg-slate-50'}">
+                            <div class="flex-grow" data-select-subject-id="${subject.id}" data-toggle-topics-id="${subject.id}">
+                                <span class="font-semibold">${subject.name}</span>
+                                <span class="block text-sm text-slate-500">Total: ${formatTime(subject.totalTime)}</span>
+                            </div>
+                            <div class="flex items-center space-x-2 pl-2">
+                               <button data-summary-subject-name="${subject.name}" class="text-indigo-600 hover:text-indigo-800 p-1 rounded-full" title="Ver Resumo"><i data-lucide="book-open" class="w-4 h-4"></i></button>
+                               <button data-practice-subject-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full" title="Praticar Tudo"><i data-lucide="library" class="w-4 h-4"></i></button>
+                               <button data-delete-subject-id="${subject.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full" title="Excluir Disciplina"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                               <i data-lucide="chevron-down" class="w-5 h-5 transition-transform chevron" data-toggle-topics-id="${subject.id}"></i>
+                            </div>
+                        </div>
+                        <div class="topics-container pl-4 border-l-2 border-slate-200 ml-4">
+                            <ul class="topic-list divide-y divide-slate-100">${topicsHTML}</ul>
+                            <div class="p-2 flex gap-2">
+                                <input type="text" data-topic-input-id="${subject.id}" placeholder="Novo assunto" class="flex-grow w-full px-2 py-1 border border-slate-300 rounded-md text-sm">
+                                <button data-add-topic-id="${subject.id}" class="bg-slate-600 text-white px-3 py-1 text-sm rounded-md hover:bg-slate-700">Add</button>
+                            </div>
+                        </div>
+                    `;
+                    subjectsList.appendChild(li);
+                });
+                lucide.createIcons();
+                updateTimerControls();
+            }
+
+            function addSubject() {
+                if (!appState.currentUser) {
+                    alert("Você precisa estar logado para adicionar disciplinas.");
+                    return;
+                }
+                const customName = customSubjectInput.value.trim();
+                const selectName = newSubjectSelect.value;
+                const name = customName || selectName;
+
+                if (name && !appState.subjects.some(s => s.name === name)) {
+                    let topics = [];
+                    if (!customName && selectName) {
+                        const normalizedName = normalizeString(selectName);
+                        const topicsData = questionsDB[normalizedName];
+                        if (topicsData) {
+                            const topicNames = new Set(topicsData.map(topicObj => topicObj.topic));
+                            topics = [...topicNames].map(topicName => ({ id: Date.now() + Math.random(), name: topicName, totalTime: 0 }));
+                        }
+                    }
+                    appState.subjects.push({ id: Date.now(), name, totalTime: 0, topics });
+                    customSubjectInput.value = '';
+                    newSubjectSelect.value = '';
+                    saveState();
+                    renderSubjects();
+                } else if (name) {
+                    alert('Essa disciplina já foi adicionada.');
+                }
+            }
+
+            function addTopic(subjectId, topicName) {
+                const subject = appState.subjects.find(s => s.id === subjectId);
+                if (subject && topicName) {
+                    subject.topics.push({ id: Date.now(), name: topicName, totalTime: 0 });
+                    saveState();
+                    renderSubjects();
+                    document.querySelector(`[data-subject-id='${subjectId}']`)?.classList.add('is-expanded');
+                }
+            }
+            
+            function deleteSubject(id) {
+                if (appState.timer.isRunning && appState.timer.currentItem?.subjectId === id) stopTimer();
+                if (appState.selectedItem?.subjectId === id) appState.selectedItem = null;
+                appState.subjects = appState.subjects.filter(s => s.id !== id);
+                saveState();
+                renderSubjects();
+                updateCurrentSubjectDisplay();
+            }
+
+            function deleteTopic(subjectId, topicId) {
+                if (appState.timer.isRunning && appState.timer.currentItem?.topicId === topicId) stopTimer();
+                if (appState.selectedItem?.topicId === topicId) appState.selectedItem = null;
+                const subject = appState.subjects.find(s => s.id === subjectId);
+                if(subject) {
+                    subject.topics = subject.topics.filter(t => t.id !== topicId);
+                    saveState();
+                    renderSubjects();
+                    updateCurrentSubjectDisplay();
+                    document.querySelector(`[data-subject-id='${subjectId}']`)?.classList.add('is-expanded');
+                }
+            }
+            
+            function selectItem(type, subjectId, topicId = null) {
+                 if (!appState.currentUser) {
+                    alert("Faça login para selecionar uma disciplina.");
+                    return;
+                }
+                if (appState.timer.isRunning) {
+                     const current = appState.timer.currentItem;
+                     if(current.type !== type || current.subjectId !== subjectId || current.topicId !== topicId) {
+                        alert('Pare o cronômetro atual antes de selecionar outro item.');
+                        return;
+                     }
+                }
+                appState.selectedItem = { type, subjectId, topicId };
+                updateCurrentSubjectDisplay();
+                renderSubjects();
+            }
+            
+            function updateCurrentSubjectDisplay() {
+                 if (!appState.selectedItem) {
+                    currentSubjectDisplay.innerHTML = 'Nenhuma disciplina selecionada';
+                    return;
+                }
+                const { type, subjectId, topicId } = appState.selectedItem;
+                const subject = appState.subjects.find(s => s.id === subjectId);
+                if (!subject) {
+                    appState.selectedItem = null;
+                    updateCurrentSubjectDisplay();
+                    return;
+                }
+                if (type === 'topic') {
+                    const topic = subject.topics.find(t => t.id === topicId);
+                    if (topic) {
+                        currentSubjectDisplay.innerHTML = `Estudando: <span class="font-bold">${subject.name}</span><br/><span class="text-sm">${topic.name}</span>`;
+                    } else {
+                        appState.selectedItem = null;
+                        updateCurrentSubjectDisplay();
+                    }
+                } else {
+                    currentSubjectDisplay.innerHTML = `Estudando: <span class="font-bold">${subject.name}</span>`;
+                }
+            }
+
+            function updateTimerControls() {
+                const hasSelectionAndUser = appState.selectedItem && appState.currentUser;
+                startPauseBtn.disabled = !hasSelectionAndUser;
+                stopBtn.disabled = !appState.timer.isRunning && appState.timer.accumulated === 0;
+            }
+            
+            // --- Lógica do Cronômetro ---
+            function updateDisplay() {
+                const elapsed = (Date.now() - appState.timer.startTime) / 1000;
+                timerDisplay.textContent = formatTime(appState.timer.accumulated + elapsed);
+            }
+
+            function startTimer() {
+                if (appState.timer.isRunning || !appState.selectedItem) return;
+                appState.timer.currentItem = { ...appState.selectedItem };
+                appState.timer.isRunning = true;
+
