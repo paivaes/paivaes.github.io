@@ -9,769 +9,595 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- SDKs do Firebase -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-      import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-      
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
-        authDomain: "gfconcursos-app.firebaseapp.com",
-        projectId: "gfconcursos-app",
-        storageBucket: "gfconcursos-app.firebasestorage.app",
-        messagingSenderId: "615439428502",
-        appId: "1:615439428502:web:b399549c3969e052098bb7"
-      };
-
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-
-      window.fb = { auth, db, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, getDoc, setDoc, collection, getDocs, query, orderBy, updateDoc };
-    </script>
-    
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
-        .timer-digits { font-variant-numeric: tabular-nums; }
-        .view { display: none; }
-        .view.active { display: block; }
-        .nav-item.active { color: #2563eb; }
-        .nav-item.active svg { stroke: #2563eb; }
-        .topics-container { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
-        .subject-item.is-expanded .topics-container { max-height: 1000px; }
-        .subject-item.is-expanded .chevron { transform: rotate(180deg); }
-        .modal-overlay { display: none; position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 50; align-items: center; justify-content: center; }
-        .modal-overlay.is-open { display: flex; }
-        .modal-content { background-color: white; padding: 1.5rem; border-radius: 0.75rem; max-width: 90%; width: 500px; max-height: 80vh; overflow-y: auto; animation: slide-up 0.3s ease-out; }
-        @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .summary-content h3 { font-size: 1.25rem; font-weight: 700; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.5rem; border-bottom: 2px solid #93c5fd; padding-bottom: 0.25rem; }
-        .summary-content h4 { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-top: 1.25rem; margin-bottom: 0.5rem; }
-        .summary-content p { color: #475569; line-height: 1.6; margin-bottom: 0.75rem; }
-        .summary-content strong { font-weight: 600; color: #334155; }
-        .progress-bar { background-color: #e5e7eb; border-radius: 9999px; height: 1rem; overflow: hidden; }
-        .progress-bar-inner { background-color: #2563eb; height: 100%; transition: width 0.5s ease-in-out; }
-        .perspective-1000 { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-        .flashcard-flipper.is-flipped { transform: rotateY(180deg); }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .timer-digits {
+            font-variant-numeric: tabular-nums;
+        }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+        .nav-item.active {
+            color: #2563eb; /* text-blue-600 */
+        }
+        .nav-item.active svg {
+            stroke: #2563eb;
+        }
     </style>
 </head>
 <body class="antialiased text-slate-800">
 
     <div id="app" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg flex flex-col">
+        
+        <!-- Cabeçalho -->
         <header class="bg-blue-600 text-white p-4 text-center shadow-md">
             <h1 class="text-2xl font-bold">GFConcursos</h1>
-            <p id="header-subtitle" class="text-sm opacity-90">Seu parceiro rumo à aprovação</p>
+            <p class="text-sm opacity-90">Seu parceiro rumo à aprovação</p>
         </header>
 
+        <!-- Conteúdo Principal -->
         <main class="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto pb-24">
             
+            <!-- VIEW: Cronômetro -->
             <div id="view-cronometro" class="view active">
-                <div id="study-cycle-container" class="mb-6">
-                    <h2 class="text-xl font-bold mb-3">Meu Ciclo de Estudo</h2>
-                    <div class="bg-white p-4 rounded-lg shadow space-y-3">
-                        <div id="cycle-display" class="hidden text-center">
-                            <h3 id="cycle-name-display" class="text-lg font-semibold text-blue-800"></h3>
-                        </div>
-                        <div id="cycle-setup">
-                             <label for="cycle-name-input" class="block text-sm font-medium text-slate-700">Nome do Ciclo:</label>
-                             <input type="text" id="cycle-name-input" placeholder="Ex: Pós-Edital ALE-RO" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg">
-                             <label for="cycle-goal-input" class="block text-sm font-medium text-slate-700 mt-3">Meta de horas para o ciclo:</label>
-                             <div class="flex items-center gap-2 mt-1">
-                                <input type="number" id="cycle-goal-input" placeholder="Ex: 100" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
-                                <button id="set-cycle-goal-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">Definir</button>
-                             </div>
-                        </div>
-                        <div id="cycle-progress" class="hidden space-y-2">
-                            <div>
-                                <div class="flex justify-between items-center text-sm font-medium text-slate-600">
-                                    <span>Progresso</span>
-                                    <span id="cycle-progress-percentage">0%</span>
-                                </div>
-                                <div class="progress-bar mt-1">
-                                    <div id="cycle-progress-bar-inner" class="progress-bar-inner" style="width: 0%;"></div>
-                                </div>
-                                <p id="cycle-progress-text" class="text-xs text-slate-500 text-right mt-1">0h 0m / 0h</p>
-                            </div>
-                             <button id="reset-cycle-btn" class="w-full mt-2 text-sm text-center text-slate-500">Redefinir Ciclo</button>
-                            <div id="cycle-completed-box" class="hidden bg-green-100 p-3 rounded-lg text-center">
-                                <p class="font-bold text-green-700">🎉 Parabéns! Meta do ciclo concluída! 🎉</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Seção do Timer -->
                 <div class="bg-slate-100 rounded-2xl p-6 text-center shadow-inner">
-                    <p id="current-subject-display" class="text-lg font-semibold text-slate-600 mb-2 h-12 flex items-center justify-center text-center">Nenhuma disciplina selecionada</p>
-                    <div id="timer-display" class="text-6xl md:text-7xl font-bold text-slate-800 timer-digits">00:00:00</div>
+                    <p id="current-subject-display" class="text-lg font-semibold text-slate-600 mb-2">Nenhuma disciplina selecionada</p>
+                    <div id="timer-display" class="text-6xl md:text-7xl font-bold text-slate-800 timer-digits tracking-wider">
+                        00:00:00
+                    </div>
                     <div class="mt-6 flex justify-center space-x-3">
-                        <button id="start-pause-btn" class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold flex items-center disabled:bg-gray-400" disabled><i data-lucide="play" class="w-5 h-5 mr-2"></i><span id="start-pause-text">Iniciar</span></button>
-                        <button id="stop-btn" class="bg-red-500 text-white px-8 py-3 rounded-full font-semibold flex items-center disabled:bg-gray-400" disabled><i data-lucide="square" class="w-5 h-5 mr-2"></i><span>Parar</span></button>
+                        <button id="start-pause-btn" class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            <i data-lucide="play" class="w-5 h-5 mr-2"></i>
+                            <span id="start-pause-text">Iniciar</span>
+                        </button>
+                        <button id="stop-btn" class="bg-red-500 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-red-600 transition-all transform hover:scale-105 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            <i data-lucide="square" class="w-5 h-5 mr-2"></i>
+                            <span>Parar</span>
+                        </button>
                     </div>
                 </div>
+
+                <!-- Seção de Disciplinas -->
                 <div>
-                    <h2 class="text-xl font-bold mb-3 mt-6">Minhas Disciplinas</h2>
+                    <h2 class="text-xl font-bold mb-3">Minhas Disciplinas</h2>
                     <div class="bg-white rounded-lg">
-                        <ul id="subjects-list" class="divide-y divide-slate-200"></ul>
+                        <ul id="subjects-list" class="divide-y divide-slate-200">
+                            <!-- Disciplinas serão inseridas aqui via JS -->
+                        </ul>
                     </div>
-                     <div id="add-subject-container" class="mt-4 space-y-2">
-                        <select id="new-subject-select" class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white">
-                            <option value="">Selecione uma disciplina do edital...</option>
-                            <option value="Língua Portuguesa">Língua Portuguesa</option>
-                            <option value="Raciocínio Lógico-Matemático">Raciocínio Lógico-Matemático</option>
-                            <option value="História e Geografia de Rondônia">História e Geografia de Rondônia</option>
-                            <option value="Direito Constitucional">Direito Constitucional</option>
-                            <option value="Direito Administrativo">Direito Administrativo</option>
-                            <option value="Legislação Específica">Legislação Específica</option>
-                        </select>
-                        <div class="flex items-center gap-2"><hr class="flex-grow"><span class="text-xs text-slate-500">OU</span><hr class="flex-grow"></div>
-                        <input type="text" id="custom-subject-input" placeholder="Digite uma disciplina personalizada" class="w-full px-4 py-2 border border-slate-300 rounded-lg">
-                        <button id="add-subject-btn" class="w-full mt-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-2"><i data-lucide="plus" class="w-5 h-5"></i><span>Adicionar</span></button>
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="new-subject-input" placeholder="Nova disciplina (ex: Direito Admin.)" class="flex-grow w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <button id="add-subject-btn" class="bg-slate-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-900 transition flex items-center">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div id="view-revisoes" class="view"><h2 class="text-xl font-bold mb-4">Revisões Agendadas</h2><div id="reviews-list" class="space-y-3"></div></div>
-            <div id="view-salas" class="view"><h2 class="text-xl font-bold mb-4">Comunidade de Estudos</h2><div id="study-room-list" class="space-y-2"></div></div>
-            <div id="view-ranking" class="view"><h2 class="text-xl font-bold mb-4">Ranking Semanal 🏆</h2><div class="bg-white rounded-lg shadow"><ul id="ranking-list" class="divide-y"></ul></div></div>
-            <div id="view-questoes" class="view"><h2 class="text-xl font-bold mb-4">Banco de Questões</h2><div id="quiz-container" class="bg-slate-100 p-4 rounded-lg"></div></div>
-            <div id="view-perfil" class="view">
-                <div id="profile-container" class="hidden"><h2 class="text-2xl font-bold text-center" id="welcome-message"></h2><p class="text-center text-slate-600 mt-2">Seus dados de estudo estão seguros.</p><button id="logout-btn" class="w-full mt-8 bg-red-500 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2"><i data-lucide="log-out" class="w-5 h-5"></i><span>Sair da Conta</span></button></div>
-                <div id="auth-container">
-                    <div id="login-form-container"><h2 class="text-2xl font-bold text-center">Acesse sua Conta</h2><form id="login-form" class="mt-6 space-y-4"><input type="email" id="login-email" placeholder="Seu e-mail" required class="w-full px-4 py-3 border rounded-lg"><input type="password" id="login-password" placeholder="Sua senha" required class="w-full px-4 py-3 border rounded-lg"><button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold">Entrar</button></form><p class="text-center text-sm mt-4">Não tem uma conta? <a href="#" id="show-register-form" class="font-semibold text-blue-600">Cadastre-se</a></p></div>
-                    <div id="register-form-container" class="hidden"><h2 class="text-2xl font-bold text-center">Crie sua Conta</h2><form id="register-form" class="mt-6 space-y-4"><input type="text" id="register-name" placeholder="Seu nome completo" required class="w-full px-4 py-3 border rounded-lg"><input type="email" id="register-email" placeholder="Seu e-mail" required class="w-full px-4 py-3 border rounded-lg"><input type="password" id="register-password" placeholder="Crie uma senha" required class="w-full px-4 py-3 border rounded-lg"><button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold">Criar Conta</button></form><p class="text-center text-sm mt-4">Já tem uma conta? <a href="#" id="show-login-form" class="font-semibold text-blue-600">Faça login</a></p></div>
+
+            <!-- VIEW: Salas de Estudo -->
+            <div id="view-salas" class="view">
+                <h2 class="text-xl font-bold mb-4">Salas de Estudo</h2>
+                <div class="space-y-3">
+                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+                        <p class="font-bold">Sala: Carreiras Policiais 👮</p>
+                        <p>17 pessoas estudando agora</p>
+                    </div>
+                    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg">
+                        <p class="font-bold">Sala: Tribunais e TRTs ⚖️</p>
+                        <p>23 pessoas estudando agora</p>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold mt-6 mb-3">Estudando Agora (simulado)</h3>
+                <div id="study-room-list" class="space-y-2">
+                    <!-- Usuários simulados serão inseridos aqui -->
                 </div>
             </div>
+
+            <!-- VIEW: Ranking -->
+            <div id="view-ranking" class="view">
+                <h2 class="text-xl font-bold mb-4">Ranking Semanal 🏆</h2>
+                <div class="bg-white rounded-lg shadow">
+                    <ul id="ranking-list" class="divide-y divide-slate-200">
+                       <!-- Ranking simulado será inserido aqui -->
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- VIEW: Questões -->
+            <div id="view-questoes" class="view">
+                <h2 class="text-xl font-bold mb-4">Banco de Questões</h2>
+                <div id="quiz-container" class="bg-slate-100 p-4 rounded-lg">
+                    <!-- O conteúdo do quiz será renderizado aqui -->
+                </div>
+            </div>
+
         </main>
-        <nav class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white border-t flex justify-around p-2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-            <button class="nav-item active flex flex-col items-center text-slate-500 p-2" data-view="cronometro"><i data-lucide="timer" class="w-6 h-6 mb-1"></i><span class="text-xs">Cronômetro</span></button>
-            <button class="nav-item relative flex flex-col items-center text-slate-500 p-2" data-view="revisoes"><i data-lucide="repeat" class="w-6 h-6 mb-1"></i><span class="text-xs">Revisões</span><span id="review-badge" class="hidden absolute top-1 right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"></span></button>
-            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="salas"><i data-lucide="users" class="w-6 h-6 mb-1"></i><span class="text-xs">Salas</span></button>
-            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="ranking"><i data-lucide="bar-chart-3" class="w-6 h-6 mb-1"></i><span class="text-xs">Ranking</span></button>
-            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="questoes"><i data-lucide="file-question" class="w-6 h-6 mb-1"></i><span class="text-xs">Questões</span></button>
-            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="perfil"><i data-lucide="user-circle" class="w-6 h-6 mb-1"></i><span class="text-xs">Perfil</span></button>
+
+        <!-- Navegação Inferior -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white border-t border-slate-200 flex justify-around p-2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+            <button class="nav-item active flex flex-col items-center text-slate-500 p-2" data-view="cronometro">
+                <i data-lucide="timer" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Cronômetro</span>
+            </button>
+            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="salas">
+                <i data-lucide="users" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Salas</span>
+            </button>
+            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="ranking">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Ranking</span>
+            </button>
+            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="questoes">
+                <i data-lucide="file-question" class="w-6 h-6 mb-1"></i>
+                <span class="text-xs">Questões</span>
+            </button>
         </nav>
     </div>
 
-    <div id="summary-modal" class="modal-overlay"><div class="modal-content relative"><button id="close-summary-modal" class="absolute top-2 right-2"><i data-lucide="x" class="w-6 h-6"></i></button><h2 id="summary-modal-title" class="text-2xl font-bold text-blue-700 mb-4"></h2><div id="summary-modal-body" class="summary-content"></div></div></div>
-    <div id="flashcard-modal" class="modal-overlay"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h2 id="flashcard-modal-title" class="text-xl font-bold text-purple-700">Flashcards</h2><button id="close-flashcard-modal"><i data-lucide="x" class="w-6 h-6"></i></button></div><div id="flashcard-container" class="w-full h-64 perspective-1000 bg-slate-100 rounded-lg flex items-center justify-center p-4 cursor-pointer"><div id="flashcard-flipper" class="relative w-full h-full text-center transform-style-3d transition-transform duration-700"><div id="flashcard-front" class="absolute w-full h-full backface-hidden flex items-center justify-center p-4 bg-white rounded-lg shadow-lg"></div><div id="flashcard-back" class="absolute w-full h-full backface-hidden transform rotate-y-180 flex items-center justify-center p-4 bg-blue-100 rounded-lg shadow-lg"></div></div></div><div class="flex justify-between items-center mt-4"><span id="flashcard-counter" class="text-sm font-medium text-slate-500"></span><div class="flex gap-2"><button id="flip-flashcard-btn" class="bg-slate-200 px-4 py-2 rounded-lg font-semibold">Virar</button><button id="next-flashcard-btn" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold">Próximo</button></div></div></div></div>
-    
-    <script type="module">
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            const { auth, db, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, getDoc, setDoc, collection, getDocs, query, orderBy, updateDoc } = window.fb;
 
             const appState = {
                 subjects: [],
-                currentUser: null,
-                studyCycle: { name: '', goalSeconds: 0, completedSeconds: 0 },
-                reviews: [],
-                timer: { instance: null, startTime: 0, accumulated: 0, isRunning: false, currentItem: null },
-                selectedItem: null,
-                quiz: { active: false, subjectName: null, topicName: null, questions: [], currentIndex: 0, incorrectTopics: [] },
-                flashcards: { active: false, cards: [], currentIndex: 0 }
-            };
-            
-            const DOMElements = {
-                timerDisplay: document.getElementById('timer-display'),
-                startPauseBtn: document.getElementById('start-pause-btn'),
-                stopBtn: document.getElementById('stop-btn'),
-                newSubjectSelect: document.getElementById('new-subject-select'),
-                customSubjectInput: document.getElementById('custom-subject-input'),
-                addSubjectBtn: document.getElementById('add-subject-btn'),
-                addSubjectContainer: document.getElementById('add-subject-container'),
-                subjectsList: document.getElementById('subjects-list'),
-                currentSubjectDisplay: document.getElementById('current-subject-display'),
-                navItems: document.querySelectorAll('.nav-item'),
-                views: document.querySelectorAll('.view'),
-                quizContainer: document.getElementById('quiz-container'),
-                summaryModal: document.getElementById('summary-modal'),
-                summaryModalTitle: document.getElementById('summary-modal-title'),
-                summaryModalBody: document.getElementById('summary-modal-body'),
-                closeSummaryModalBtn: document.getElementById('close-summary-modal'),
-                headerSubtitle: document.getElementById('header-subtitle'),
-                cycleGoalInput: document.getElementById('cycle-goal-input'),
-                setCycleGoalBtn: document.getElementById('set-cycle-goal-btn'),
-                cycleProgress: document.getElementById('cycle-progress'),
-                cycleProgressText: document.getElementById('cycle-progress-text'),
-                cycleProgressBarInner: document.getElementById('cycle-progress-bar-inner'),
-                cycleProgressPercentage: document.getElementById('cycle-progress-percentage'),
-                cycleCompletedBox: document.getElementById('cycle-completed-box'),
-                cycleNameInput: document.getElementById('cycle-name-input'),
-                cycleNameDisplay: document.getElementById('cycle-name-display'),
-                cycleSetup: document.getElementById('cycle-setup'),
-                cycleDisplay: document.getElementById('cycle-display'),
-                resetCycleBtn: document.getElementById('reset-cycle-btn'),
-                reviewsList: document.getElementById('reviews-list'),
-                reviewBadge: document.getElementById('review-badge'),
-                profileContainer: document.getElementById('profile-container'),
-                authContainer: document.getElementById('auth-container'),
-                loginFormContainer: document.getElementById('login-form-container'),
-                registerFormContainer: document.getElementById('register-form-container'),
-                loginForm: document.getElementById('login-form'),
-                registerForm: document.getElementById('register-form'),
-                showRegisterBtn: document.getElementById('show-register-form'),
-                showLoginBtn: document.getElementById('show-login-form'),
-                logoutBtn: document.getElementById('logout-btn'),
-                welcomeMessage: document.getElementById('welcome-message'),
-                studyRoomList: document.getElementById('study-room-list'),
-                flashcardModal: document.getElementById('flashcard-modal'),
-                closeFlashcardModalBtn: document.getElementById('close-flashcard-modal'),
-                flashcardModalTitle: document.getElementById('flashcard-modal-title'),
-                flashcardFlipper: document.getElementById('flashcard-flipper'),
-                flashcardFront: document.getElementById('flashcard-front'),
-                flashcardBack: document.getElementById('flashcard-back'),
-                flipFlashcardBtn: document.getElementById('flip-flashcard-btn'),
-                nextFlashcardBtn: document.getElementById('next-flashcard-btn'),
-                flashcardCounter: document.getElementById('flashcard-counter'),
-                flashcardContainer: document.getElementById('flashcard-container')
+                timer: {
+                    instance: null,
+                    startTime: 0,
+                    pausedTime: 0,
+                    accumulated: 0,
+                    isRunning: false,
+                    currentSubjectId: null,
+                },
+                selectedSubjectId: null,
+                quiz: {
+                    active: false,
+                    subjectName: null,
+                    questions: [],
+                    currentIndex: 0,
+                }
             };
 
-            const summariesDB = { /* Omitido para brevidade */ };
-            const questionsDB = { /* Omitido para brevidade */ };
+            // --- Elementos do DOM ---
+            const timerDisplay = document.getElementById('timer-display');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const startPauseText = document.getElementById('start-pause-text');
+            const stopBtn = document.getElementById('stop-btn');
+            const newSubjectInput = document.getElementById('new-subject-input');
+            const addSubjectBtn = document.getElementById('add-subject-btn');
+            const subjectsList = document.getElementById('subjects-list');
+            const currentSubjectDisplay = document.getElementById('current-subject-display');
+            
+            const navItems = document.querySelectorAll('.nav-item');
+            const views = document.querySelectorAll('.view');
+            
+            const quizContainer = document.getElementById('quiz-container');
 
-            function formatTime(seconds) { const h = Math.floor(seconds / 3600); const m = Math.floor((seconds % 3600) / 60); if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`; return `${m}m`; }
-            function formatTimeHMS(seconds) { const h = String(Math.floor(seconds / 3600)).padStart(2, '0'); const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0'); const s = String(Math.floor(seconds % 60)).padStart(2, '0'); return `${h}:${m}:${s}`; }
-            function normalizeString(str) { if (!str) return ''; return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ç/g, "c").replace(/-/g,' ').replace('º','').replace('(','').replace(')','').trim(); }
+            // --- Funções de Lógica ---
 
-            async function saveState() {
-                if (appState.currentUser) {
-                    try {
-                        const userDocRef = doc(db, "users", appState.currentUser.uid, "data", "appData");
-                        await setDoc(userDocRef, { subjects: appState.subjects, studyCycle: appState.studyCycle, reviews: appState.reviews });
-                        const userProfileRef = doc(db, "users", appState.currentUser.uid);
-                        await updateDoc(userProfileRef, { totalTime: appState.studyCycle.completedSeconds || 0 });
-                    } catch (error) { console.error("Erro ao salvar dados:", error); }
-                }
-            }
-            async function loadState() {
-                if (appState.currentUser) {
-                    const userDocRef = doc(db, "users", appState.currentUser.uid, "data", "appData");
-                    const docSnap = await getDoc(userDocRef);
-                    const data = docSnap.exists() ? docSnap.data() : {};
-                    appState.subjects = data.subjects || [];
-                    appState.studyCycle = data.studyCycle || { name: '', goalSeconds: 0, completedSeconds: 0 };
-                    appState.reviews = data.reviews || [];
-                } else {
-                    appState.subjects = [];
-                    appState.studyCycle = { name: '', goalSeconds: 0, completedSeconds: 0 };
-                    appState.reviews = [];
-                }
-                renderStudyCycle();
-                updateReviewNotification();
-            }
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    const userDocRef = doc(db, "users", user.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    appState.currentUser = { uid: user.uid, email: user.email, name: userDoc.exists() ? userDoc.data().name : 'Usuário' };
-                    await updateDoc(userDocRef, { isOnline: true });
-                    updateUIForLogin();
-                } else {
-                    if (appState.currentUser) {
-                         const userDocRef = doc(db, "users", appState.currentUser.uid);
-                         await updateDoc(userDocRef, { isOnline: false });
-                    }
-                    appState.currentUser = null;
-                    if(appState.timer.isRunning) await stopTimer();
-                    await loadState();
-                    updateCurrentSubjectDisplay();
-                    updateUIForLogout();
-                }
-            });
-            async function registerUser(name, email, password) {
-                try {
-                    const cred = await createUserWithEmailAndPassword(auth, email, password);
-                    await setDoc(doc(db, "users", cred.user.uid), { name, email, isOnline: false, totalTime: 0 });
-                    alert('Cadastro realizado com sucesso! Faça o login.'); 
-                    toggleAuthForms();
-                } catch (error) { alert("Erro ao cadastrar: " + error.message); }
-            }
-            async function loginUser(email, password) { 
-                try { await signInWithEmailAndPassword(auth, email, password); } 
-                catch (error) { alert("E-mail ou senha incorretos."); } 
-            }
-            async function logoutUser() { 
-                try { await signOut(auth); } 
-                catch(error) { console.error("Erro ao sair:", error); } 
+            function formatTime(seconds) {
+                const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+                const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+                const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+                return `${h}:${m}:${s}`;
             }
             
-            function updateUIForLogin() {
-                DOMElements.profileContainer.classList.remove('hidden');
-                DOMElements.authContainer.classList.add('hidden');
-                DOMElements.welcomeMessage.textContent = `Olá, ${appState.currentUser.name.split(' ')[0]}!`;
-                DOMElements.headerSubtitle.textContent = `Bem-vindo(a) de volta!`;
-                loadState().then(() => { 
-                    renderSubjects(); 
-                    updateTimerControls(); 
-                    switchView('cronometro');
-                });
-            }
-            function updateUIForLogout() {
-                DOMElements.profileContainer.classList.add('hidden');
-                DOMElements.authContainer.classList.remove('hidden');
-                DOMElements.headerSubtitle.textContent = 'Seu parceiro rumo à aprovação';
-                renderSubjects(); 
-                updateTimerControls(); 
-                renderStudyCycle(); 
-                updateReviewNotification();
-                switchView('perfil');
-            }
-            function toggleAuthForms() { 
-                DOMElements.loginFormContainer.classList.toggle('hidden'); 
-                DOMElements.registerFormContainer.classList.toggle('hidden'); 
-            }
-            function switchView(viewName) {
-                DOMElements.views.forEach(v => v.classList.toggle('active', v.id === `view-${viewName}`));
-                DOMElements.navItems.forEach(item => item.classList.toggle('active', item.dataset.view === viewName));
-                if (viewName === 'questoes') renderQuizView();
-                if (viewName === 'salas') renderStudyRoom();
-                if (viewName === 'ranking') renderRanking();
-                if (viewName === 'revisoes') renderReviews();
+            function saveState() {
+                localStorage.setItem('gfconcursos_state', JSON.stringify({
+                    subjects: appState.subjects
+                }));
             }
 
+            function loadState() {
+                const savedState = localStorage.getItem('gfconcursos_state');
+                if (savedState) {
+                    const parsedState = JSON.parse(savedState);
+                    appState.subjects = parsedState.subjects || [];
+                }
+            }
+            
             function renderSubjects() {
-                DOMElements.subjectsList.innerHTML = '';
-                if (!appState.currentUser) {
-                     DOMElements.subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Faça login para ver e adicionar suas disciplinas.</li>`;
-                     DOMElements.addSubjectContainer.classList.add('hidden');
-                     document.getElementById('study-cycle-container').classList.add('hidden');
-                     return;
-                }
-                
-                DOMElements.addSubjectContainer.classList.remove('hidden');
-                document.getElementById('study-cycle-container').classList.remove('hidden');
-
+                subjectsList.innerHTML = '';
                 if (appState.subjects.length === 0) {
-                    DOMElements.subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Adicione sua primeira disciplina.</li>`;
-                    return;
+                    subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Adicione sua primeira disciplina para começar a cronometrar.</li>`;
                 }
                 
                 appState.subjects.forEach(subject => {
-                    const isSelectedSubject = appState.selectedItem?.type === 'subject' && appState.selectedItem.subjectId === subject.id;
+                    const isSelected = subject.id === appState.selectedSubjectId;
                     const li = document.createElement('li');
-                    li.className = `subject-item ${isSelectedSubject ? 'is-expanded' : ''}`;
-                    li.dataset.subjectId = subject.id;
-                    li.dataset.subjectName = subject.name;
-
-                    const topicsHTML = subject.topics.map(topic => {
-                        const isSelectedTopic = appState.selectedItem?.type === 'topic' && appState.selectedItem.topicId === topic.id;
-                        return `
-                            <li class="flex justify-between items-center p-3 transition ${isSelectedTopic ? 'bg-blue-50' : 'hover:bg-slate-50'}">
-                                <div class="cursor-pointer flex-grow" data-select-topic-id="${topic.id}" data-parent-id="${subject.id}">
-                                    <span class="font-medium text-sm">${topic.name}</span>
-                                    <span class="block text-xs text-slate-500">Total: ${formatTimeHMS(topic.totalTime)}</span>
-                                </div>
-                                <div class="flex items-center space-x-1 pl-1">
-                                    <button data-practice-topic-id="${topic.id}" data-parent-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full flex items-center text-xs font-semibold"><i data-lucide="file-question" class="w-3 h-3 mr-1"></i> Praticar</button>
-                                    <button data-delete-topic-id="${topic.id}" data-parent-id="${subject.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
-                                </div>
-                            </li>
-                        `;
-                    }).join('');
-
+                    li.className = `p-4 flex justify-between items-center transition ${isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'}`;
+                    
                     li.innerHTML = `
-                        <div class="p-4 flex justify-between items-center transition cursor-pointer ${isSelectedSubject ? 'bg-blue-100' : 'hover:bg-slate-50'}">
-                            <div class="flex-grow" data-select-subject-id="${subject.id}" data-toggle-topics-id="${subject.id}">
-                                <span class="font-semibold">${subject.name}</span>
-                                <span class="block text-sm text-slate-500">Total: ${formatTimeHMS(subject.totalTime)}</span>
-                            </div>
-                            <div class="flex items-center space-x-2 pl-2">
-                               <button data-summary-subject-name="${subject.name}" class="text-indigo-600 hover:text-indigo-800 p-1 rounded-full" title="Ver Resumo"><i data-lucide="book-open" class="w-4 h-4"></i></button>
-                               <button data-practice-subject-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full" title="Praticar Tudo"><i data-lucide="library" class="w-4 h-4"></i></button>
-                               <button data-delete-subject-id="${subject.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full" title="Excluir Disciplina"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                               <i data-lucide="chevron-down" class="w-5 h-5 transition-transform chevron" data-toggle-topics-id="${subject.id}"></i>
-                            </div>
+                        <div class="cursor-pointer flex-grow" data-select-id="${subject.id}">
+                            <span class="font-semibold">${subject.name}</span>
+                            <span class="block text-sm text-slate-500">Total: ${formatTime(subject.totalTime)}</span>
                         </div>
-                        <div class="topics-container pl-4 border-l-2 border-slate-200 ml-4">
-                            <ul class="topic-list divide-y divide-slate-100">${topicsHTML}</ul>
-                            <div class="p-2 flex gap-2">
-                                <input type="text" data-topic-input-id="${subject.id}" placeholder="Novo assunto" class="flex-grow w-full px-2 py-1 border border-slate-300 rounded-md text-sm">
-                                <button data-add-topic-id="${subject.id}" class="bg-slate-600 text-white px-3 py-1 text-sm rounded-md hover:bg-slate-700">Add</button>
-                            </div>
+                        <div class="flex items-center space-x-2 pl-2">
+                           <button data-practice-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full flex items-center text-sm font-semibold"><i data-lucide="file-question" class="w-4 h-4 mr-1"></i> Praticar</button>
+                           <button data-delete-id="${subject.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     `;
-                    DOMElements.subjectsList.appendChild(li);
+                    subjectsList.appendChild(li);
                 });
                 lucide.createIcons();
                 updateTimerControls();
             }
-            async function addSubject() {
-                if (!appState.currentUser) return alert("Você precisa estar logado.");
-                const name = DOMElements.customSubjectInput.value.trim() || DOMElements.newSubjectSelect.value;
-                if (name && !appState.subjects.some(s => s.name === name)) {
-                    let topics = [];
-                    if (!DOMElements.customSubjectInput.value.trim() && DOMElements.newSubjectSelect.value) {
-                        const topicsData = questionsDB[normalizeString(name)];
-                        if (topicsData) {
-                            topics = [...new Set(topicsData.map(t => t.topic))].map(topicName => ({ id: Date.now() + Math.random(), name: topicName, totalTime: 0, studyLog: [] }));
-                        }
+
+            function addSubject() {
+                const name = newSubjectInput.value.trim();
+                if (name) {
+                    const newSubject = {
+                        id: Date.now(),
+                        name: name,
+                        totalTime: 0
+                    };
+                    appState.subjects.push(newSubject);
+                    newSubjectInput.value = '';
+                    saveState();
+                    renderSubjects();
+                }
+            }
+            
+            function deleteSubject(id) {
+                 if (confirm('Tem certeza que deseja excluir esta disciplina?')) {
+                    appState.subjects = appState.subjects.filter(s => s.id !== id);
+                    if (appState.selectedSubjectId === id) {
+                        appState.selectedSubjectId = null;
+                        currentSubjectDisplay.textContent = 'Nenhuma disciplina selecionada';
                     }
-                    appState.subjects.push({ id: Date.now(), name, totalTime: 0, topics });
-                    DOMElements.customSubjectInput.value = '';
-                    DOMElements.newSubjectSelect.value = '';
-                    await saveState();
+                    if (appState.timer.currentSubjectId === id && appState.timer.isRunning) {
+                        stopTimer();
+                    }
+                    saveState();
                     renderSubjects();
-                } else if (name) { alert('Essa disciplina já foi adicionada.'); }
-            }
-            async function addTopic(subjectId, topicName) {
-                const subject = appState.subjects.find(s => s.id === subjectId);
-                if (subject && topicName) {
-                    subject.topics.push({ id: Date.now(), name: topicName, totalTime: 0, studyLog: [] });
-                    await saveState();
-                    renderSubjects();
-                    document.querySelector(`[data-subject-id='${subjectId}']`)?.classList.add('is-expanded');
                 }
             }
-            async function deleteSubject(id) {
-                if (appState.timer.isRunning && appState.timer.currentItem?.subjectId === id) await stopTimer();
-                if (appState.selectedItem?.subjectId === id) appState.selectedItem = null;
-                appState.subjects = appState.subjects.filter(s => s.id !== id);
-                appState.reviews = appState.reviews.filter(r => r.subjectId !== id);
-                await saveState();
-                renderSubjects();
-                updateCurrentSubjectDisplay();
-            }
-            async function deleteTopic(subjectId, topicId) {
-                if (appState.timer.isRunning && appState.timer.currentItem?.topicId === topicId) await stopTimer();
-                if (appState.selectedItem?.topicId === topicId) appState.selectedItem = null;
-                const subject = appState.subjects.find(s => s.id === subjectId);
-                if(subject) {
-                    subject.topics = subject.topics.filter(t => t.id !== topicId);
-                    appState.reviews = appState.reviews.filter(r => r.topicId !== topicId);
-                    await saveState();
-                    renderSubjects();
-                    updateCurrentSubjectDisplay();
-                    document.querySelector(`[data-subject-id='${subjectId}']`)?.classList.add('is-expanded');
+            
+            function selectSubject(id) {
+                if (appState.timer.isRunning && appState.timer.currentSubjectId !== id) {
+                    alert('Pare o cronômetro atual antes de selecionar outra disciplina.');
+                    return;
                 }
-            }
-            function selectItem(type, subjectId, topicId = null) {
-                if (!appState.currentUser) return alert("Faça login para selecionar.");
-                if (appState.timer.isRunning) {
-                     if(appState.timer.currentItem.type !== type || appState.timer.currentItem.subjectId !== subjectId || appState.timer.currentItem.topicId !== topicId) {
-                        return alert('Pare o cronômetro atual antes de selecionar outro item.');
-                     }
-                }
-                appState.selectedItem = { type, subjectId, topicId };
-                updateCurrentSubjectDisplay();
+                appState.selectedSubjectId = id;
+                const subject = appState.subjects.find(s => s.id === id);
+                currentSubjectDisplay.textContent = subject ? `Estudando: ${subject.name}` : 'Nenhuma disciplina selecionada';
                 renderSubjects();
             }
-            function updateCurrentSubjectDisplay() {
-                 if (!appState.selectedItem) { DOMElements.currentSubjectDisplay.innerHTML = 'Nenhuma disciplina selecionada'; return; }
-                const { type, subjectId, topicId } = appState.selectedItem;
-                const subject = appState.subjects.find(s => s.id === subjectId);
-                if (!subject) { appState.selectedItem = null; updateCurrentSubjectDisplay(); return; }
-                if (type === 'topic') {
-                    const topic = subject.topics.find(t => t.id === topicId);
-                    if (topic) { DOMElements.currentSubjectDisplay.innerHTML = `Estudando: <span class="font-bold">${subject.name}</span><br/><span class="text-sm">${topic.name}</span>`; } 
-                    else { appState.selectedItem = null; updateCurrentSubjectDisplay(); }
-                } else { DOMElements.currentSubjectDisplay.innerHTML = `Estudando: <span class="font-bold">${subject.name}</span>`; }
-            }
+            
             function updateTimerControls() {
-                const hasSelectionAndUser = appState.selectedItem && appState.currentUser;
-                DOMElements.startPauseBtn.disabled = !hasSelectionAndUser;
-                DOMElements.stopBtn.disabled = !appState.timer.isRunning && appState.timer.accumulated === 0;
+                const hasSelection = !!appState.selectedSubjectId;
+                startPauseBtn.disabled = !hasSelection;
+                stopBtn.disabled = !appState.timer.isRunning && appState.timer.accumulated === 0;
             }
+            
+            // --- Lógica do Cronômetro ---
+            function updateDisplay() {
+                const elapsed = (Date.now() - appState.timer.startTime) / 1000;
+                const totalElapsed = appState.timer.accumulated + elapsed;
+                timerDisplay.textContent = formatTime(totalElapsed);
+            }
+
             function startTimer() {
-                if (appState.timer.isRunning || !appState.selectedItem) return;
-                appState.timer.currentItem = { ...appState.selectedItem };
+                if (appState.timer.isRunning) return;
+
+                appState.timer.currentSubjectId = appState.selectedSubjectId;
                 appState.timer.isRunning = true;
                 appState.timer.startTime = Date.now();
-                appState.timer.instance = setInterval(() => {
-                    const elapsed = (Date.now() - appState.timer.startTime) / 1000;
-                    DOMElements.timerDisplay.textContent = formatTimeHMS(appState.timer.accumulated + elapsed);
-                }, 1000);
-                DOMElements.startPauseBtn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 mr-2"></i><span>Pausar</span>`;
+                appState.timer.instance = setInterval(updateDisplay, 1000);
+                
+                startPauseBtn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 mr-2"></i><span>Pausar</span>`;
                 lucide.createIcons();
-                DOMElements.stopBtn.disabled = false;
+                stopBtn.disabled = false;
+                
+                document.querySelectorAll('#subjects-list li').forEach(li => {
+                    if (parseInt(li.querySelector('[data-select-id]').dataset.selectId) !== appState.selectedSubjectId) {
+                       li.style.pointerEvents = 'none';
+                       li.style.opacity = '0.5';
+                    }
+                });
             }
+
             function pauseTimer() {
                 if (!appState.timer.isRunning) return;
+
                 appState.timer.isRunning = false;
                 clearInterval(appState.timer.instance);
-                appState.timer.accumulated += (Date.now() - appState.timer.startTime) / 1000;
-                DOMElements.startPauseBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 mr-2"></i><span>Continuar</span>`;
+                const elapsed = (Date.now() - appState.timer.startTime) / 1000;
+                appState.timer.accumulated += elapsed;
+
+                startPauseBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 mr-2"></i><span>Continuar</span>`;
                 lucide.createIcons();
             }
-            async function stopTimer() {
-                if (!appState.timer.currentItem) return;
-                let finalTime = appState.timer.accumulated;
-                if(appState.timer.isRunning) finalTime += (Date.now() - appState.timer.startTime) / 1000;
-                
-                const { type, subjectId, topicId } = appState.timer.currentItem;
-                const subject = appState.subjects.find(s => s.id === subjectId);
+            
+            function stopTimer() {
+                const subject = appState.subjects.find(s => s.id === appState.timer.currentSubjectId);
                 if (subject) {
+                     let finalTime = appState.timer.accumulated;
+                     if(appState.timer.isRunning){
+                        finalTime += (Date.now() - appState.timer.startTime) / 1000;
+                     }
                     subject.totalTime += finalTime;
-                    appState.studyCycle.completedSeconds += finalTime;
-                    if (type === 'topic') {
-                        const topic = subject.topics.find(t => t.id === topicId);
-                        if (topic) { topic.totalTime += finalTime; scheduleReviews(subject, topic); }
-                    }
                 }
-                
+
                 appState.timer.isRunning = false;
                 clearInterval(appState.timer.instance);
                 appState.timer.accumulated = 0;
-                appState.timer.currentItem = null;
+                appState.timer.currentSubjectId = null;
                 
-                DOMElements.timerDisplay.textContent = formatTimeHMS(0);
-                DOMElements.startPauseBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 mr-2"></i><span>Iniciar</span>`;
+                timerDisplay.textContent = formatTime(0);
+                startPauseBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 mr-2"></i><span>Iniciar</span>`;
                 lucide.createIcons();
-                await saveState();
+                
+                document.querySelectorAll('#subjects-list li').forEach(li => {
+                    li.style.pointerEvents = 'auto';
+                    li.style.opacity = '1';
+                });
+
+                saveState();
                 renderSubjects();
-                renderStudyCycle();
-                updateReviewNotification();
             }
-            async function setStudyCycle() {
-                const name = DOMElements.cycleNameInput.value.trim();
-                const hours = parseFloat(DOMElements.cycleGoalInput.value);
-                if (!name) { return alert("Por favor, dê um nome ao seu ciclo."); }
-                if (hours && hours > 0) {
-                    appState.studyCycle = { name, goalSeconds: hours * 3600, completedSeconds: 0 };
-                    await saveState();
-                    renderStudyCycle();
-                } else { alert("Por favor, insira um número de horas válido."); }
-            }
-            async function resetStudyCycle() {
-                if (confirm("Tem certeza que deseja apagar o ciclo atual?")) {
-                    appState.studyCycle = { name: '', goalSeconds: 0, completedSeconds: 0 };
-                    await saveState();
-                    renderStudyCycle();
+            
+            // --- Navegação ---
+            function switchView(viewName) {
+                views.forEach(view => {
+                    view.classList.toggle('active', view.id === `view-${viewName}`);
+                });
+                navItems.forEach(item => {
+                    item.classList.toggle('active', item.dataset.view === viewName);
+                });
+                if (viewName === 'questoes') {
+                    renderQuizView();
                 }
             }
-            function renderStudyCycle() {
-                if (!appState.currentUser) { document.getElementById('study-cycle-container').classList.add('hidden'); return; }
-                document.getElementById('study-cycle-container').classList.remove('hidden');
-                const { name, goalSeconds, completedSeconds } = appState.studyCycle;
-                if (goalSeconds > 0 && name) {
-                    DOMElements.cycleSetup.classList.add('hidden');
-                    DOMElements.cycleProgress.classList.remove('hidden');
-                    DOMElements.cycleDisplay.classList.remove('hidden');
-                    DOMElements.cycleNameDisplay.textContent = name;
-                    const percentage = Math.min(100, (completedSeconds / goalSeconds) * 100);
-                    DOMElements.cycleProgressBarInner.style.width = `${percentage}%`;
-                    DOMElements.cycleProgressPercentage.textContent = `${Math.floor(percentage)}%`;
-                    DOMElements.cycleProgressText.textContent = `${formatTime(completedSeconds)} / ${formatTime(goalSeconds)}`;
-                    DOMElements.cycleCompletedBox.classList.toggle('hidden', percentage < 100);
-                } else {
-                    DOMElements.cycleSetup.classList.remove('hidden');
-                    DOMElements.cycleProgress.classList.add('hidden');
-                    DOMElements.cycleDisplay.classList.add('hidden');
-                    DOMElements.cycleNameInput.value = '';
-                    DOMElements.cycleGoalInput.value = '';
-                }
+            
+            // --- Lógica das Questões ---
+            const questionsDB = {
+                'direito constitucional': [
+                    {
+                        banca: 'CESPE/Cebraspe', year: '2023',
+                        prompt: 'Acerca dos direitos e garantias fundamentais, julgue o item a seguir.',
+                        statement: 'O direito à vida, previsto na Constituição Federal, abrange tanto o direito de não ser morto quanto o direito de ter uma vida digna.',
+                        answer: 'certo'
+                    },
+                    {
+                        banca: 'CESPE/Cebraspe', year: '2021',
+                        prompt: 'Sobre o controle de constitucionalidade, julgue o item.',
+                        statement: 'A Ação Direta de Inconstitucionalidade (ADI) pode ser proposta por qualquer cidadão.',
+                        answer: 'errado'
+                    }
+                ],
+                'direito administrativo': [
+                    {
+                        banca: 'FGV', year: '2022',
+                        prompt: 'Julgue o item a seguir, a respeito dos atos administrativos.',
+                        statement: 'A revogação de um ato administrativo produz efeitos ex tunc, ou seja, retroativos.',
+                        answer: 'errado'
+                    }
+                ],
+                'português': [
+                    {
+                        banca: 'FCC', year: '2024',
+                        prompt: 'Quanto à concordância verbal, julgue o item.',
+                        statement: 'A frase "Houveram muitos problemas na reunião" está de acordo com a norma-padrão da língua portuguesa.',
+                        answer: 'errado'
+                    },
+                     {
+                        banca: 'FCC', year: '2023',
+                        prompt: 'Em relação à crase, julgue o item.',
+                        statement: 'O uso do acento grave indicativo da crase é obrigatório na frase "Refiro-me àquela aluna dedicada".',
+                        answer: 'certo'
+                    }
+                ],
+                'raciocinio logico matematico': [
+                    {
+                        banca: 'FGV', year: '2024',
+                        prompt: 'Considere a seguinte proposição: "Se estudo, então passo no concurso".',
+                        statement: 'A negação dessa proposição é "Estudo e não passo no concurso".',
+                        answer: 'certo'
+                    },
+                    {
+                        banca: 'CESPE/Cebraspe', year: '2023',
+                        prompt: 'Julgue o item a seguir com base na lógica proposicional.',
+                        statement: 'A proposição "A aprovação é difícil ou o estudo não é necessário" é equivalente a "Se a aprovação não é difícil, então o estudo não é necessário".',
+                        answer: 'errado'
+                    }
+                ]
+            };
+            
+            function normalizeString(str) {
+                return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ç/g, "c");
             }
-            function scheduleReviews(subject, topic) {
-                const today = new Date().toISOString().split('T')[0];
-                const reviewPeriods = [1, 7, 21, 30];
-                const hasExistingReviewToday = appState.reviews.some(r => r.topicId === topic.id && r.studyDate === today);
-                if (!hasExistingReviewToday) {
-                    reviewPeriods.forEach(days => {
-                        const dueDate = new Date();
-                        dueDate.setDate(dueDate.getDate() + days);
-                        appState.reviews.push({ id: Date.now() + Math.random(), subjectId: subject.id, topicId: topic.id, subjectName: subject.name, topicName: topic.name, studyDate: today, days, dueDate: dueDate.toISOString().split('T')[0], isCompleted: false });
-                    });
-                }
-            }
-            function renderReviews() {
-                if (!appState.currentUser) { DOMElements.reviewsList.innerHTML = `<li class="p-4 text-center text-slate-500">Faça login para ver suas revisões.</li>`; return; }
-                const pendingReviews = appState.reviews.filter(r => !r.isCompleted).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-                if (pendingReviews.length === 0) { DOMElements.reviewsList.innerHTML = `<div class="p-4 text-center bg-green-100 text-green-700 rounded-lg"><p class="font-semibold">Nenhuma revisão pendente!</p></div>`; return; }
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                DOMElements.reviewsList.innerHTML = pendingReviews.map(review => {
-                    const dueDate = new Date(review.dueDate + 'T00:00:00');
-                    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                    let dateInfo;
-                    if (diffDays < 0) dateInfo = `<span class="font-bold text-red-600">Atrasada ${Math.abs(diffDays)}d</span>`;
-                    else if (diffDays === 0) dateInfo = `<span class="font-bold text-yellow-600">Para Hoje</span>`;
-                    else dateInfo = `<span>Em ${diffDays}d</span>`;
-                    return `<div class="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center"><div><p class="font-semibold">${review.topicName}</p><p class="text-sm text-slate-500">${review.subjectName} - Rev. de ${review.days} dias</p><p class="text-xs text-slate-400 mt-1">Vence em: ${dueDate.toLocaleDateString('pt-BR')} (${dateInfo})</p></div><div class="flex flex-col gap-2"><button data-review-id="${review.id}" class="complete-review-btn bg-green-500 text-white px-3 py-1 rounded-md font-semibold text-xs">Concluir</button><button data-subject-name="${review.subjectName}" data-topic-name="${review.topicName}" class="generate-flashcards-btn bg-purple-500 text-white px-3 py-1 rounded-md font-semibold text-xs">Flashcards</button></div></div>`;
-                }).join('');
-            }
-            async function completeReview(reviewId) {
-                const minutesStr = prompt("Minutos gastos na revisão:");
-                if (minutesStr === null) return;
-                const minutes = parseInt(minutesStr, 10);
-                if (isNaN(minutes) || minutes < 0) { return alert("Número inválido."); }
-                const review = appState.reviews.find(r => r.id === reviewId);
-                if (review) {
-                    review.isCompleted = true;
-                    appState.studyCycle.completedSeconds += minutes * 60;
-                    await saveState();
-                    renderReviews();
-                    renderStudyCycle();
-                    updateReviewNotification();
-                }
-            }
-            function updateReviewNotification() {
-                if (!appState.currentUser) { DOMElements.reviewBadge.classList.add('hidden'); return; }
-                const pendingCount = appState.reviews.filter(r => !r.isCompleted).length;
-                if (pendingCount > 0) { DOMElements.reviewBadge.textContent = pendingCount; DOMElements.reviewBadge.classList.remove('hidden'); } 
-                else { DOMElements.reviewBadge.classList.add('hidden'); }
-            }
-            function startQuiz(subjectId, topicId = null) {
+
+            function startQuiz(subjectId) {
                 const subject = appState.subjects.find(s => s.id === subjectId);
                 if (!subject) return;
-                const subjectTopicsData = questionsDB[normalizeString(subject.name)];
-                let questions = [];
-                let topicName = null;
-                if (topicId) {
-                    const topic = subject.topics.find(t => t.id === topicId);
-                    if (!topic) return;
-                    topicName = topic.name;
-                    const topicData = subjectTopicsData?.find(t => normalizeString(t.topic) === normalizeString(topic.name));
-                    questions = topicData?.questions || [];
-                } else { if (subjectTopicsData) { questions = subjectTopicsData.flatMap(t => t.questions); } }
-                
-                if (questions.length > 0) {
-                    questions.sort(() => Math.random() - 0.5);
-                    appState.quiz = { active: true, subjectName: subject.name, topicName, questions, currentIndex: 0, incorrectTopics: [] };
-                    switchView('questoes');
-                } else { alert(`Nenhuma questão encontrada para "${topicName || subject.name}".`); }
-            }
-            function renderQuizView() {
-                if (!appState.currentUser) { DOMElements.quizContainer.innerHTML = `<div class="text-center p-4"><p>Faça login para praticar.</p></div>`; return; }
-                if (!appState.quiz.active) { DOMElements.quizContainer.innerHTML = `<div class="text-center p-4"><p>Escolha uma disciplina e clique em "Praticar".</p></div>`; return; }
-                const q = appState.quiz.questions[appState.quiz.currentIndex];
-                if (!q) {
-                    appState.quiz.active = false;
-                    const incorrectCounts = appState.quiz.incorrectTopics.reduce((acc, topic) => { acc[topic] = (acc[topic] || 0) + 1; return acc; }, {});
-                    const mostIncorrectTopic = Object.keys(incorrectCounts).reduce((a, b) => incorrectCounts[a] > incorrectCounts[b] ? a : b, null);
-                    
-                    let reviewHTML = `<div class="bg-green-100 text-green-800 p-4 rounded-lg text-center"><h4 class="font-bold">Excelente!</h4><p>Você acertou todas as questões. Continue assim!</p></div>`;
-                    if (mostIncorrectTopic) {
-                        const summary = summariesDB[normalizeString(appState.quiz.subjectName)]?.topics[normalizeString(mostIncorrectTopic)];
-                        if (summary) {
-                            reviewHTML = `<div class="bg-yellow-100 p-4 rounded-lg"><h4 class="font-bold text-yellow-800">Foco para Revisão: ${mostIncorrectTopic}</h4><div class="summary-content text-left mt-2">${summary}</div></div>`;
-                        }
-                    }
 
-                    DOMElements.quizContainer.innerHTML = `<div class="bg-white p-4 rounded-lg shadow text-center"><h3 class="text-lg font-bold text-blue-600">Quiz Concluído!</h3><p class="mt-2">Você finalizou o quiz de ${appState.quiz.topicName || appState.quiz.subjectName}.</p><div class="my-4">${reviewHTML}</div><button id="restart-quiz-btn" class="mt-4 w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">Recomeçar</button><button id="back-to-home-btn" class="mt-2 w-full bg-slate-600 text-white px-6 py-2 rounded-lg font-semibold">Voltar</button></div>`;
-                    const subjectForRestart = appState.subjects.find(s=>s.name === appState.quiz.subjectName);
-                    if(subjectForRestart) {
-                        const topicForRestart = appState.quiz.topicName ? subjectForRestart.topics.find(t=>t.name === appState.quiz.topicName) : null;
-                        DOMElements.quizContainer.querySelector('#restart-quiz-btn').addEventListener('click', () => startQuiz(subjectForRestart.id, topicForRestart ? topicForRestart.id : null ));
-                    }
-                    DOMElements.quizContainer.querySelector('#back-to-home-btn').addEventListener('click', () => switchView('cronometro'));
+                const normalizedName = normalizeString(subject.name);
+                const questions = questionsDB[normalizedName];
+                
+                if (questions && questions.length > 0) {
+                    appState.quiz = {
+                        active: true,
+                        subjectName: subject.name,
+                        questions: questions,
+                        currentIndex: 0,
+                    };
+                    switchView('questoes');
+                } else {
+                    alert(`Nenhuma questão encontrada para "${subject.name}".\n(Disponível para: Direito Constitucional, Direito Administrativo, Português, Raciocínio Lógico Matemático)`);
+                }
+            }
+
+            function renderQuizView() {
+                if (!appState.quiz.active) {
+                    quizContainer.innerHTML = `
+                        <div class="text-center p-4">
+                            <p class="font-semibold text-slate-700">Pronto para praticar?</p>
+                            <p class="text-sm text-slate-500 mt-1">Vá para a aba "Cronômetro", escolha uma disciplina e clique em "Praticar" para começar um quiz.</p>
+                        </div>
+                    `;
                     return;
                 }
-                const quizTitle = appState.quiz.topicName ? `${appState.quiz.subjectName} > ${appState.quiz.topicName}` : appState.quiz.subjectName;
-                DOMElements.quizContainer.innerHTML = `<p class="text-sm mb-4">Praticando: <span class="font-bold">${quizTitle}</span> (${appState.quiz.currentIndex + 1}/${appState.quiz.questions.length})</p><div class="bg-white p-4 rounded-lg shadow"><p class="text-xs text-slate-500">${q.banca} • ${q.year}</p><p class="mt-2">${q.prompt}</p><p class="font-semibold mt-1">${q.statement}</p><div class="flex space-x-4 mt-4"><button id="certo-btn" class="bg-green-200 px-4 py-1 rounded-md">Certo</button><button id="errado-btn" class="bg-red-200 px-4 py-1 rounded-md">Errado</button></div><div id="question-feedback" class="mt-4 text-sm font-semibold h-5"></div><button id="next-question-btn" class="hidden mt-4 w-full bg-blue-600 text-white px-6 py-2 rounded-lg">Próxima</button></div>`;
-                DOMElements.quizContainer.querySelector('#certo-btn').addEventListener('click', () => checkAnswer('certo'));
-                DOMElements.quizContainer.querySelector('#errado-btn').addEventListener('click', () => checkAnswer('errado'));
-                DOMElements.quizContainer.querySelector('#next-question-btn').addEventListener('click', loadNextQuestion);
+                
+                const q = appState.quiz.questions[appState.quiz.currentIndex];
+
+                if (!q) {
+                    quizContainer.innerHTML = `
+                        <div class="bg-white p-4 rounded-lg shadow text-center">
+                            <h3 class="text-lg font-bold text-blue-600">Parabéns!</h3>
+                            <p class="mt-2 text-slate-700">Você concluiu o quiz de ${appState.quiz.subjectName}.</p>
+                            <button id="restart-quiz-btn" class="mt-4 w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Recomeçar</button>
+                        </div>
+                    `;
+                    quizContainer.querySelector('#restart-quiz-btn').addEventListener('click', restartQuiz);
+                    return;
+                }
+
+                quizContainer.innerHTML = `
+                     <p class="text-sm text-slate-600 mb-4">Praticando: <span class="font-bold">${appState.quiz.subjectName}</span></p>
+                     <div id="question-container" class="bg-white p-4 rounded-lg shadow">
+                        <p class="text-xs text-slate-500">${q.banca} • ${q.year}</p>
+                        <p class="mt-2">${q.prompt}</p>
+                        <p class="font-semibold mt-1">${q.statement}</p>
+                        <div class="flex space-x-4 mt-4 text-sm">
+                            <button id="certo-btn" class="bg-green-200 text-green-800 px-4 py-1 rounded-md hover:bg-green-300 transition-colors">Certo</button>
+                            <button id="errado-btn" class="bg-red-200 text-red-800 px-4 py-1 rounded-md hover:bg-red-300 transition-colors">Errado</button>
+                        </div>
+                        <div id="question-feedback" class="mt-4 text-sm font-semibold h-5"></div>
+                        <button id="next-question-btn" class="hidden mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Próxima Questão</button>
+                    </div>
+                `;
+                
+                const certoBtn = quizContainer.querySelector('#certo-btn');
+                const erradoBtn = quizContainer.querySelector('#errado-btn');
+
+                certoBtn.addEventListener('click', () => checkAnswer('certo'));
+                erradoBtn.addEventListener('click', () => checkAnswer('errado'));
+                quizContainer.querySelector('#next-question-btn').addEventListener('click', loadNextQuestion);
             }
+
             function checkAnswer(selectedAnswer) {
                 const q = appState.quiz.questions[appState.quiz.currentIndex];
-                const feedbackEl = DOMElements.quizContainer.querySelector('#question-feedback');
-                DOMElements.quizContainer.querySelector('#certo-btn').disabled = true;
-                DOMElements.quizContainer.querySelector('#errado-btn').disabled = true;
-                const isCorrect = selectedAnswer === q.answer;
-                feedbackEl.textContent = isCorrect ? 'Resposta Correta!' : 'Resposta Incorreta!';
-                feedbackEl.className = `mt-4 text-sm font-semibold h-5 ${isCorrect ? 'text-green-600' : 'text-red-600'}`;
-                if (!isCorrect) {
-                    const subjectData = questionsDB[normalizeString(appState.quiz.subjectName)];
-                    if(subjectData){
-                        const questionTopic = subjectData.find(t => t.questions.some(ques => ques.statement === q.statement))?.topic;
-                        if(questionTopic) appState.quiz.incorrectTopics.push(questionTopic);
-                    }
-                }
-                DOMElements.quizContainer.querySelector('#next-question-btn').classList.remove('hidden');
-            }
-            function loadNextQuestion() { appState.quiz.currentIndex++; renderQuizView(); }
-            async function renderStudyRoom() { /* ... */ }
-            async function renderRanking() { /* ... */ }
-            function showSummaryModal(subjectName) { /* ... */ }
-            function hideSummaryModal() { /* ... */ }
-            function generateFlashcards(subjectName, topicName) {
-                const subjectSummary = summariesDB[normalizeString(subjectName)];
-                const topicSummaryHTML = subjectSummary?.topics[normalizeString(topicName)];
-                if (!topicSummaryHTML) { alert("Resumo não encontrado para gerar flashcards."); return; }
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = topicSummaryHTML;
-                const cards = Array.from(tempDiv.querySelectorAll('p')).map(p => {
-                    const front = p.querySelector('strong')?.textContent || '';
-                    const back = p.textContent;
-                    return { front, back };
-                }).filter(card => card.front && card.back);
-                if (cards.length > 0) {
-                    appState.flashcards = { active: true, cards, currentIndex: 0 };
-                    DOMElements.flashcardModalTitle.textContent = `Flashcards: ${topicName}`;
-                    showFlashcardModal();
-                } else { alert("Não foi possível gerar flashcards para este tópico."); }
-            }
-            function showFlashcardModal() { renderFlashcard(); DOMElements.flashcardModal.classList.add('is-open'); }
-            function hideFlashcardModal() { DOMElements.flashcardModal.classList.remove('is-open'); }
-            function renderFlashcard() {
-                const { cards, currentIndex } = appState.flashcards;
-                if (currentIndex >= cards.length) { hideFlashcardModal(); return; }
-                const card = cards[currentIndex];
-                DOMElements.flashcardFront.textContent = card.front;
-                DOMElements.flashcardBack.textContent = card.back;
-                DOMElements.flashcardCounter.textContent = `${currentIndex + 1} / ${cards.length}`;
-                DOMElements.flashcardFlipper.classList.remove('is-flipped');
-            }
-            function flipFlashcard() { DOMElements.flashcardFlipper.classList.toggle('is-flipped'); }
-            function nextFlashcard() { appState.flashcards.currentIndex++; renderFlashcard(); }
-            
-            DOMElements.addSubjectBtn.addEventListener('click', addSubject);
-            DOMElements.setCycleGoalBtn.addEventListener('click', setStudyCycle);
-            DOMElements.resetCycleBtn.addEventListener('click', resetStudyCycle);
-            DOMElements.startPauseBtn.addEventListener('click', () => appState.timer.isRunning ? pauseTimer() : startTimer());
-            DOMElements.stopBtn.addEventListener('click', stopTimer);
-            DOMElements.showRegisterBtn.addEventListener('click', (e) => { e.preventDefault(); toggleAuthForms(); });
-            DOMElements.showLoginBtn.addEventListener('click', (e) => { e.preventDefault(); toggleAuthForms(); });
-            DOMElements.registerForm.addEventListener('submit', (e) => { e.preventDefault(); registerUser(DOMElements.registerForm.elements['register-name'].value, DOMElements.registerForm.elements['register-email'].value, DOMElements.registerForm.elements['register-password'].value); DOMElements.registerForm.reset(); });
-            DOMElements.loginForm.addEventListener('submit', (e) => { e.preventDefault(); loginUser(DOMElements.loginForm.elements['login-email'].value, DOMElements.loginForm.elements['login-password'].value); DOMElements.loginForm.reset(); });
-            DOMElements.logoutBtn.addEventListener('click', logoutUser);
-            document.querySelector('nav').addEventListener('click', (e) => {
-                const navItem = e.target.closest('.nav-item');
-                if (navItem?.dataset.view) {
-                    const viewName = navItem.dataset.view;
-                    if (viewName === 'questoes' && appState.selectedItem) startQuiz(appState.selectedItem.subjectId, appState.selectedItem.topicId);
-                    else switchView(viewName);
-                }
-            });
-             DOMElements.subjectsList.addEventListener('click', (e) => {
-                const subjectLi = e.target.closest('.subject-item');
-                if (!subjectLi) return;
-                const subjectId = parseInt(subjectLi.dataset.subjectId);
-                if (e.target.closest('[data-toggle-topics-id]')) subjectLi.classList.toggle('is-expanded');
-                if (e.target.closest('[data-add-topic-id]')) { const input = subjectLi.querySelector(`[data-topic-input-id='${subjectId}']`); addTopic(subjectId, input.value.trim()); input.value = ''; }
-                if (e.target.closest('[data-select-subject-id]')) selectItem('subject', subjectId);
-                const selectTopicBtn = e.target.closest('[data-select-topic-id]');
-                if (selectTopicBtn) selectItem('topic', parseInt(selectTopicBtn.dataset.parentId), parseFloat(selectTopicBtn.dataset.selectTopicId));
-                if (e.target.closest('[data-delete-subject-id]')) deleteSubject(subjectId);
-                const deleteTopicBtn = e.target.closest('[data-delete-topic-id]');
-                if (deleteTopicBtn) deleteTopic(parseInt(deleteTopicBtn.dataset.parentId), parseFloat(deleteTopicBtn.dataset.deleteTopicId));
-                if (e.target.closest('[data-practice-subject-id]')) startQuiz(subjectId);
-                const practiceTopicBtn = e.target.closest('[data-practice-topic-id]');
-                if (practiceTopicBtn) startQuiz(parseInt(practiceTopicBtn.dataset.parentId), parseFloat(practiceTopicBtn.dataset.practiceTopicId));
-                const summaryBtn = e.target.closest('[data-summary-subject-name]');
-                if (summaryBtn) showSummaryModal(summaryBtn.dataset.summarySubjectName);
-            });
-             DOMElements.reviewsList.addEventListener('click', (e) => {
-                const completeBtn = e.target.closest('.complete-review-btn');
-                if (completeBtn) completeReview(parseFloat(completeBtn.dataset.reviewId));
-                const flashcardBtn = e.target.closest('.generate-flashcards-btn');
-                if (flashcardBtn) generateFlashcards(flashcardBtn.dataset.subjectName, flashcardBtn.dataset.topicName);
-            });
-            DOMElements.flipFlashcardBtn.addEventListener('click', flipFlashcard);
-            DOMElements.nextFlashcardBtn.addEventListener('click', nextFlashcard);
-            DOMElements.closeFlashcardModalBtn.addEventListener('click', hideFlashcardModal);
-            DOMElements.flashcardContainer.addEventListener('click', () => flipFlashcard());
-            DOMElements.closeSummaryModalBtn.addEventListener('click', hideSummaryModal);
-            DOMElements.summaryModal.addEventListener('click', (e) => { if (e.target === DOMElements.summaryModal) hideSummaryModal(); });
+                const feedbackEl = quizContainer.querySelector('#question-feedback');
+                
+                quizContainer.querySelector('#certo-btn').disabled = true;
+                quizContainer.querySelector('#errado-btn').disabled = true;
 
-            function init() { /* onAuthStateChanged handles initialization */ }
+                if (selectedAnswer === q.answer) {
+                    feedbackEl.textContent = 'Resposta Correta!';
+                    feedbackEl.className = 'mt-4 text-sm font-semibold h-5 text-green-600';
+                } else {
+                    feedbackEl.textContent = 'Resposta Incorreta!';
+                    feedbackEl.className = 'mt-4 text-sm font-semibold h-5 text-red-600';
+                }
+                quizContainer.querySelector('#next-question-btn').classList.remove('hidden');
+            }
+
+            function loadNextQuestion() {
+                appState.quiz.currentIndex++;
+                renderQuizView();
+            }
+            
+            function restartQuiz() {
+                appState.quiz.currentIndex = 0;
+                renderQuizView();
+            }
+
+
+            // --- Simulação de Dados ---
+            function renderSimulatedData() {
+                // Sala de estudos
+                const studyRoomList = document.getElementById('study-room-list');
+                const mockUsers = [
+                    { name: 'Carlos M.', subject: 'Direito Constitucional' },
+                    { name: 'Beatriz L.', subject: 'Português (Gramática)' },
+                    { name: 'Fernanda A.', subject: 'Raciocínio Lógico' },
+                    { name: 'Ricardo P.', subject: 'Informática' },
+                ];
+                studyRoomList.innerHTML = mockUsers.map(user => `
+                    <div class="bg-white p-3 rounded-lg flex items-center justify-between shadow-sm">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 mr-3">${user.name.charAt(0)}</div>
+                            <div>
+                                <p class="font-semibold">${user.name}</p>
+                                <p class="text-sm text-slate-500">${user.subject}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                            <span class="text-sm font-medium">Online</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Ranking
+                const rankingList = document.getElementById('ranking-list');
+                 const mockRanking = [
+                    { rank: '🥇', name: 'Juliana P.', time: '45h 32m' },
+                    { rank: '🥈', name: 'Marcos A.', time: '42h 11m' },
+                    { rank: '🥉', name: 'Ana C.', time: '38h 54m' },
+                    { rank: '4', name: 'Você', time: '35h 02m (simulado)' },
+                    { rank: '5', name: 'Lucas G.', time: '33h 45m' },
+                ];
+                rankingList.innerHTML = mockRanking.map(user => `
+                    <li class="p-4 flex items-center ${user.name.includes('Você') ? 'bg-blue-50' : ''}">
+                        <span class="text-xl font-bold w-10 text-center">${user.rank}</span>
+                        <p class="flex-grow font-semibold">${user.name}</p>
+                        <p class="text-slate-600 font-medium">${user.time}</p>
+                    </li>
+                `).join('');
+            }
+
+            // --- Event Listeners ---
+            addSubjectBtn.addEventListener('click', addSubject);
+            newSubjectInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addSubject();
+            });
+
+            subjectsList.addEventListener('click', (e) => {
+                const selectEl = e.target.closest('[data-select-id]');
+                const practiceBtn = e.target.closest('[data-practice-id]');
+                const deleteBtn = e.target.closest('[data-delete-id]');
+
+                if (selectEl) selectSubject(parseInt(selectEl.dataset.selectId));
+                if (practiceBtn) startQuiz(parseInt(practiceBtn.dataset.practiceId));
+                if (deleteBtn) deleteSubject(parseInt(deleteBtn.dataset.deleteId));
+            });
+            
+            startPauseBtn.addEventListener('click', () => {
+                if (appState.timer.isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            });
+            
+            stopBtn.addEventListener('click', stopTimer);
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    switchView(item.dataset.view);
+                });
+            });
+
+            // --- Inicialização ---
+            function init() {
+                loadState();
+                renderSubjects();
+                renderSimulatedData();
+                updateTimerControls();
+                renderQuizView();
+            }
+
             init();
         });
     </script>
 </body>
 </html>
-
