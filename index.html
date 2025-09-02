@@ -16,27 +16,27 @@
       import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
       
-      // = ===================================================================================
+      // ====================================================================================
       // COLE AQUI O SEU OBJETO firebaseConfig (do Passo 2 do Guia)
       // =====================================================================================
       // Import the functions you need from the SDKs you need
-        import { initializeApp } from "firebase/app";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
-    apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
-    authDomain: "gfconcursos-app.firebaseapp.com",
-    projectId: "gfconcursos-app",
-    storageBucket: "gfconcursos-app.firebasestorage.app",
-    messagingSenderId: "615439428502",
-    appId: "1:615439428502:web:b399549c3969e052098bb7"
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
+  authDomain: "gfconcursos-app.firebaseapp.com",
+  projectId: "gfconcursos-app",
+  storageBucket: "gfconcursos-app.firebasestorage.app",
+  messagingSenderId: "615439428502",
+  appId: "1:615439428502:web:b399549c3969e052098bb7"
 };
 
 // Initialize Firebase
-      // =====================================================================================
-      const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+
       const auth = getAuth(app);
       const db = getFirestore(app);
 
@@ -316,6 +316,7 @@
     </script>
 </body>
 </html>
+
 
 
 
