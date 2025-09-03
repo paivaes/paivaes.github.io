@@ -360,6 +360,7 @@
         const firebaseConfig = {
           apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
           authDomain: "gfconcursos-app.firebaseapp.com",
+          databaseURL: "https://gfconcursos-app-default-rtdb.firebaseio.com",
           projectId: "gfconcursos-app",
           storageBucket: "gfconcursos-app.firebasestorage.app",
           messagingSenderId: "615439428502",
@@ -1020,9 +1021,27 @@
                 const email = document.getElementById('register-email').value;
                 const password = document.getElementById('register-password').value;
                 createUserWithEmailAndPassword(auth, email, password)
-                    .then(cred => updateProfile(cred.user, { displayName: name }))
-                    .then(() => alert('Cadastro realizado com sucesso!'))
-                    .catch(err => alert(`Erro: ${err.message}`));
+                    .then(async (userCredential) => {
+                        // Atualiza o perfil do usuário
+                        await updateProfile(userCredential.user, { displayName: name });
+                        
+                        // Cria o documento inicial no Firestore para o novo usuário
+                        const userDocRef = doc(db, 'users', userCredential.user.uid);
+                        await setDoc(userDocRef, {
+                            name: name,
+                            email: email,
+                            subjects: [],
+                            studyCycle: { goalSeconds: 0, completedSeconds: 0 },
+                            reviews: []
+                        });
+
+                        alert('Cadastro realizado com sucesso!');
+                        registerForm.reset();
+                    })
+                    .catch((error) => {
+                        console.error("Erro no cadastro:", error);
+                        alert(`Erro ao cadastrar: ${error.message}`);
+                    });
             });
 
             loginForm.addEventListener('submit', (e) => {
@@ -1051,4 +1070,5 @@
     </script>
 </body>
 </html>
+
 
