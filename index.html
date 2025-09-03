@@ -489,16 +489,14 @@
                     updateUIForLogin();
                 } else {
                     // Se o usuário deslogou ou não está logado
-                    if (appState.currentUser) {
-                        // Marca usuário como offline no DB
-                        const userDocRef = doc(db, 'users', appState.currentUser.uid);
-                        await updateDoc(userDocRef, { isOnline: false });
-                    }
-                    
+                    // O status 'isOnline: false' é definido no evento de logout ou beforeunload
                     appState.currentUser = null;
                     
                     // Cancela o listener de dados para economizar recursos
-                    if (appState.unsubscribeUserDoc) appState.unsubscribeUserDoc();
+                    if (appState.unsubscribeUserDoc) {
+                        appState.unsubscribeUserDoc();
+                        appState.unsubscribeUserDoc = null;
+                    }
                     
                     // Limpa o estado local
                     appState.subjects = [];
@@ -1260,6 +1258,16 @@
             });
 
             // --- Listeners de Autenticação com Firebase ---
+            
+            // Define o usuário como offline ao fechar a aba/navegador
+            window.addEventListener('beforeunload', () => {
+                // Não é 100% garantido que funcione, mas é a melhor abordagem client-side
+                if (auth.currentUser) {
+                    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+                    updateDoc(userDocRef, { isOnline: false });
+                }
+            });
+
             showRegisterBtn.addEventListener('click', (e) => { e.preventDefault(); toggleAuthForms(); });
             showLoginBtn.addEventListener('click', (e) => { e.preventDefault(); toggleAuthForms(); });
 
@@ -1308,8 +1316,19 @@
                     });
             });
 
-            logoutBtn.addEventListener('click', () => {
-                signOut(auth).catch(error => console.error("Erro ao sair:", error));
+            logoutBtn.addEventListener('click', async () => {
+                if (auth.currentUser) {
+                    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+                    try {
+                        // Garante que o status offline seja definido antes de deslogar
+                        await updateDoc(userDocRef, { isOnline: false });
+                        await signOut(auth);
+                    } catch (error) {
+                        console.error("Erro ao fazer logout:", error);
+                        // Tenta deslogar mesmo se a atualização do banco de dados falhar
+                        await signOut(auth);
+                    }
+                }
             });
 
             function toggleAuthForms() {
@@ -1321,3 +1340,4 @@
     </script>
 </body>
 </html>
+
