@@ -344,8 +344,7 @@
             getDoc,
             collection,
             getDocs,
-            onSnapshot,
-            updateDoc
+            onSnapshot
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import {
             getDatabase,
@@ -354,7 +353,6 @@
             onValue,
             onDisconnect
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -396,6 +394,7 @@
                     topicName: null,
                     questions: [],
                     currentIndex: 0,
+                    score: 0,
                 },
                 unsubscribeUserDoc: null, 
                 unsubscribeUsers: null
@@ -460,22 +459,27 @@
             
             // --- Lógica de Autenticação e Presença ---
             onAuthStateChanged(auth, async (user) => {
+                // Limpa listeners antigos para evitar duplicação
+                if (appState.unsubscribeUserDoc) appState.unsubscribeUserDoc();
+                if (appState.unsubscribeUsers) {
+                    if(appState.unsubscribeUsers.firestore) appState.unsubscribeUsers.firestore();
+                    if(appState.unsubscribeUsers.rtdb) appState.unsubscribeUsers.rtdb();
+                }
+
                 if (user) {
                     appState.currentUser = user;
                     const userFirestoreRef = doc(db, 'users', user.uid);
                     const userStatusRef = ref(rtdb, 'status/' + user.uid);
 
-                    // Lógica de presença do Firebase Realtime Database
+                    // Sistema de presença do Firebase Realtime Database
                     const connectedRef = ref(rtdb, '.info/connected');
                     onValue(connectedRef, (snap) => {
                         if (snap.val() === true) {
                             onDisconnect(userStatusRef).set(false);
                             set(userStatusRef, true);
-                            updateDoc(userFirestoreRef, { isOnline: true });
                         }
                     });
 
-                    if (appState.unsubscribeUserDoc) appState.unsubscribeUserDoc();
                     appState.unsubscribeUserDoc = onSnapshot(userFirestoreRef, (docSnap) => {
                         if (docSnap.exists()) {
                             const data = docSnap.data();
@@ -491,15 +495,11 @@
                     updateUIForLogin();
                 } else {
                     appState.currentUser = null;
-                    if (appState.unsubscribeUserDoc) {
-                        appState.unsubscribeUserDoc();
-                        appState.unsubscribeUserDoc = null;
-                    }
                     appState.subjects = [];
                     appState.studyCycle = { goalSeconds: 0, completedSeconds: 0 };
                     appState.reviews = [];
                     appState.selectedItem = null;
-                    if(appState.timer.isRunning) stopTimer(false);
+                    if(appState.timer.isRunning) stopTimer(false); // Para o timer sem salvar
                     updateUIForLogout();
                 }
                 updateTimerControls();
@@ -526,9 +526,8 @@
             function formatTime(seconds) {
                 const h = Math.floor(seconds / 3600);
                 const m = Math.floor((seconds % 3600) / 60);
-                const s = Math.floor(seconds % 60);
                 if (h > 0) return `${h.toString()}h ${m.toString().padStart(2, '0')}m`;
-                return `${m.toString()}m ${s.toString().padStart(2, '0')}s`;
+                return `${m.toString()}m ${Math.floor(seconds % 60).toString().padStart(2, '0')}s`;
             }
             
             function formatTimeHMS(seconds) {
@@ -614,8 +613,7 @@
                     appState.subjects.push({ id: Date.now(), name, totalTime: 0, topics });
                     customSubjectInput.value = '';
                     newSubjectSelect.value = '';
-                    saveState();
-                    renderSubjects(); 
+                    saveState(); 
                 } else if (name) {
                     alert('Essa disciplina já foi adicionada.');
                 }
@@ -815,7 +813,8 @@
             }
 
             function completeReview(reviewId) {
-                const minutes = 15;
+                // Para simplificar a UX, creditamos um tempo fixo de 15 minutos por revisão.
+                const minutes = 15; 
                 const review = appState.reviews.find(r => r.id === reviewId);
                 if (review) {
                     review.isCompleted = true;
@@ -827,7 +826,9 @@
             function updateReviewNotification() {
                 const pendingCount = appState.currentUser ? appState.reviews.filter(r => !r.isCompleted).length : 0;
                 reviewBadge.classList.toggle('hidden', pendingCount === 0);
-                reviewBadge.textContent = pendingCount;
+                if (pendingCount > 0) {
+                    reviewBadge.textContent = pendingCount;
+                }
             }
 
             function switchView(viewName) {
@@ -851,6 +852,7 @@
 
                 const combineAndRender = () => {
                     const combinedUsers = Object.keys(usersData).map(uid => ({
+                        id: uid,
                         ...usersData[uid],
                         isOnline: statusData[uid] === true
                     }));
@@ -919,8 +921,12 @@
              
             // --- Resumos e Questões (Lógica Inalterada) ---
             const summariesDB = {
-                'lingua portuguesa': `<h3>Visão Geral da Banca FGV</h3><p>Disciplina de grande peso, que valoriza a interpretação e a aplicação prática da gramática...</p>`,
-                // Outros resumos omitidos para brevidade
+                'lingua portuguesa': `<h3>Visão Geral da Banca FGV</h3><p>Disciplina de grande peso, que valoriza a interpretação e a aplicação prática da gramática. A banca testa o candidato 'cansado', com textos longos e complexos para verificar a atenção e a resistência. O foco é entender como a gramática constrói o sentido do texto.</p><h4>Interpretação de Textos</h4><p><strong>Foco:</strong> Compreender informações centrais, inferir sentidos, identificar a tese do autor e reconhecer a tipologia textual. <strong>Dica:</strong> Primeiro, leia as perguntas para saber o que procurar no texto. Desconfie de alternativas que generalizam ('sempre', 'nunca') ou extrapolam o que foi dito.</p><h4>Concordância Verbal e Nominal</h4><p><strong>Foco:</strong> Relação entre sujeito e verbo, e substantivo e seus determinantes. Cuidado com casos de sujeito composto (especialmente posposto ao verbo), sujeito oracional e verbos impessoais como 'haver' e 'fazer' indicando tempo.</p><h4>Regência Verbal e Nominal</h4><p><strong>Foco:</strong> Entender a preposição exigida. Verbos que mudam de sentido com a mudança de regência (aspirar, assistir, visar) são sempre cobrados. Crie uma lista com os mais traiçoeiros.</p><h4>Pontuação</h4><p><strong>Foco:</strong> Uso da vírgula é o principal. Estude como isolar orações adjetivas explicativas, adjuntos adverbiais deslocados, apostos e vocativos. A FGV avalia a pontuação como elemento que altera a estrutura e o sentido.</p>`,
+                'raciocinio logico matematico': `<h3>Visão Geral da Banca FGV</h3><p>Mais do que decorar fórmulas, a FGV exige que você traduza enunciados em português para a linguagem lógica formal. A interpretação correta do problema é 80% da questão.</p><h4>Estruturas Lógicas e Lógica Proposicional</h4><p><strong>Foco:</strong> Tabela-verdade, conectivos, negações e equivalências. <strong>Dica:</strong> A equivalência da condicional ('Se P, então Q' ⇔ 'Se não Q, então não P' ⇔ 'Não P ou Q') é o item mais cobrado na história da banca. Domine-a!</p><h4>Lógica de Argumentação e Diagramas Lógicos</h4><p><strong>Foco:</strong> Validade de argumentos e uso de diagramas de Venn (diagramas lógicos) para resolver problemas com quantificadores como 'todo', 'algum' e 'nenhum'. Treine visualizar os conjuntos e suas intersecções.</p><h4>Análise Combinatória e Probabilidade</h4><p><strong>Foco:</strong> Saber quando usar arranjo, combinação ou permutação. A chave é se perguntar: 'A ordem dos elementos importa?'. Em probabilidade, o cálculo de eventos simples (casos favoráveis / casos possíveis) é o mais comum.</p>`,
+                'historia e geografia de rondonia': `<h3>Visão Geral</h3><p>Exige conhecimento aprofundado sobre a formação e as características do estado. A banca pode usar fotos, mapas antigos ou trechos de jornais para contextualizar as questões.</p><h4>Processo de Colonização e Ciclos Econômicos</h4><p><strong>Foco:</strong> Entender os ciclos da borracha (e o papel dos 'soldados da borracha'), da cassiterita e da agropecuária. A construção da Estrada de Ferro Madeira-Mamoré é um ponto central e deve ser estudada em detalhes, incluindo suas motivações e consequências.</p><h4>Criação do Estado</h4><p><strong>Foco:</strong> Memorize o processo: criação do Território Federal do Guaporé (1943), mudança para Território de Rondônia (1956) e elevação a Estado (1981). A FGV pode contextualizar com os presidentes da época (Vargas, JK, Figueiredo).</p><h4>Aspectos Físicos</h4><p><strong>Foco:</strong> Conhecer o relevo (predomínio de planícies), a importância dos rios da bacia amazônica (Madeira, Guaporé, Mamoré) e as características do clima equatorial (quente e úmido).</p>`,
+                'direito constitucional': `<h3>Visão Geral da Banca FGV</h3><p>A banca foca na literalidade da Constituição, mas também cobra a interpretação consolidada do STF (jurisprudência sumulada). Não basta ler o artigo, é preciso entender como ele é aplicado.</p><h4>Direitos e Garantias Fundamentais (Art. 5º)</h4><p><strong>Foco:</strong> Memorização dos incisos. <strong>Dica:</strong> Agrupe os incisos por tema (direitos individuais, de associação, remédios constitucionais) para facilitar. Entenda a aplicabilidade e os requisitos de cada remédio (Habeas Corpus, Mandado de Segurança, etc.).</p><h4>Administração Pública (Art. 37 a 41)</h4><p><strong>Foco:</strong> Princípios da Administração (L.I.M.P.E.), regras de concurso, estabilidade e acumulação de cargos. A FGV adora criar casos práticos sobre acumulação.</p><h4>Organização do Estado</h4><p><strong>Foco:</strong> Repartição de competências (Arts. 21 a 24). É um tema complexo. <strong>Dica:</strong> Crie uma tabela para visualizar o que é competência privativa da União, concorrente entre União e Estados, e comum a todos.</p>`,
+                'direito administrativo': `<h3>Visão Geral da Banca FGV</h3><p>Matéria extremamente relevante. A FGV ama criar 'historinhas' e casos práticos para testar a aplicação da teoria. Ao estudar, imagine-se como um servidor público resolvendo o problema.</p><h4>Atos Administrativos</h4><p><strong>Foco:</strong> Atributos (presunção de legitimidade, autoexecutoriedade, tipicidade, imperatividade) e os elementos de validade. <strong>Dica:</strong> Decore o mnemônico <strong>COFIFOMOB</strong> (Competência, Finalidade, Forma, Motivo, Objeto).</p><h4>Poderes da Administração</h4><p><strong>Foco:</strong> Diferenciar os poderes, especialmente o poder de polícia (suas fases e limites) do poder disciplinar e hierárquico. Entenda a diferença entre uso e abuso de poder.</p><h4>Licitações e Contratos (Lei 14.133/2021)</h4><p><strong>Foco:</strong> Conhecer as novas modalidades (diálogo competitivo), os princípios e os critérios de julgamento. Não precisa decorar todos os prazos, mas entenda o fluxo geral do processo licitatório.</p><h4>Improbidade Administrativa</h4><p><strong>Foco:</strong> As atualizações recentes são cruciais. A principal mudança é a exigência de <strong>dolo específico</strong> para a caracterização do ato ímprobo. Atos culposos não são mais punidos por esta lei.</p>`,
+                'legislacao especifica': `<h3>Visão Geral</h3><p>Aqui, o conhecimento literal das normas é crucial. A banca costuma trocar uma única palavra para tornar a alternativa incorreta. O método de estudo é a repetição.</p><h4>Constituição do Estado de Rondônia</h4><p><strong>Foco:</strong> Dê atenção especial às competências da Assembleia Legislativa (Art. 34) e do Governador do Estado (Art. 65). Leia também os artigos sobre os servidores públicos estaduais.</p><h4>Regimento Interno da ALE-RO</h4><p><strong>Foco:</strong> É um conteúdo denso. Priorize a composição da Mesa Diretora, o funcionamento das sessões (tipos, quóruns) e o processo de tramitação das proposições (leis, resoluções, etc.). <strong>Dica:</strong> Crie flashcards com os prazos e números importantes (quórum de votação, número de deputados nas comissões, etc.).</p>`
             };
             
             function showSummaryModal(subjectName) {
@@ -939,7 +945,12 @@
             }
 
             const questionsDB = {
-                // DB de questões omitido para brevidade
+                'lingua portuguesa': [ { topic: 'Interpretação de Textos', questions: [ { banca: 'FGV', year: '2023', prompt: 'Considerando o trecho "A persistência é o caminho do êxito", de Charles Chaplin, julgue a afirmativa.', statement: 'O autor sugere que o sucesso é um evento instantâneo, não dependendo de esforço contínuo.', answer: 'errado' }, { banca: 'FGV', year: '2022', prompt: 'Em "O homem, que é um ser racional, muitas vezes age por impulso."', statement: 'A informação de que o homem é um ser racional é apresentada como uma verdade universal e indispensável para o sentido da frase.', answer: 'errado' }, { banca: 'FGV', year: '2024', prompt: 'No fragmento "Embora chovesse, fomos à praia."', statement: 'A oração "Embora chovesse" expressa uma ideia de concessão em relação à oração principal.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Texto: "A tecnologia aproxima os distantes e distancia os próximos."', statement: 'O texto constrói seu sentido a partir de uma relação de paradoxo.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'A partir da leitura de um editorial de jornal que critica a burocracia estatal.', statement: 'É correto inferir que a principal função desse gênero textual é apresentar uma opinião sobre um tema relevante.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'No ditado popular "Água mole em pedra dura, tanto bate até que fura".', statement: 'A ideia central do provérbio é a valorização da insistência para superar obstáculos.', answer: 'certo' }, ]}, { topic: 'Concordância Verbal e Nominal', questions: [ { banca: 'FGV', year: '2023', prompt: 'Analise a concordância na frase a seguir.', statement: 'Na frase "Faz muitos anos que não vejo meus amigos", o verbo "Fazer" está empregado corretamente, indicando tempo decorrido.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Julgue a correção da frase.', statement: 'A frase "Houveram muitos problemas na reunião" está gramaticalmente correta.', answer: 'errado' }, { banca: 'FGV', year: '2024', prompt: 'Julgue a concordância na expressão "meio-dia e meia".', statement: 'A palavra "meia" concorda com a palavra "hora", que está subentendida.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre a frase "A maioria dos concurseiros sonha com a aprovação".', statement: 'O verbo "sonha" poderia ser flexionado no plural ("sonham"), concordando com "concurseiros", sem que houvesse erro gramatical.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Julgue a frase "É proibido entrada de estranhos".', statement: 'A concordância está correta, pois o sujeito "entrada" não está determinado por artigo.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Analise a frase "Segue anexo os documentos solicitados".', statement: 'A concordância nominal está incorreta; o correto seria "Seguem anexos os documentos solicitados".', answer: 'certo' }, ]}, { topic: 'Regência Verbal e Nominal', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a regência do verbo "assistir" na frase "O paciente assistiu o médico durante o procedimento".', statement: 'O verbo "assistir", no sentido de "ajudar", é transitivo direto, portanto a regência está correta.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Analise a frase "Eu aspiro o cargo de Técnico Legislativo".', statement: 'O verbo "aspirar", no sentido de "almejar", exige a preposição "a", sendo a forma correta: "Eu aspiro ao cargo...".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Julgue a regência do verbo "implicar".', statement: 'Na frase "Estudar implica aprovação", o verbo "implicar" é transitivo direto, não exigindo a preposição "em".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Analise a frase "O filme que assisti ontem foi excelente".', statement: 'A regência do verbo "assistir" (no sentido de ver) está incorreta, pois ele exige a preposição "a". O correto seria "ao qual assisti".', answer: 'certo' }, ]}, { topic: 'Crase', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre o uso do acento indicativo de crase, julgue o item.', statement: 'Na frase "O pesquisador se referiu àquelas teorias ultrapassadas", o uso da crase é facultativo.', answer: 'errado' }, { banca: 'FGV', year: '2023', prompt: 'Julgue a frase "Ele foi à França".', statement: 'O uso do acento indicativo de crase é obrigatório, pois o nome do país "França" admite o artigo "a".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Analise a frase "A reunião começará às 14h".', statement: 'A crase é obrigatória antes de locuções adverbiais femininas que indicam hora.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Na frase "Ele escreve a lápis".', statement: 'O uso da crase antes de "lápis" é incorreto, pois "lápis" é uma palavra masculina.', answer: 'certo' }, ]}, { topic: 'Pontuação', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue o uso da vírgula na seguinte frase: "O candidato, um jovem muito esforçado, passou no concurso."', statement: 'A vírgula foi utilizada para isolar um aposto explicativo.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre a frase "Quando o edital foi publicado, todos começaram a estudar."', statement: 'A vírgula é utilizada para separar a oração subordinada adverbial deslocada da oração principal.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Na frase "O diretor solicitou aos servidores: dedicação, empenho e pontualidade."', statement: 'Os dois-pontos foram usados para introduzir uma enumeração.', answer: 'certo' }, ]}, { topic: 'Morfologia', questions: [ { banca: 'FGV', year: '2024', prompt: 'Na frase "O concurseiro que estuda, passa", analise a função da palavra "que".', statement: 'A palavra "que" é um pronome relativo, retomando o termo "concurseiro".', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Em "Estuda-se muito para concursos", analise a partícula "se".', statement: 'A partícula "se" atua como índice de indeterminação do sujeito.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Na frase "Se você estudar, será aprovado".', statement: 'A palavra "Se" é uma conjunção subordinativa condicional.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Em "O edital é bastante claro".', statement: 'A palavra "bastante" funciona como um advérbio de intensidade, modificando o adjetivo "claro".', answer: 'certo' }, ]}, { topic: 'Semântica', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a relação de sentido entre as palavras "eminente" e "iminente".', statement: 'As palavras são parônimas, ou seja, possuem grafia e pronúncia parecidas, mas significados diferentes.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Na frase "O servidor deferiu o pedido".', statement: 'O verbo "deferir" é sinônimo de "conceder" ou "atender".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Analise a frase "Ele acendeu a luz" e "Ele ascendeu na carreira".', statement: 'Os verbos "acender" e "ascender" são homônimos, pois possuem a mesma pronúncia, mas grafia e significados diferentes.', answer: 'certo' }, ]}, { topic: 'Figuras de Linguagem', questions: [ { banca: 'FGV', year: '2023', prompt: 'Na expressão "O plenário explodiu em aplausos".', statement: 'Ocorre uma hipérbole, que é a figura do exagero.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Na frase "Aquele servidor é uma raposa".', statement: 'Há uma metáfora, que consiste em uma comparação implícita.', answer: 'certo' }, ]} ],
+                'raciocinio logico matematico': [ { topic: 'Estruturas Lógicas', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue a equivalência lógica.', statement: 'A proposição "Se chove, então o chão molha" é logicamente equivalente a "Se o chão não molha, então não chove".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Considere a proposição "João é servidor e Maria não é advogada".', statement: 'A negação dessa proposição é "João não é servidor ou Maria é advogada".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A proposição "O servidor é eficiente ou não é promovido".', statement: 'Sua equivalência lógica, utilizando a regra da condicional, é "Se o servidor não é eficiente, então não é promovido".', answer: 'certo' }, ]}, { topic: 'Lógica de Argumentação', questions: [ { banca: 'FGV', year: '2023', prompt: 'Considere o argumento: "Todos os rondonienses são brasileiros. João é rondoniense. Logo, João é brasileiro."', statement: 'Este argumento é um exemplo de silogismo válido.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Premissas: 1. Se o processo é urgente, o analista trabalha. 2. O analista não trabalha.', statement: 'A conclusão lógica que se pode extrair é que "o processo não é urgente".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Premissas: 1. Ou Ana estuda, ou Bia viaja. 2. Ana não estuda.', statement: 'A conclusão válida do argumento é que "Bia viaja".', answer: 'certo' }, ]}, { topic: 'Diagramas Lógicos', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a representação por diagramas de Venn.', statement: 'A intersecção dos conjuntos "Servidores Públicos" e "Advogados" representa os servidores públicos que também são advogados.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sabe-se que "Algum servidor é feliz" e "Todo servidor é competente".', statement: 'A partir dessas premissas, é correto concluir que "Algum competente é feliz".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Em uma repartição, todo analista é formado em Direito. Se Carlos não é formado em Direito.', statement: 'É correto concluir que Carlos não é analista nessa repartição.', answer: 'certo' }, ]}, { topic: 'Verdades e Mentiras', questions: [ { banca: 'FGV', year: '2024', prompt: 'Três servidores, Ana, Bia e Carlos, fizeram uma afirmação. Sabe-se que apenas um deles diz a verdade. Ana diz: "Bia mentiu". Bia diz: "Carlos mentiu". Carlos diz: "Eu não menti".', statement: 'Quem disse a verdade foi Bia.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Dois suspeitos, A e B, são interrogados. A diz: "B é o culpado". B diz: "A está mentindo". Sabe-se que um deles mente e o outro diz a verdade.', statement: 'É possível concluir que A é o culpado.', answer: 'errado' }, ]}, { topic: 'Sequências Lógicas', questions: [ { banca: 'FGV', year: '2023', prompt: 'Considere a sequência: 2, 5, 11, 23, ...', statement: 'O próximo número da sequência, seguindo o padrão lógico, é 47.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Na sequência de palavras (LEI, MESA, CANETA, ...), o critério é o número de letras.', statement: 'A próxima palavra, seguindo a lógica, poderia ser "PROCESSO".', answer: 'certo' }, ]}, { topic: 'Correlação de Elementos', questions: [ { banca: 'FGV', year: '2024', prompt: 'Três amigos (Marcos, Paulo, João) têm três profissões (médico, engenheiro, advogado) e moram em três cidades (Porto Velho, Ji-Paraná, Ariquemes), não necessariamente na mesma ordem. Sabe-se que: 1. Marcos não é médico e não mora em Porto Velho. 2. O engenheiro mora em Ji-Paraná. 3. João é o advogado.', statement: 'É correto concluir que Paulo é o engenheiro e mora em Ji-Paraná.', answer: 'certo' }, ]}, { topic: 'Análise Combinatória', questions: [ { banca: 'FGV', year: '2024', prompt: 'Julgue o item sobre arranjos e combinações.', statement: 'O número de comissões de 3 pessoas que podem ser formadas a partir de um grupo de 5 pessoas é calculado por um arranjo simples.', answer: 'errado' }, { banca: 'FGV', year: '2022', prompt: 'Para formar uma senha de 4 dígitos distintos usando os algarismos de 1 a 7.', statement: 'O número de senhas possíveis é calculado pela fórmula de Arranjo de 7 elementos tomados 4 a 4.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'De quantas maneiras distintas 5 servidores podem sentar-se em 5 cadeiras em fila?', statement: 'O número de maneiras é calculado por uma permutação de 5 elementos (5!).', answer: 'certo' }, ]}, { topic: 'Probabilidade', questions: [ { banca: 'FGV', year: '2023', prompt: 'Ao lançar um dado não viciado, julgue a probabilidade.', statement: 'A probabilidade de se obter um número par é de 1/2.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Em uma urna com 5 bolas brancas e 3 bolas pretas, retira-se uma bola ao acaso.', statement: 'A probabilidade de a bola retirada ser preta é de 3/8.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Lançando duas moedas, a probabilidade de se obter duas "caras".', statement: 'A probabilidade do evento é de 1/4.', answer: 'certo' }, ]} ],
+                'historia e geografia de rondonia': [ { topic: 'Processo de Colonização', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre a colonização de Rondônia, julgue o item.', statement: 'Projetos de colonização agrícola implementados pelo INCRA a partir da década de 1970 foram um fator determinante para o adensamento populacional do estado.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A ocupação inicial do Vale do Guaporé esteve fortemente ligada à mineração de ouro no período colonial.', statement: 'Esta afirmação está correta e remonta ao século XVIII.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'A Marcha para o Oeste, política do governo de Getúlio Vargas, foi um dos impulsos para a ocupação e integração da região amazônica, incluindo Rondônia.', statement: 'A política de Vargas teve impacto direto na futura criação do Território do Guaporé.', answer: 'certo' }, ]}, { topic: 'Ciclos Econômicos', questions: [ { banca: 'FGV', year: '2022', prompt: 'Acerca dos ciclos econômicos que marcaram a história de Rondônia, julgue o item.', statement: 'O primeiro ciclo da borracha, no final do século XIX, foi o principal fator para a construção da Estrada de Ferro Madeira-Mamoré.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'O ciclo da cassiterita, em meados do século XX, atraiu um grande contingente de migrantes para o território, consolidando novos núcleos urbanos.', statement: 'Esta afirmação sobre o ciclo da cassiterita é historicamente precisa.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'O segundo ciclo da borracha está diretamente relacionado à demanda dos Aliados durante a Segunda Guerra Mundial.', statement: 'Os "soldados da borracha" foram trabalhadores nordestinos recrutados para extrair látex na Amazônia nesse período.', answer: 'certo' }, ]}, { topic: 'Criação do Estado', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue a afirmativa sobre a formação político-administrativa de Rondônia.', statement: 'Rondônia foi elevado à categoria de Estado da Federação em 1981, desmembrando-se do estado do Amazonas.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Antes de se tornar Estado, Rondônia foi um Território Federal, criado em 1943 com o nome de Território Federal do Guaporé.', statement: 'A criação do Território Federal do Guaporé é um marco inicial na autonomia política da região.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A escolha do nome "Rondônia" para o território foi uma homenagem ao Marechal Cândido Rondon.', statement: 'Rondon foi um sertanista e desbravador de grande importância para a integração da região.', answer: 'certo' }, ]}, { topic: 'Questões Ambientais', questions: [ { banca: 'FGV', year: '2023', prompt: 'Sobre a dinâmica ambiental de Rondônia, julgue o item.', statement: 'O "arco do desmatamento" é uma expressão que designa uma área de intensa pressão sobre a floresta amazônica, na qual Rondônia está inserida.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'As hidrelétricas de Santo Antônio e Jirau, construídas no Rio Madeira.', statement: 'São projetos de grande impacto socioambiental no estado, gerando debates sobre desenvolvimento e conservação.', answer: 'certo' }, ]}, { topic: 'População e Demografia', questions: [ { banca: 'FGV', year: '2024', prompt: 'A respeito da composição populacional de Rondônia.', statement: 'A população do estado foi majoritariamente formada por correntes migratórias de outras regiões do Brasil, especialmente do Sul e Sudeste, a partir da segunda metade do século XX.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Porto Velho, a capital do estado.', statement: 'Sua origem está diretamente ligada à construção da Estrada de Ferro Madeira-Mamoré.', answer: 'certo' }, ]}, { topic: 'Aspectos Físicos e Relevo', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre as características geográficas de Rondônia, julgue o item.', statement: 'O relevo rondoniense é predominantemente caracterizado por planícies e baixas altitudes, sendo parte da planície amazônica.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'O ponto mais elevado do estado é o Pico do Tracuá.', statement: 'Esta afirmação está incorreta; o relevo do estado é de baixa altitude e o Pico do Tracuá não se localiza em Rondônia.', answer: 'errado' }, ]}, { topic: 'Hidrografia e Clima', questions: [ { banca: 'FGV', year: '2023', prompt: 'A respeito do clima de Rondônia, julgue a afirmativa.', statement: 'O clima predominante em Rondônia é o Equatorial, caracterizado por altas temperaturas e elevada umidade, com uma estação seca bem definida.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Os rios Madeira, Mamoré e Guaporé são os principais cursos d\'água que banham o estado.', statement: 'Esses rios pertencem à Bacia Amazônica e têm grande importância econômica e histórica.', answer: 'certo' }, ]} ],
+                'direito constitucional': [ { topic: 'Direitos e Garantias Fundamentais (Art. 5º)', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue o item a respeito dos direitos e deveres individuais e coletivos.', statement: 'A casa é asilo inviolável do indivíduo, ninguém nela podendo penetrar sem consentimento do morador, salvo em caso de flagrante delito ou desastre, ou, durante o dia, por determinação judicial.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre a liberdade de associação.', statement: 'A criação de associações e, na forma da lei, a de cooperativas independem de autorização, sendo vedada a interferência estatal em seu funcionamento.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A respeito dos remédios constitucionais.', statement: 'O mandado de segurança coletivo pode ser impetrado por partido político com representação no Congresso Nacional.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre o direito à propriedade.', statement: 'A pequena propriedade rural, assim definida em lei, desde que trabalhada pela família, não será objeto de penhora para pagamento de débitos decorrentes de sua atividade produtiva.', answer: 'certo' }, ]}, { topic: 'Direitos Sociais', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre direitos sociais previstos no Art. 6º da CF.', statement: 'A moradia, a alimentação e o transporte são exemplos de direitos sociais expressamente previstos na Constituição Federal.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre o direito de greve.', statement: 'O direito de greve é assegurado aos trabalhadores, competindo a eles decidir sobre a oportunidade de exercê-lo e sobre os interesses que devam por meio dele defender.', answer: 'certo' }, ]}, { topic: 'Nacionalidade e Direitos Políticos', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre os cargos privativos de brasileiro nato.', statement: 'O cargo de Presidente do Senado Federal é privativo de brasileiro nato.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre direitos políticos.', statement: 'O alistamento eleitoral e o voto são obrigatórios para os maiores de dezoito anos e facultativos para os analfabetos.', answer: 'certo' }, ]}, { topic: 'Administração Pública (Art. 37 a 41)', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre os princípios da Administração Pública, julgue a afirmativa.', statement: 'O princípio da publicidade admite exceções, como nos casos em que a defesa da intimidade ou o interesse social o exigirem.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre a acumulação de cargos, um servidor ocupante de cargo técnico.', statement: 'Um servidor que ocupa um cargo técnico pode acumular com um cargo de professor, desde que haja compatibilidade de horários.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'A investidura em cargo ou emprego público depende de aprovação prévia em concurso público de provas ou de provas e títulos.', statement: 'Esta regra geral não se aplica às nomeações para cargo em comissão, declarado em lei de livre nomeação e exoneração.', answer: 'certo' }, ]}, { topic: 'Organização do Estado', questions: [ { banca: 'FGV', year: '2023', prompt: 'Acerca da repartição de competências entre os entes federativos, julgue o item.', statement: 'Compete privativamente à União legislar sobre direito civil, comercial, penal, processual, eleitoral, agrário, marítimo, aeronáutico, espacial e do trabalho.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Julgue o item sobre as competências.', statement: 'Legislar sobre procedimentos em matéria processual é competência concorrente da União, dos Estados e do Distrito Federal.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Sobre a intervenção federal.', statement: 'A União não intervirá nos Estados nem no Distrito Federal, exceto para, entre outras hipóteses, repelir invasão estrangeira ou de uma unidade da Federação em outra.', answer: 'certo' }, ]}, { topic: 'Poder Legislativo', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre o processo legislativo, julgue a afirmativa.', statement: 'Uma medida provisória, após sua edição pelo Presidente da República, tem força de lei e vigência imediata, mas precisa ser convertida em lei pelo Congresso Nacional para não perder sua eficácia.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Sobre as comissões parlamentares de inquérito (CPI).', statement: 'As CPIs têm poderes de investigação próprios das autoridades judiciais e podem determinar a quebra de sigilo bancário, fiscal e de dados.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A respeito da imunidade parlamentar.', statement: 'Os Deputados e Senadores são invioláveis, civil e penalmente, por quaisquer de suas opiniões, palavras e votos. Isso se refere à imunidade material.', answer: 'certo' }, ]}, { topic: 'Controle de Constitucionalidade', questions: [ { banca: 'FGV', year: '2024', prompt: 'Acerca do controle de constitucionalidade no Brasil, julgue a afirmativa.', statement: 'Na Ação Direta de Inconstitucionalidade (ADI), a decisão de mérito proferida pelo STF possui eficácia contra todos (erga omnes) e efeito vinculante.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre o controle difuso.', statement: 'Qualquer juiz ou tribunal pode, no julgamento de um caso concreto, declarar incidentalmente a inconstitucionalidade de uma lei.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre a Ação Declaratória de Constitucionalidade (ADC).', statement: 'A ADC visa transformar uma presunção relativa de constitucionalidade de uma lei federal em uma presunção absoluta.', answer: 'certo' }, ]} ],
+                'direito administrativo': [ { topic: 'Princípios Administrativos', questions: [ { banca: 'FGV', year: '2024', prompt: 'Um agente público, ao aplicar uma multa, age com rigor excessivo e desproporcional à infração cometida.', statement: 'A conduta do agente viola o princípio da razoabilidade e da proporcionalidade.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Um edital de concurso que exige altura mínima para o cargo de técnico administrativo, sem justificativa legal.', statement: 'Este edital fere o princípio da isonomia e da razoabilidade.', answer: 'certo' }, ]}, { topic: 'Atos Administrativos', questions: [ { banca: 'FGV', year: '2023', prompt: 'A respeito dos atributos do ato administrativo, julgue o item.', statement: 'A autoexecutoriedade é o atributo que permite à Administração Pública anular seus próprios atos, quando eivados de vícios que os tornam ilegais.', answer: 'errado' }, { banca: 'FGV', year: '2022', prompt: 'Um prefeito desapropria um imóvel para construir uma praça, mas na verdade o utiliza para beneficiar um amigo.', statement: 'O ato administrativo está viciado no elemento "finalidade", caracterizando desvio de poder.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A anulação de um ato administrativo ilegal.', statement: 'Opera efeitos retroativos (ex tunc), desfazendo as relações jurídicas desde a origem do ato.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A revogação de um ato administrativo.', statement: 'É feita por motivos de conveniência e oportunidade e opera efeitos prospectivos (ex nunc).', answer: 'certo' }, ]}, { topic: 'Poderes da Administração', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a afirmativa sobre o poder de polícia.', statement: 'O poder de polícia pode ser delegado a pessoas jurídicas de direito privado, como empresas públicas, para a execução de sanções.', answer: 'errado' }, { banca: 'FGV', year: '2023', prompt: 'O Secretário de Obras avoca para si a competência de um subordinado para decidir sobre um processo específico.', statement: 'Esta é uma manifestação do poder hierárquico.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A aplicação de uma penalidade a um servidor que cometeu uma infração funcional.', statement: 'Decorre do poder disciplinar da Administração.', answer: 'certo' }, ]}, { topic: 'Organização da Administração', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre a Administração Indireta.', statement: 'As autarquias, como o INSS, são pessoas jurídicas de direito público, criadas por lei específica, com autonomia administrativa e financeira.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre empresas estatais.', statement: 'As sociedades de economia mista, como o Banco do Brasil, são pessoas jurídicas de direito privado, com capital misto (público e privado), mas com controle acionário do Poder Público.', answer: 'certo' }, ]}, { topic: 'Bens Públicos', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre as características dos bens públicos.', statement: 'Os bens de uso comum do povo, como rios e praças, são, em regra, inalienáveis, ou seja, não podem ser vendidos enquanto mantiverem essa qualificação.', answer: 'certo' } ]}, { topic: 'Licitações e Contratos (Lei 14.133)', questions: [ { banca: 'FGV', year: '2024', prompt: 'De acordo com a Nova Lei de Licitações (Lei nº 14.133/2021), julgue o item.', statement: 'A modalidade de licitação denominada "diálogo competitivo" é restrita a contratações que envolvam inovação tecnológica ou técnica.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A inexigibilidade de licitação ocorre em situações onde há inviabilidade de competição.', statement: 'A contratação de um artista consagrado pela crítica especializada é um exemplo clássico de inexigibilidade.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A dispensa de licitação ocorre em casos especificados em lei, onde, embora a competição seja possível, o legislador optou por não exigi-la.', statement: 'A contratação de pequeno valor é um exemplo de dispensa de licitação.', answer: 'certo' }, ]}, { topic: 'Controle da Administração', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre o controle exercido pelos Tribunais de Contas.', statement: 'O Tribunal de Contas da União (TCU) aprecia as contas do Presidente da República, mas o julgamento final compete ao Congresso Nacional.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'O controle judicial dos atos administrativos.', statement: 'Incide sobre a legalidade dos atos, não podendo o Poder Judiciário, em regra, analisar o mérito administrativo (conveniência e oportunidade).', answer: 'certo' }, ]}, { topic: 'Improbidade Administrativa (Lei 8.429)', questions: [ { banca: 'FGV', year: '2023', prompt: 'Conforme as alterações recentes na Lei de Improbidade Administrativa, julgue a afirmativa.', statement: 'Para a caracterização de ato de improbidade administrativa, é indispensável a comprovação do dolo específico do agente.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Um prefeito que, por mera negligência, causa um pequeno prejuízo ao erário.', statement: 'Após as alterações na Lei de Improbidade, essa conduta culposa não mais caracteriza ato de improbidade administrativa.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Uma das sanções previstas na Lei de Improbidade.', statement: 'A suspensão dos direitos políticos é uma das penalidades aplicáveis aos condenados por improbidade administrativa.', answer: 'certo' }, ]} ],
+                'legislacao especifica': [ { topic: 'Constituição do Estado de Rondônia', questions: [ { banca: 'FGV', year: '2023', prompt: 'Com base na Constituição do Estado de Rondônia, julgue o item.', statement: 'O Poder Legislativo do Estado de Rondônia é exercido pela Assembleia Legislativa, composta por Deputados Estaduais eleitos pelo sistema majoritário.', answer: 'errado' }, { banca: 'FGV', year: '2024', prompt: 'Conforme a Constituição Estadual, compete à Assembleia Legislativa processar e julgar o Governador nos crimes de responsabilidade.', statement: 'Esta é uma das competências privativas da Assembleia Legislativa.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A Constituição de Rondônia veda a nomeação, para cargo em comissão, de cônjuge ou parente de até segundo grau do Governador.', statement: 'Esta norma estadual configura uma medida contra o nepotismo.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Segundo a Constituição Estadual, o Tribunal de Contas do Estado é composto por sete Conselheiros.', statement: 'Este número está correto conforme a disposição da Constituição de Rondônia.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A iniciativa popular de projetos de lei é prevista na Constituição Estadual.', statement: 'A Constituição de Rondônia admite a proposição de leis pela população, na forma da lei.', answer: 'certo' }, ]}, { topic: 'Regimento Interno da ALE-RO', questions: [ { banca: 'FGV', year: '2024', prompt: 'De acordo com o Regimento Interno da ALE-RO, julgue a afirmativa.', statement: 'As sessões legislativas ordinárias da Assembleia Legislativa são independentes de convocação e ocorrem em períodos predeterminados anualmente.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre o processo legislativo no âmbito da ALE-RO.', statement: 'Um projeto de lei aprovado pela Assembleia, caso seja vetado pelo Governador, pode ter seu veto derrubado pelo voto da maioria absoluta dos Deputados.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A respeito da Mesa Diretora da ALE-RO.', statement: 'A Mesa é o órgão de direção dos trabalhos da Assembleia, sendo seus membros eleitos para um mandato de dois anos.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre as Comissões Permanentes.', statement: 'As Comissões Permanentes, como a de Constituição e Justiça, têm a função de analisar e emitir parecer sobre as proposições antes de serem votadas em Plenário.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre o quórum para deliberações em Plenário.', statement: 'Salvo disposição em contrário, as deliberações da Assembleia Legislativa são tomadas por maioria de votos, presente a maioria absoluta de seus membros.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Um deputado que falta a um terço das sessões ordinárias de uma sessão legislativa.', statement: 'Conforme o Regimento Interno, o deputado pode perder o mandato por falta de decoro parlamentar.', answer: 'certo' }, ]} ]
             };
             
             function normalizeString(str) {
@@ -947,16 +958,79 @@
             }
 
             function startQuiz(subjectId, topicId = null) {
-                // Lógica do quiz inalterada
+                const subject = appState.subjects.find(s => s.id === subjectId);
+                if (!subject) return;
+                const normalizedSubjectName = normalizeString(subject.name);
+                const subjectTopicsData = questionsDB[normalizedSubjectName];
+                let questions = [];
+                let topicName = null;
+                if (topicId) {
+                    const topic = subject.topics.find(t => t.id === topicId);
+                    if (!topic) return;
+                    topicName = topic.name;
+                    const normalizedTopicName = normalizeString(topic.name);
+                    const topicData = subjectTopicsData?.find(t => normalizeString(t.topic) === normalizedTopicName);
+                    questions = topicData?.questions || [];
+                } else {
+                    if (subjectTopicsData) {
+                        questions = subjectTopicsData.flatMap(topicObj => topicObj.questions);
+                    }
+                }
+                if (questions.length > 0) {
+                    questions.sort(() => Math.random() - 0.5);
+                    appState.quiz = { active: true, subjectName: subject.name, topicName, questions, currentIndex: 0, score: 0 };
+                    renderQuizView(); // Chamar renderQuizView em vez de switchView
+                    switchView('questoes');
+                } else {
+                    alert(`Nenhuma questão encontrada para "${topicName || subject.name}".`);
+                }
             }
+
             function renderQuizView() {
-                // Lógica do quiz inalterada
+                if (!appState.currentUser) {
+                     quizContainer.innerHTML = `<div class="text-center p-4"><p class="font-semibold text-slate-700">Faça login para praticar com questões.</p></div>`;
+                     return;
+                }
+                if (!appState.quiz.active) {
+                    quizContainer.innerHTML = `<div class="text-center p-4"><p class="font-semibold text-slate-700">Pronto para praticar?</p><p class="text-sm text-slate-500 mt-1">Escolha uma disciplina ou assunto e clique em "Praticar".</p></div>`;
+                    return;
+                }
+                const q = appState.quiz.questions[appState.quiz.currentIndex];
+                if (!q) {
+                    appState.quiz.active = false;
+                    const totalQuestions = appState.quiz.questions.length;
+                    const score = appState.quiz.score;
+                    const percentage = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(1) : 0;
+                    quizContainer.innerHTML = `<div class="bg-white p-4 rounded-lg shadow text-center"><h3 class="text-lg font-bold text-blue-600">Quiz Concluído!</h3><p class="mt-2 text-slate-700">Você acertou ${score} de ${totalQuestions} questões (${percentage}%).</p><button id="back-to-home-btn" class="mt-4 w-full bg-slate-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-slate-700 transition">Voltar ao Início</button></div>`;
+                    quizContainer.querySelector('#back-to-home-btn').addEventListener('click', () => switchView('cronometro'));
+                    return;
+                }
+                const quizTitle = appState.quiz.topicName ? `${appState.quiz.subjectName} > ${appState.quiz.topicName}` : appState.quiz.subjectName;
+                quizContainer.innerHTML = `<p class="text-sm text-slate-600 mb-4">Praticando: <span class="font-bold">${quizTitle}</span> (${appState.quiz.currentIndex + 1}/${appState.quiz.questions.length})</p><div id="question-container" class="bg-white p-4 rounded-lg shadow"><p class="text-xs text-slate-500">${q.banca} • ${q.year}</p><p class="mt-2">${q.prompt}</p><p class="font-semibold mt-1">${q.statement}</p><div class="flex space-x-4 mt-4 text-sm"><button id="certo-btn" class="bg-green-200 text-green-800 px-4 py-1 rounded-md hover:bg-green-300 transition-colors">Certo</button><button id="errado-btn" class="bg-red-200 text-red-800 px-4 py-1 rounded-md hover:bg-red-300 transition-colors">Errado</button></div><div id="question-feedback" class="mt-4 text-sm font-semibold h-5"></div><button id="next-question-btn" class="hidden mt-4 w-full text-center bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Próxima Questão</button></div>`;
+                quizContainer.querySelector('#certo-btn').addEventListener('click', () => checkAnswer('certo'));
+                quizContainer.querySelector('#errado-btn').addEventListener('click', () => checkAnswer('errado'));
+                quizContainer.querySelector('#next-question-btn').addEventListener('click', loadNextQuestion);
             }
+
             function checkAnswer(selectedAnswer) {
-                // Lógica do quiz inalterada
+                const q = appState.quiz.questions[appState.quiz.currentIndex];
+                const feedbackEl = quizContainer.querySelector('#question-feedback');
+                quizContainer.querySelector('#certo-btn').disabled = true;
+                quizContainer.querySelector('#errado-btn').disabled = true;
+                if (selectedAnswer === q.answer) {
+                    appState.quiz.score++;
+                    feedbackEl.textContent = 'Resposta Correta!';
+                    feedbackEl.className = `mt-4 text-sm font-semibold h-5 text-green-600`;
+                } else {
+                    feedbackEl.textContent = 'Resposta Incorreta!';
+                    feedbackEl.className = `mt-4 text-sm font-semibold h-5 text-red-600`;
+                }
+                quizContainer.querySelector('#next-question-btn').classList.remove('hidden');
             }
+
             function loadNextQuestion() {
-                // Lógica do quiz inalterada
+                appState.quiz.currentIndex++;
+                renderQuizView();
             }
 
             // --- Event Listeners ---
@@ -1022,10 +1096,8 @@
                 const password = document.getElementById('register-password').value;
                 createUserWithEmailAndPassword(auth, email, password)
                     .then(async (userCredential) => {
-                        // Atualiza o perfil do usuário
                         await updateProfile(userCredential.user, { displayName: name });
                         
-                        // Cria o documento inicial no Firestore para o novo usuário
                         const userDocRef = doc(db, 'users', userCredential.user.uid);
                         await setDoc(userDocRef, {
                             name: name,
@@ -1034,9 +1106,14 @@
                             studyCycle: { goalSeconds: 0, completedSeconds: 0 },
                             reviews: []
                         });
+                        
+                        // Garante que o usuário apareça imediatamente na lista da comunidade
+                        const userStatusRef = ref(rtdb, 'status/' + userCredential.user.uid);
+                        await set(userStatusRef, false);
 
                         alert('Cadastro realizado com sucesso!');
                         registerForm.reset();
+                        toggleAuthForms();
                     })
                     .catch((error) => {
                         console.error("Erro no cadastro:", error);
@@ -1055,9 +1132,7 @@
             logoutBtn.addEventListener('click', async () => {
                 if (auth.currentUser) {
                     const userStatusRef = ref(rtdb, 'status/' + auth.currentUser.uid);
-                    await set(userStatusRef, false);
-                    const userFirestoreRef = doc(db, 'users', auth.currentUser.uid);
-                    await updateDoc(userFirestoreRef, { isOnline: false });
+                    await set(userStatusRef, false); // Define como offline ANTES de deslogar
                     await signOut(auth);
                 }
             });
@@ -1070,5 +1145,4 @@
     </script>
 </body>
 </html>
-
 
