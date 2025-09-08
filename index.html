@@ -1356,11 +1356,39 @@
     // 12. REDAÇÃO
     // =========================
     async function carregarTemasRedacao() {
-        // Esta função agora será chamada, mas o banco de temas é estático por enquanto.
-    }
+    const container = document.getElementById('lista-temas-redacao');
+    container.innerHTML = '';
+
+    const temas = [
+        { titulo: "A importância da educação para o desenvolvimento social", ano: 2023, banca: "FGV" },
+        { titulo: "Os desafios da mobilidade urbana nas grandes cidades", ano: 2022, banca: "FGV" },
+        { titulo: "Tecnologia e privacidade: limites e responsabilidades", ano: 2021, banca: "FGV" }
+    ];
+
+    temas.forEach(tema => {
+        container.innerHTML += `
+            <div class="border p-4 rounded-lg">
+                <h3 class="font-bold text-lg text-blue-700">${tema.titulo}</h3>
+                <p class="text-sm text-gray-600">Ano: ${tema.ano} | Banca: ${tema.banca}</p>
+                <button class="mt-2 bg-green-500 text-white px-3 py-1 rounded" onclick="abrirModalRedacao('${tema.titulo}')">Escrever Redação</button>
+            </div>
+        `;
+    });
+}
+
+function abrirModalRedacao(titulo) {
+    temaRedacaoAtual = titulo;
+    document.getElementById('modal-redacao-titulo').textContent = `Tema: ${titulo}`;
+    document.getElementById('modal-redacao').classList.remove('hidden');
+    document.getElementById('modal-redacao').classList.add('flex');
+}
+
+document.getElementById('btn-fechar-modal-redacao').addEventListener('click', () => {
+    document.getElementById('modal-redacao').classList.add('hidden');
+    document.getElementById('modal-redacao').classList.remove('flex');
+});
 
   </script>
 
 </body>
 </html>
-
