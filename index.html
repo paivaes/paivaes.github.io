@@ -1,1148 +1,1366 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GFConcursos - Foco na Aprovação</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
-        }
-        .timer-digits {
-            font-variant-numeric: tabular-nums;
-        }
-        .view {
-            display: none;
-        }
-        .view.active {
-            display: block;
-        }
-        .nav-item.active {
-            color: #2563eb; /* text-blue-600 */
-        }
-        .nav-item.active svg {
-            stroke: #2563eb;
-        }
-        .topics-container {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-in-out;
-        }
-        .subject-item.is-expanded .topics-container {
-            max-height: 1000px; /* valor alto para permitir expansão */
-        }
-        .subject-item.is-expanded .chevron {
-            transform: rotate(180deg);
-        }
-        /* Estilos do Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 50;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-overlay.is-open {
-            display: flex;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            max-width: 90%;
-            width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            animation: slide-up 0.3s ease-out;
-        }
-        @keyframes slide-up {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        .summary-content h3 {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: #1e3a8a; /* text-blue-900 */
-          margin-top: 1.5rem;
-          margin-bottom: 0.5rem;
-          border-bottom: 2px solid #93c5fd; /* border-blue-300 */
-          padding-bottom: 0.25rem;
-        }
-        .summary-content h4 {
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: #1e293b; /* text-slate-800 */
-          margin-top: 1.25rem;
-          margin-bottom: 0.5rem;
-        }
-        .summary-content p {
-          color: #475569; /* text-slate-600 */
-          line-height: 1.6;
-          margin-bottom: 0.75rem;
-        }
-        .summary-content strong {
-            font-weight: 600;
-            color: #334155; /* text-slate-700 */
-        }
-        .progress-bar {
-            background-color: #e5e7eb; /* bg-gray-200 */
-            border-radius: 9999px;
-            height: 1rem;
-            overflow: hidden;
-        }
-        .progress-bar-inner {
-            background-color: #2563eb; /* bg-blue-600 */
-            height: 100%;
-            transition: width 0.5s ease-in-out;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Plataforma de Estudos GFConcursos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+    .container { max-width: 1200px; margin: auto; padding: 20px; }
+    .card { background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+    h2 { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; margin-bottom: 1rem; border-bottom: 2px solid #93c5fd; padding-bottom: 0.5rem;}
+    select, input, button, textarea {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        border: 1px solid #d1d5db;
+        transition: all 0.2s;
+        font-size: 1rem;
+    }
+    textarea { width: 100%; min-height: 250px; }
+    button { cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .tab-button { background-color: #e5e7eb; }
+    .tab-button.active { background-color: #3b82f6; color: white; }
+    .option-button { display: block; width: 100%; text-align: left; background-color: #f3f4f6; margin-bottom: 0.5rem; }
+    .option-button:hover { background-color: #e5e7eb; }
+    .option-button.correct { background-color: #d1fae5; border-color: #10b981; }
+    .option-button.incorrect { background-color: #fee2e2; border-color: #ef4444; }
+    .priority-item { cursor: grab; user-select: none; }
+    .priority-item:active { cursor: grabbing; background-color: #f0f4ff; }
+    .dragging { opacity: 0.5; }
+  </style>
 </head>
-<body class="antialiased text-slate-800">
+<body>
 
-    <div id="app" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg flex flex-col">
-        
-        <!-- Cabeçalho -->
-        <header class="bg-blue-600 text-white p-4 text-center shadow-md">
-            <h1 class="text-2xl font-bold">GFConcursos</h1>
-            <p id="header-subtitle" class="text-sm opacity-90">Seu parceiro rumo à aprovação</p>
-        </header>
+  <div class="container">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-blue-800">Plataforma de Estudos GFConcursos</h1>
+      <p id="auth-status" class="text-slate-600">Carregando...</p>
+    </header>
 
-        <!-- Conteúdo Principal -->
-        <main class="flex-grow p-4 md:p-6 space-y-6 overflow-y-auto pb-24">
-            
-            <!-- VIEW: Cronômetro -->
-            <div id="view-cronometro" class="view active">
-                 <!-- Seção Ciclo de Estudo -->
-                <div id="study-cycle-container" class="mb-6">
-                    <h2 class="text-xl font-bold mb-3">Meu Ciclo de Estudo</h2>
-                    <div class="bg-white p-4 rounded-lg shadow space-y-3">
-                        <div id="cycle-setup">
-                             <label for="cycle-goal-input" class="block text-sm font-medium text-slate-700">Definir meta de horas para o ciclo:</label>
-                             <div class="flex items-center gap-2 mt-1">
-                                 <input type="number" id="cycle-goal-input" placeholder="Ex: 100" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                                 <button id="set-cycle-goal-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Definir</button>
-                             </div>
-                        </div>
-                        <div id="cycle-progress" class="hidden space-y-2">
-                            <div>
-                                <div class="flex justify-between items-center text-sm font-medium text-slate-600">
-                                    <span>Progresso</span>
-                                    <span id="cycle-progress-percentage">0%</span>
-                                </div>
-                                <div class="progress-bar mt-1">
-                                    <div id="cycle-progress-bar-inner" class="progress-bar-inner" style="width: 0%;"></div>
-                                </div>
-                                <p id="cycle-progress-text" class="text-xs text-slate-500 text-right mt-1">0h 0m / 0h</p>
-                            </div>
-                            <div id="cycle-completed-box" class="hidden bg-green-100 border border-green-200 text-green-700 text-center p-3 rounded-lg">
-                                <p class="font-bold">🎉 Parabéns! Meta do ciclo concluída! 🎉</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção do Timer -->
-                <div class="bg-slate-100 rounded-2xl p-6 text-center shadow-inner">
-                    <p id="current-subject-display" class="text-lg font-semibold text-slate-600 mb-2 h-12 flex items-center justify-center text-center">Nenhuma disciplina selecionada</p>
-                    <div id="timer-display" class="text-6xl md:text-7xl font-bold text-slate-800 timer-digits tracking-wider">
-                        00:00:00
-                    </div>
-                    <div class="mt-6 flex justify-center space-x-3">
-                        <button id="start-pause-btn" class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                            <i data-lucide="play" class="w-5 h-5 mr-2"></i>
-                            <span id="start-pause-text">Iniciar</span>
-                        </button>
-                        <button id="stop-btn" class="bg-red-500 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-red-600 transition-all transform hover:scale-105 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                            <i data-lucide="square" class="w-5 h-5 mr-2"></i>
-                            <span>Parar</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Seção de Disciplinas -->
-                <div>
-                    <h2 class="text-xl font-bold mb-3 mt-6">Minhas Disciplinas</h2>
-                    <div class="bg-white rounded-lg">
-                        <ul id="subjects-list" class="divide-y divide-slate-200">
-                            <!-- Disciplinas e assuntos serão inseridos aqui via JS -->
-                        </ul>
-                    </div>
-                     <div id="add-subject-container" class="mt-4 space-y-2">
-                         <select id="new-subject-select" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white">
-                             <option value="">Selecione uma disciplina do edital...</option>
-                             <option value="Língua Portuguesa">Língua Portuguesa</option>
-                             <option value="Raciocínio Lógico-Matemático">Raciocínio Lógico-Matemático</option>
-                             <option value="História e Geografia de Rondônia">História e Geografia de Rondônia</option>
-                             <option value="Direito Constitucional">Direito Constitucional</option>
-                             <option value="Direito Administrativo">Direito Administrativo</option>
-                             <option value="Legislação Específica">Legislação Específica</option>
-                         </select>
-                         <div class="flex items-center gap-2">
-                            <hr class="flex-grow border-slate-200">
-                            <span class="text-xs text-slate-500">OU</span>
-                            <hr class="flex-grow border-slate-200">
-                         </div>
-                         <input type="text" id="custom-subject-input" placeholder="Digite uma disciplina personalizada" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                         <button id="add-subject-btn" class="w-full mt-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-900 transition flex items-center justify-center gap-2">
-                             <i data-lucide="plus" class="w-5 h-5"></i>
-                             <span>Adicionar</span>
-                         </button>
-                     </div>
-                </div>
-            </div>
-
-            <!-- VIEW: Revisões -->
-            <div id="view-revisoes" class="view">
-                <h2 class="text-xl font-bold mb-4">Revisões Agendadas</h2>
-                <div id="reviews-list" class="space-y-3">
-                    <!-- Lista de revisões pendentes será inserida aqui -->
-                </div>
-            </div>
-
-            <!-- VIEW: Salas de Estudo -->
-            <div id="view-salas" class="view">
-                <h2 class="text-xl font-bold mb-4">Comunidade de Estudos</h2>
-                <div id="study-room-list" class="space-y-2">
-                    <!-- Usuários reais serão inseridos aqui -->
-                </div>
-            </div>
-
-            <!-- VIEW: Ranking -->
-            <div id="view-ranking" class="view">
-                <h2 class="text-xl font-bold mb-4">Ranking Semanal 🏆</h2>
-                <div class="bg-white rounded-lg shadow">
-                    <ul id="ranking-list" class="divide-y divide-slate-200">
-                       <!-- Ranking dinâmico será inserido aqui -->
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- VIEW: Questões -->
-            <div id="view-questoes" class="view">
-                <h2 class="text-xl font-bold mb-4">Banco de Questões</h2>
-                <div id="quiz-container" class="bg-slate-100 p-4 rounded-lg">
-                    <!-- O conteúdo do quiz será renderizado aqui -->
-                </div>
-            </div>
-
-             <!-- VIEW: Perfil -->
-            <div id="view-perfil" class="view">
-                <!-- Container para usuário LOGADO -->
-                <div id="profile-container" class="hidden">
-                    <h2 class="text-2xl font-bold text-center" id="welcome-message"></h2>
-                    <p class="text-center text-slate-600 mt-2">Seus dados de estudo estão seguros na nuvem.</p>
-                    <button id="logout-btn" class="w-full mt-8 bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition flex items-center justify-center gap-2">
-                        <i data-lucide="log-out" class="w-5 h-5"></i>
-                        <span>Sair da Conta</span>
-                    </button>
-                </div>
-
-                <!-- Container para usuário DESLOGADO -->
-                <div id="auth-container">
-                    <!-- Formulário de Login -->
-                    <div id="login-form-container">
-                        <h2 class="text-2xl font-bold text-center">Acesse sua Conta</h2>
-                        <form id="login-form" class="mt-6 space-y-4">
-                            <input type="email" id="login-email" placeholder="Seu e-mail" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                            <input type="password" id="login-password" placeholder="Sua senha" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                            <button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Entrar</button>
-                        </form>
-                        <p class="text-center text-sm mt-4">
-                            Não tem uma conta? <a href="#" id="show-register-form" class="font-semibold text-blue-600 hover:underline">Cadastre-se</a>
-                        </p>
-                    </div>
-
-                    <!-- Formulário de Cadastro -->
-                    <div id="register-form-container" class="hidden">
-                        <h2 class="text-2xl font-bold text-center">Crie sua Conta</h2>
-                        <form id="register-form" class="mt-6 space-y-4">
-                            <input type="text" id="register-name" placeholder="Seu nome completo" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                            <input type="email" id="register-email" placeholder="Seu e-mail" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                            <input type="password" id="register-password" placeholder="Crie uma senha" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                            <button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Criar Conta</button>
-                        </form>
-                        <p class="text-center text-sm mt-4">
-                            Já tem uma conta? <a href="#" id="show-login-form" class="font-semibold text-blue-600 hover:underline">Faça login</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-
-        <!-- Navegação Inferior -->
-        <nav class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white border-t border-slate-200 flex justify-around p-2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-            <button class="nav-item active flex flex-col items-center text-slate-500 p-2" data-view="cronometro">
-                <i data-lucide="timer" class="w-6 h-6 mb-1"></i>
-                <span class="text-xs">Cronômetro</span>
-            </button>
-            <button class="nav-item relative flex flex-col items-center text-slate-500 p-2" data-view="revisoes">
-                <i data-lucide="repeat" class="w-6 h-6 mb-1"></i>
-                <span class="text-xs">Revisões</span>
-                <span id="review-badge" class="hidden absolute top-1 right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"></span>
-            </button>
-            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="salas">
-                <i data-lucide="users" class="w-6 h-6 mb-1"></i>
-                <span class="text-xs">Salas</span>
-            </button>
-            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="ranking">
-                <i data-lucide="bar-chart-3" class="w-6 h-6 mb-1"></i>
-                <span class="text-xs">Ranking</span>
-            </button>
-            <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="questoes">
-                <i data-lucide="file-question" class="w-6 h-6 mb-1"></i>
-                <span class="text-xs">Questões</span>
-            </button>
-             <button class="nav-item flex flex-col items-center text-slate-500 p-2" data-view="perfil">
-                <i data-lucide="user-circle" class="w-6 h-6 mb-1"></i>
-                <span class="text-xs">Perfil</span>
-            </button>
+    <!-- Autenticação -->
+    <div id="auth-container" class="card max-w-md mx-auto">
+        <div id="login-view">
+            <h2 class="text-xl font-bold">Acessar Conta</h2>
+            <input type="email" id="login-email" placeholder="E-mail" class="w-full mb-2 p-2">
+            <input type="password" id="login-password" placeholder="Senha" class="w-full mb-2 p-2">
+            <button id="btn-login" class="w-full bg-blue-600 text-white font-semibold py-2">Entrar</button>
+        </div>
+         <div id="logout-view" class="hidden text-center">
+            <p id="welcome-message" class="mb-4 text-lg"></p>
+            <button id="btn-logout" class="w-full bg-red-500 text-white font-semibold py-2">Sair</button>
+        </div>
+    </div>
+    
+    <!-- Abas de Navegação -->
+    <div id="tabs-container" class="mb-6 hidden">
+        <div class="md:hidden text-right mb-4">
+            <button id="menu-toggle" class="p-2 rounded bg-gray-200">Menu</button>
+        </div>
+        <nav id="nav-menu" class="hidden md:flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
+            <button class="tab-button px-4 py-2 rounded" data-tab="estudo">Estudo</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="simulados">Simulados</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="redacao">Redação</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="progresso">Progresso</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="edital">Edital</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="perfil">Meu Perfil</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="ranking">Ranking</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="desafios">Desafios</button>
         </nav>
     </div>
 
-    <!-- Modal para Resumos -->
-    <div id="summary-modal" class="modal-overlay">
-        <div class="modal-content relative">
-            <button id="close-summary-modal" class="absolute top-2 right-2 text-slate-500 hover:text-slate-800">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <h2 id="summary-modal-title" class="text-2xl font-bold text-blue-700 mb-4"></h2>
-            <div id="summary-modal-body" class="summary-content"></div>
+    <!-- Conteúdo principal do App (inicialmente oculto) -->
+    <div id="main-content" class="hidden">
+      
+      <!-- Aba de Estudo -->
+      <div id="tab-content-estudo" class="tab-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Coluna da Esquerda: Seleção e Prática -->
+            <div>
+              <div class="card">
+                <h2>Menu de Disciplinas</h2>
+                <label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label>
+                <select id="seletorDisciplina" class="w-full"></select>
+                <div id="listaAssuntos" class="mt-4 space-y-3"></div>
+              </div>
+    
+              <div class="card">
+                  <h2>Praticar Questões</h2>
+                   <div class="grid grid-cols-2 gap-4">
+                      <div>
+                          <label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label>
+                          <select id="nivelDificuldade" class="w-full">
+                            <option value="">Todas</option>
+                            <option value="facil">Fácil</option>
+                            <option value="medio">Médio</option>
+                            <option value="dificil">Difícil</option>
+                          </select>
+                      </div>
+                      <div>
+                          <label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label>
+                          <input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full">
+                      </div>
+                   </div>
+                   <button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button>
+              </div>
+    
+              <div class="card">
+                  <h2>Revisão Inteligente 🧠</h2>
+                  <label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label>
+                  <input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2">
+                  <button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button>
+              </div>
+    
+            </div>
+    
+            <!-- Coluna da Direita: Dashboards -->
+            <div>
+              <div class="card">
+                <h2>Metas e Prioridades do Ciclo</h2>
+                <div class="mb-4">
+                    <label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label>
+                    <input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full">
+                </div>
+                <div class="mb-4 border-t pt-4 mt-4">
+                    <label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label>
+                    <input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Prioridade das Disciplinas:</label>
+                    <p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p>
+                    <div id="lista-prioridades" class="border rounded p-2 space-y-2">
+                        <p class="text-slate-400">Carregando disciplinas...</p>
+                    </div>
+                </div>
+                <button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button>
+              </div>
+
+              <div class="card">
+                <h2>Progresso por Disciplina</h2>
+                <div id="progressoDisciplinas"></div>
+              </div>
+              
+              <div class="card">
+                  <h2>Revisões Agendadas</h2>
+                  <div id="listaRevisoes"></div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- Aba de Simulados -->
+      <div id="tab-content-simulados" class="tab-content hidden">
+          <div class="card">
+              <h2>Simulados de Provas Anteriores</h2>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div>
+                      <label for="filtro-banca" class="block font-semibold mb-1">Banca:</label>
+                      <select id="filtro-banca" class="w-full">
+                          <option value="">Todas</option>
+                          <option value="FGV">FGV</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label>
+                      <select id="filtro-cargo" class="w-full">
+                           <option value="">Todos</option>
+                           <option value="Assistente Legislativo">Assistente Legislativo</option>
+                      </select>
+                  </div>
+                   <div>
+                      <label for="filtro-ano" class="block font-semibold mb-1">Ano:</label>
+                      <select id="filtro-ano" class="w-full">
+                           <option value="">Todos</option>
+                           <option value="2018">2018</option>
+                      </select>
+                  </div>
+              </div>
+              <div id="lista-simulados" class="space-y-3">
+                  <p class="text-slate-500">Carregando simulados...</p>
+              </div>
+          </div>
+      </div>
+
+      <!-- Aba de Redação -->
+      <div id="tab-content-redacao" class="tab-content hidden">
+          <div class="card">
+              <h2>Banco de Temas de Redação - FGV</h2>
+              <div id="lista-temas-redacao" class="space-y-4"></div>
+          </div>
+      </div>
+      
+      <!-- Aba de Progresso -->
+      <div id="tab-content-progresso" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <div class="card">
+                    <h2>Evolução de Questões</h2>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4">
+                        <div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div>
+                        <div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div>
+                        <div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div>
+                        <div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div>
+                    </div>
+                    <canvas id="graficoEvolucaoPizza" height="200"></canvas>
+                </div>
+            </div>
+            <div>
+                <div class="card">
+                    <h2>Histórico de Desempenho</h2>
+                    <div class="flex flex-col sm:flex-row gap-4 items-center mb-4">
+                      <div class="w-full sm:w-auto flex-grow">
+                          <label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label>
+                          <select id="filtroPeriodoDesempenho" class="w-full">
+                            <option value="semana">Última semana</option>
+                            <option value="mes">Último mês</option>
+                            <option value="total" selected>Todo histórico</option>
+                          </select>
+                      </div>
+                      <div class="w-full sm:w-auto pt-0 sm:pt-7">
+                          <button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button>
+                      </div>
+                    </div>
+                    <div class="mb-6">
+                      <canvas id="graficoDesempenhoModos" height="200"></canvas>
+                    </div>
+                    <div>
+                      <canvas id="graficoLinhaModos" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
+      </div>
+
+      <!-- Aba de Edital -->
+      <div id="tab-content-edital" class="tab-content hidden">
+          <div class="card" id="card-edital-para-pdf">
+              <div class="flex justify-between items-center" id="edital-header">
+                <div>
+                    <h2>Edital Verticalizado</h2>
+                    <p class="text-lg font-semibold text-slate-700 -mt-4 mb-4">Concurso: Assembleia Legislativa de Rondônia (ALE-RO) - Base 2018</p>
+                </div>
+                <button id="btn-download-pdf" class="bg-blue-600 text-white font-semibold">Baixar PDF</button>
+              </div>
+              <div id="edital-verticalizado-container" class="mt-4 space-y-4"></div>
+          </div>
+      </div>
+      
+      <!-- Aba de Perfil -->
+       <div id="tab-content-perfil" class="tab-content hidden">
+          <div class="card">
+            <div class="flex justify-between items-center">
+                <h2>Meu Perfil</h2>
+                <button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button>
+            </div>
+            <div id="perfil-usuario" class="space-y-2 mt-4"></div>
+            
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3>
+                <div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div>
+            </div>
+             <div class="mt-6">
+                <h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏆 Hall da Fama</h3>
+                <div id="hall-da-fama" class="space-y-2"></div>
+            </div>
+             <div class="mt-6">
+                <h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3>
+                <div id="lista-redacoes-salvas" class="space-y-2"></div>
+            </div>
+          </div>
+      </div>
+
+      <!-- Aba de Ranking -->
+      <div id="tab-content-ranking" class="tab-content hidden">
+          <div class="card">
+              <h2>Ranking Geral</h2>
+              <div id="ranking-geral-container" class="space-y-2"></div>
+          </div>
+      </div>
+
+      <!-- Aba de Desafios -->
+      <div id="tab-content-desafios" class="tab-content hidden">
+          <div class="card">
+              <h2>Desafios 1x1</h2>
+              <div id="desafios-container" class="space-y-3"></div>
+          </div>
+      </div>
+
     </div>
+  </div>
 
-    <script type="module">
-        // Importações do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { 
-            getAuth, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged,
-            updateProfile
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { 
-            getFirestore, 
-            doc, 
-            setDoc, 
-            getDoc,
-            collection,
-            getDocs,
-            onSnapshot
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import {
-            getDatabase,
-            ref,
-            set,
-            onValue,
-            onDisconnect
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  <!-- Modal de Questões -->
+  <div id="modal-questoes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div class="flex justify-between items-center mb-4">
+            <h2 id="modal-titulo" class="m-0 p-0 border-0">Simulado</h2>
+            <button id="btn-fechar-modal" class="text-2xl font-bold">&times;</button>
+          </div>
+          <div id="modal-corpo"></div>
+      </div>
+  </div>
 
-        // Configuração do Firebase
-        const firebaseConfig = {
-          apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
-          authDomain: "gfconcursos-app.firebaseapp.com",
-          databaseURL: "https://gfconcursos-app-default-rtdb.firebaseio.com",
-          projectId: "gfconcursos-app",
-          storageBucket: "gfconcursos-app.firebasestorage.app",
-          messagingSenderId: "615439428502",
-          appId: "1:615439428502:web:b399549c3969e052098bb7"
-        };
+  <!-- Modal de Redação -->
+  <div id="modal-redacao" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[95vh] flex flex-col">
+          <div class="flex justify-between items-center mb-4">
+            <h2 id="modal-redacao-titulo" class="m-0 p-0 border-0">Escrever Redação</h2>
+            <button id="btn-fechar-modal-redacao" class="text-2xl font-bold">&times;</button>
+          </div>
+          <div class="overflow-y-auto flex-grow">
+              <div id="redacao-instrucoes" class="mb-4"></div>
+              <textarea id="redacao-texto-usuario" placeholder="Comece a escrever sua redação aqui..."></textarea>
+              <div id="correcao-container" class="mt-4 hidden"></div>
+          </div>
+          <div class="pt-4 border-t mt-4 flex justify-end gap-4">
+              <button id="btn-imprimir-redacao" class="bg-gray-500 text-white font-semibold hidden">Imprimir PDF</button>
+              <button id="btn-corrigir-redacao" class="bg-green-500 text-white font-semibold">Corrigir Redação</button>
+          </div>
+      </div>
+  </div>
 
-        // Inicialização dos serviços do Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const rtdb = getDatabase(app);
 
-        // --- INÍCIO DO SCRIPT PRINCIPAL DO APP ---
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+  <!-- SCRIPTS -->
+  <script type="module">
+    // =========================
+    // CONFIGURAÇÃO DO FIREBASE
+    // =========================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
+      authDomain: "gfconcursos-app.firebaseapp.com",
+      databaseURL: "https://gfconcursos-app-default-rtdb.firebaseio.com",
+      projectId: "gfconcursos-app",
+      storageBucket: "gfconcursos-app.firebasestorage.app",
+      messagingSenderId: "615439428502",
+      appId: "1:615439428502:web:b399549c3969e052098bb7"
+    };
 
-            const appState = {
-                subjects: [],
-                currentUser: null,
-                studyCycle: { goalSeconds: 0, completedSeconds: 0 },
-                reviews: [],
-                timer: {
-                    instance: null,
-                    startTime: 0,
-                    accumulated: 0,
-                    isRunning: false,
-                    currentItem: null,
-                },
-                selectedItem: null,
-                quiz: {
-                    active: false,
-                    subjectName: null,
-                    topicName: null,
-                    questions: [],
-                    currentIndex: 0,
-                    score: 0,
-                },
-                unsubscribeUserDoc: null, 
-                unsubscribeUsers: null
-            };
+    // Importações do Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-            // --- Elementos do DOM ---
-            const timerDisplay = document.getElementById('timer-display');
-            const startPauseBtn = document.getElementById('start-pause-btn');
-            const stopBtn = document.getElementById('stop-btn');
-            const newSubjectSelect = document.getElementById('new-subject-select');
-            const customSubjectInput = document.getElementById('custom-subject-input');
-            const addSubjectBtn = document.getElementById('add-subject-btn');
-            const addSubjectContainer = document.getElementById('add-subject-container');
-            const subjectsList = document.getElementById('subjects-list');
-            const currentSubjectDisplay = document.getElementById('current-subject-display');
-            const navItems = document.querySelectorAll('.nav-item');
-            const views = document.querySelectorAll('.view');
-            const quizContainer = document.getElementById('quiz-container');
-            const summaryModal = document.getElementById('summary-modal');
-            const summaryModalTitle = document.getElementById('summary-modal-title');
-            const summaryModalBody = document.getElementById('summary-modal-body');
-            const closeSummaryModalBtn = document.getElementById('close-summary-modal');
-            const headerSubtitle = document.getElementById('header-subtitle');
-            const cycleGoalInput = document.getElementById('cycle-goal-input');
-            const setCycleGoalBtn = document.getElementById('set-cycle-goal-btn');
-            const cycleProgress = document.getElementById('cycle-progress');
-            const cycleProgressText = document.getElementById('cycle-progress-text');
-            const cycleProgressBarInner = document.getElementById('cycle-progress-bar-inner');
-            const cycleProgressPercentage = document.getElementById('cycle-progress-percentage');
-            const cycleCompletedBox = document.getElementById('cycle-completed-box');
-            const reviewsList = document.getElementById('reviews-list');
-            const reviewBadge = document.getElementById('review-badge');
-            const profileContainer = document.getElementById('profile-container');
-            const authContainer = document.getElementById('auth-container');
-            const loginFormContainer = document.getElementById('login-form-container');
-            const registerFormContainer = document.getElementById('register-form-container');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const showRegisterBtn = document.getElementById('show-register-form');
-            const showLoginBtn = document.getElementById('show-login-form');
-            const logoutBtn = document.getElementById('logout-btn');
-            const welcomeMessage = document.getElementById('welcome-message');
-            const studyRoomList = document.getElementById('study-room-list');
+    // Variáveis globais
+    let graficoPizza = null;
+    let graficoDesempenhoModos = null;
+    let graficoLinhaModos = null;
+    let metaAcertosGlobal = 0;
+    const modalCorpo = document.getElementById('modal-corpo');
+    
+    // Variáveis de estado do Simulado
+    let questoesDoSimulado = [];
+    let questaoAtualIndex = 0;
+    let pontuacao = 0;
+    let temaRedacaoAtual = null;
+    
+    // =========================
+    // LÓGICA DE NAVEGAÇÃO POR ABAS
+    // =========================
+    const tabsContainer = document.getElementById('tabs-container');
+    const tabButtons = tabsContainer.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-            // --- Lógica de Persistência com Firestore ---
-            async function saveState() {
-                if (auth.currentUser) {
-                    const userDocRef = doc(db, 'users', auth.currentUser.uid);
-                    try {
-                        await setDoc(userDocRef, {
-                            subjects: appState.subjects,
-                            studyCycle: appState.studyCycle,
-                            reviews: appState.reviews,
-                            name: auth.currentUser.displayName,
-                            email: auth.currentUser.email,
-                        }, { merge: true });
-                    } catch (error) {
-                        console.error("Erro ao salvar dados no Firestore:", error);
-                    }
-                }
-            }
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+        document.getElementById('nav-menu').classList.toggle('hidden');
+    });
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.tab;
             
-            // --- Lógica de Autenticação e Presença ---
-            onAuthStateChanged(auth, async (user) => {
-                // Limpa listeners antigos para evitar duplicação
-                if (appState.unsubscribeUserDoc) appState.unsubscribeUserDoc();
-                if (appState.unsubscribeUsers) {
-                    if(appState.unsubscribeUsers.firestore) appState.unsubscribeUsers.firestore();
-                    if(appState.unsubscribeUsers.rtdb) appState.unsubscribeUsers.rtdb();
-                }
-
-                if (user) {
-                    appState.currentUser = user;
-                    const userFirestoreRef = doc(db, 'users', user.uid);
-                    const userStatusRef = ref(rtdb, 'status/' + user.uid);
-
-                    // Sistema de presença do Firebase Realtime Database
-                    const connectedRef = ref(rtdb, '.info/connected');
-                    onValue(connectedRef, (snap) => {
-                        if (snap.val() === true) {
-                            onDisconnect(userStatusRef).set(false);
-                            set(userStatusRef, true);
-                        }
-                    });
-
-                    appState.unsubscribeUserDoc = onSnapshot(userFirestoreRef, (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            appState.subjects = data.subjects || [];
-                            appState.studyCycle = data.studyCycle || { goalSeconds: 0, completedSeconds: 0 };
-                            appState.reviews = data.reviews || [];
-                            renderSubjects();
-                            renderStudyCycle();
-                            renderReviews();
-                            updateReviewNotification();
-                        }
-                    });
-                    updateUIForLogin();
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            tabContents.forEach(content => {
+                if (content.id === `tab-content-${tab}`) {
+                    content.classList.remove('hidden');
                 } else {
-                    appState.currentUser = null;
-                    appState.subjects = [];
-                    appState.studyCycle = { goalSeconds: 0, completedSeconds: 0 };
-                    appState.reviews = [];
-                    appState.selectedItem = null;
-                    if(appState.timer.isRunning) stopTimer(false); // Para o timer sem salvar
-                    updateUIForLogout();
-                }
-                updateTimerControls();
-            });
-
-            function updateUIForLogin() {
-                profileContainer.classList.remove('hidden');
-                authContainer.classList.add('hidden');
-                welcomeMessage.textContent = `Olá, ${auth.currentUser.displayName.split(' ')[0]}!`;
-                headerSubtitle.textContent = `Bem-vindo(a) de volta!`;
-                switchView('cronometro');
-            }
-            
-            function updateUIForLogout() {
-                profileContainer.classList.add('hidden');
-                authContainer.classList.remove('hidden');
-                headerSubtitle.textContent = 'Seu parceiro rumo à aprovação';
-                renderSubjects();
-                renderStudyCycle();
-                updateReviewNotification();
-            }
-
-            // --- Funções Auxiliares ---
-            function formatTime(seconds) {
-                const h = Math.floor(seconds / 3600);
-                const m = Math.floor((seconds % 3600) / 60);
-                if (h > 0) return `${h.toString()}h ${m.toString().padStart(2, '0')}m`;
-                return `${m.toString()}m ${Math.floor(seconds % 60).toString().padStart(2, '0')}s`;
-            }
-            
-            function formatTimeHMS(seconds) {
-                const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-                const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-                const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-                return `${h}:${m}:${s}`;
-            }
-
-            // --- Funções Principais do App ---
-            
-            function renderSubjects() {
-                subjectsList.innerHTML = '';
-                if (!appState.currentUser) {
-                     subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Faça login para ver e adicionar suas disciplinas.</li>`;
-                     addSubjectContainer.classList.add('hidden');
-                     document.getElementById('study-cycle-container').classList.add('hidden');
-                     return;
-                }
-                addSubjectContainer.classList.remove('hidden');
-                document.getElementById('study-cycle-container').classList.remove('hidden');
-                if (appState.subjects.length === 0) {
-                    subjectsList.innerHTML = `<li class="p-4 text-center text-slate-500">Adicione sua primeira disciplina.</li>`;
-                    return;
-                }
-                appState.subjects.forEach(subject => {
-                    const isSelectedSubject = appState.selectedItem?.type === 'subject' && appState.selectedItem.subjectId === subject.id;
-                    const li = document.createElement('li');
-                    li.className = 'subject-item';
-                    li.dataset.subjectId = subject.id;
-                    li.dataset.subjectName = subject.name;
-                    const topicsHTML = subject.topics.map(topic => {
-                        const isSelectedTopic = appState.selectedItem?.type === 'topic' && appState.selectedItem.topicId === topic.id;
-                        return `
-                            <li class="flex justify-between items-center p-3 transition ${isSelectedTopic ? 'bg-blue-50' : 'hover:bg-slate-50'}">
-                                <div class="cursor-pointer flex-grow" data-select-topic-id="${topic.id}" data-parent-id="${subject.id}">
-                                    <span class="font-medium text-sm">${topic.name}</span>
-                                    <span class="block text-xs text-slate-500">Total: ${formatTimeHMS(topic.totalTime)}</span>
-                                </div>
-                                <div class="flex items-center space-x-1 pl-1">
-                                    <button data-practice-topic-id="${topic.id}" data-parent-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full flex items-center text-xs font-semibold"><i data-lucide="file-question" class="w-3 h-3 mr-1"></i> Praticar</button>
-                                    <button data-delete-topic-id="${topic.id}" data-parent-id="${subject.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
-                                </div>
-                            </li>`;
-                    }).join('');
-                    li.innerHTML = `
-                        <div class="p-4 flex justify-between items-center transition cursor-pointer ${isSelectedSubject ? 'bg-blue-100' : 'hover:bg-slate-50'}">
-                            <div class="flex-grow" data-select-subject-id="${subject.id}" data-toggle-topics-id="${subject.id}">
-                                <span class="font-semibold">${subject.name}</span>
-                                <span class="block text-sm text-slate-500">Total: ${formatTimeHMS(subject.totalTime)}</span>
-                            </div>
-                            <div class="flex items-center space-x-2 pl-2">
-                               <button data-summary-subject-name="${subject.name}" class="text-indigo-600 hover:text-indigo-800 p-1 rounded-full" title="Ver Resumo"><i data-lucide="book-open" class="w-4 h-4"></i></button>
-                               <button data-practice-subject-id="${subject.id}" class="text-blue-600 hover:text-blue-800 p-1 rounded-full" title="Praticar Tudo"><i data-lucide="library" class="w-4 h-4"></i></button>
-                               <button data-delete-subject-id="${subject.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full" title="Excluir Disciplina"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                               <i data-lucide="chevron-down" class="w-5 h-5 transition-transform chevron" data-toggle-topics-id="${subject.id}"></i>
-                            </div>
-                        </div>
-                        <div class="topics-container pl-4 border-l-2 border-slate-200 ml-4">
-                            <ul class="topic-list divide-y divide-slate-100">${topicsHTML}</ul>
-                            <div class="p-2 flex gap-2">
-                                <input type="text" data-topic-input-id="${subject.id}" placeholder="Novo assunto" class="flex-grow w-full px-2 py-1 border border-slate-300 rounded-md text-sm">
-                                <button data-add-topic-id="${subject.id}" class="bg-slate-600 text-white px-3 py-1 text-sm rounded-md hover:bg-slate-700">Add</button>
-                            </div>
-                        </div>`;
-                    subjectsList.appendChild(li);
-                });
-                lucide.createIcons();
-                updateTimerControls();
-            }
-
-            function addSubject() {
-                if (!appState.currentUser) return alert("Você precisa estar logado para adicionar disciplinas.");
-                const name = customSubjectInput.value.trim() || newSubjectSelect.value;
-                if (name && !appState.subjects.some(s => s.name === name)) {
-                    let topics = [];
-                    if (!customSubjectInput.value.trim() && newSubjectSelect.value) {
-                        const topicsData = questionsDB[normalizeString(newSubjectSelect.value)];
-                        if (topicsData) {
-                            topics = [...new Set(topicsData.map(t => t.topic))].map(topicName => ({ id: Date.now() + Math.random(), name: topicName, totalTime: 0 }));
-                        }
-                    }
-                    appState.subjects.push({ id: Date.now(), name, totalTime: 0, topics });
-                    customSubjectInput.value = '';
-                    newSubjectSelect.value = '';
-                    saveState(); 
-                } else if (name) {
-                    alert('Essa disciplina já foi adicionada.');
-                }
-            }
-
-            function addTopic(subjectId, topicName) {
-                const subject = appState.subjects.find(s => s.id === subjectId);
-                if (subject && topicName) {
-                    subject.topics.push({ id: Date.now(), name: topicName, totalTime: 0 });
-                    saveState();
-                }
-            }
-            
-            function deleteSubject(id) {
-                if (appState.timer.isRunning && appState.timer.currentItem?.subjectId === id) stopTimer();
-                if (appState.selectedItem?.subjectId === id) appState.selectedItem = null;
-                appState.subjects = appState.subjects.filter(s => s.id !== id);
-                appState.reviews = appState.reviews.filter(r => r.subjectId !== id);
-                saveState();
-            }
-
-            function deleteTopic(subjectId, topicId) {
-                if (appState.timer.isRunning && appState.timer.currentItem?.topicId === topicId) stopTimer();
-                if (appState.selectedItem?.topicId === topicId) appState.selectedItem = null;
-                const subject = appState.subjects.find(s => s.id === subjectId);
-                if(subject) {
-                    subject.topics = subject.topics.filter(t => t.id !== topicId);
-                    appState.reviews = appState.reviews.filter(r => r.topicId !== topicId);
-                    saveState();
-                }
-            }
-            
-            function selectItem(type, subjectId, topicId = null) {
-                if (!appState.currentUser) return alert("Faça login para selecionar uma disciplina.");
-                if (appState.timer.isRunning) {
-                    const current = appState.timer.currentItem;
-                    if(current.type !== type || current.subjectId !== subjectId || current.topicId !== topicId) {
-                        return alert('Pare o cronômetro atual antes de selecionar outro item.');
-                    }
-                }
-                appState.selectedItem = { type, subjectId, topicId };
-                updateCurrentSubjectDisplay();
-                renderSubjects();
-            }
-            
-            function updateCurrentSubjectDisplay() {
-                 if (!appState.selectedItem) {
-                    currentSubjectDisplay.innerHTML = 'Nenhuma disciplina selecionada';
-                    return;
-                }
-                const { type, subjectId, topicId } = appState.selectedItem;
-                const subject = appState.subjects.find(s => s.id === subjectId);
-                if (!subject) {
-                    appState.selectedItem = null;
-                    return updateCurrentSubjectDisplay();
-                }
-                if (type === 'topic') {
-                    const topic = subject.topics.find(t => t.id === topicId);
-                    if (topic) {
-                        currentSubjectDisplay.innerHTML = `Estudando: <span class="font-bold">${subject.name}</span><br/><span class="text-sm">${topic.name}</span>`;
-                    } else {
-                        appState.selectedItem = null;
-                        updateCurrentSubjectDisplay();
-                    }
-                } else {
-                    currentSubjectDisplay.innerHTML = `Estudando: <span class="font-bold">${subject.name}</span>`;
-                }
-            }
-
-            function updateTimerControls() {
-                startPauseBtn.disabled = !(appState.selectedItem && appState.currentUser);
-                stopBtn.disabled = !appState.timer.isRunning && appState.timer.accumulated === 0;
-            }
-            
-            function updateDisplay() {
-                const elapsed = (Date.now() - appState.timer.startTime) / 1000;
-                timerDisplay.textContent = formatTimeHMS(appState.timer.accumulated + elapsed);
-            }
-
-            function startTimer() {
-                if (appState.timer.isRunning || !appState.selectedItem) return;
-                appState.timer.currentItem = { ...appState.selectedItem };
-                appState.timer.isRunning = true;
-                appState.timer.startTime = Date.now();
-                appState.timer.instance = setInterval(updateDisplay, 1000);
-                startPauseBtn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 mr-2"></i><span>Pausar</span>`;
-                lucide.createIcons();
-                stopBtn.disabled = false;
-            }
-
-            function pauseTimer() {
-                if (!appState.timer.isRunning) return;
-                appState.timer.isRunning = false;
-                clearInterval(appState.timer.instance);
-                appState.timer.accumulated += (Date.now() - appState.timer.startTime) / 1000;
-                startPauseBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 mr-2"></i><span>Continuar</span>`;
-                lucide.createIcons();
-            }
-            
-            function stopTimer(shouldSave = true) {
-                if (!appState.timer.currentItem) return;
-                let finalTime = appState.timer.accumulated;
-                if(appState.timer.isRunning) finalTime += (Date.now() - appState.timer.startTime) / 1000;
-                
-                if (shouldSave) {
-                    const { type, subjectId, topicId } = appState.timer.currentItem;
-                    const subject = appState.subjects.find(s => s.id === subjectId);
-                    if (subject) {
-                        subject.totalTime += finalTime;
-                        appState.studyCycle.completedSeconds += finalTime;
-                        if (type === 'topic') {
-                            const topic = subject.topics.find(t => t.id === topicId);
-                            if (topic) {
-                               topic.totalTime += finalTime;
-                               scheduleReviews(subject, topic);
-                            }
-                        }
-                    }
-                    saveState();
-                }
-                
-                appState.timer.isRunning = false;
-                clearInterval(appState.timer.instance);
-                appState.timer.accumulated = 0;
-                appState.timer.currentItem = null;
-                timerDisplay.textContent = formatTimeHMS(0);
-                startPauseBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 mr-2"></i><span>Iniciar</span>`;
-                lucide.createIcons();
-            }
-            
-            function setStudyCycleGoal() {
-                const hours = parseFloat(cycleGoalInput.value);
-                if (hours && hours > 0) {
-                    appState.studyCycle.goalSeconds = hours * 3600;
-                    appState.studyCycle.completedSeconds = 0;
-                    saveState();
-                } else {
-                    alert("Por favor, insira um número de horas válido.");
-                }
-            }
-
-            function renderStudyCycle() {
-                if (!appState.currentUser || !appState.studyCycle.goalSeconds) {
-                    cycleProgress.classList.add('hidden');
-                    return;
-                }
-                cycleProgress.classList.remove('hidden');
-                const { goalSeconds, completedSeconds } = appState.studyCycle;
-                const percentage = Math.min(100, (completedSeconds / goalSeconds) * 100);
-                cycleProgressBarInner.style.width = `${percentage}%`;
-                cycleProgressPercentage.textContent = `${Math.floor(percentage)}%`;
-                cycleProgressText.textContent = `${formatTime(completedSeconds)} / ${(goalSeconds / 3600).toFixed(1)}h`;
-                cycleCompletedBox.classList.toggle('hidden', percentage < 100);
-            }
-
-            function scheduleReviews(subject, topic) {
-                const today = new Date().toISOString().split('T')[0];
-                if (!appState.reviews.some(r => r.topicId === topic.id && r.studyDate === today)) {
-                    [1, 7, 21, 30].forEach(days => {
-                        const dueDate = new Date();
-                        dueDate.setDate(dueDate.getDate() + days);
-                        appState.reviews.push({
-                            id: Date.now() + Math.random(),
-                            subjectId: subject.id,
-                            topicId: topic.id,
-                            subjectName: subject.name,
-                            topicName: topic.name,
-                            studyDate: today,
-                            days,
-                            dueDate: dueDate.toISOString().split('T')[0],
-                            isCompleted: false
-                        });
-                    });
-                }
-            }
-            
-            function renderReviews() {
-                if (!appState.currentUser) return reviewsList.innerHTML = `<li class="p-4 text-center text-slate-500">Faça login para ver suas revisões.</li>`;
-                const pendingReviews = appState.reviews.filter(r => !r.isCompleted).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-                if (pendingReviews.length === 0) return reviewsList.innerHTML = `<div class="p-4 text-center bg-green-100 text-green-700 rounded-lg"><p class="font-semibold">Nenhuma revisão pendente!</p></div>`;
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                reviewsList.innerHTML = pendingReviews.map(review => {
-                    const dueDate = new Date(review.dueDate + 'T00:00:00');
-                    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                    let dateInfo = diffDays < 0 ? `<span class="font-bold text-red-600">Atrasada ${Math.abs(diffDays)}d</span>` : diffDays === 0 ? `<span class="font-bold text-yellow-600">Para Hoje</span>` : `<span>Em ${diffDays}d</span>`;
-                    return `
-                        <div class="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center">
-                            <div>
-                                <p class="font-semibold text-slate-800">${review.topicName}</p>
-                                <p class="text-sm text-slate-500">${review.subjectName} - Rev. de ${review.days} dias</p>
-                                <p class="text-xs text-slate-400 mt-1">Vence em: ${dueDate.toLocaleDateString('pt-BR')} (${dateInfo})</p>
-                            </div>
-                            <button data-review-id="${review.id}" class="complete-review-btn bg-green-500 text-white px-3 py-1 rounded-md font-semibold text-sm hover:bg-green-600 transition">Concluir</button>
-                        </div>`;
-                }).join('');
-            }
-
-            function completeReview(reviewId) {
-                // Para simplificar a UX, creditamos um tempo fixo de 15 minutos por revisão.
-                const minutes = 15; 
-                const review = appState.reviews.find(r => r.id === reviewId);
-                if (review) {
-                    review.isCompleted = true;
-                    appState.studyCycle.completedSeconds += minutes * 60;
-                    saveState();
-                }
-            }
-            
-            function updateReviewNotification() {
-                const pendingCount = appState.currentUser ? appState.reviews.filter(r => !r.isCompleted).length : 0;
-                reviewBadge.classList.toggle('hidden', pendingCount === 0);
-                if (pendingCount > 0) {
-                    reviewBadge.textContent = pendingCount;
-                }
-            }
-
-            function switchView(viewName) {
-                views.forEach(view => view.classList.toggle('active', view.id === `view-${viewName}`));
-                navItems.forEach(item => item.classList.toggle('active', item.dataset.view === viewName));
-                if (viewName === 'salas') renderStudyRoom();
-                if (viewName === 'ranking') renderRanking();
-            }
-
-            function renderStudyRoom() {
-                if (appState.unsubscribeUsers) {
-                    if(appState.unsubscribeUsers.firestore) appState.unsubscribeUsers.firestore();
-                    if(appState.unsubscribeUsers.rtdb) appState.unsubscribeUsers.rtdb();
-                }
-
-                const usersRef = collection(db, "users");
-                const statusRef = ref(rtdb, 'status');
-
-                let usersData = {};
-                let statusData = {};
-
-                const combineAndRender = () => {
-                    const combinedUsers = Object.keys(usersData).map(uid => ({
-                        id: uid,
-                        ...usersData[uid],
-                        isOnline: statusData[uid] === true
-                    }));
-                    
-                    studyRoomList.innerHTML = combinedUsers.map(user => {
-                        const statusClass = user.isOnline ? 'text-green-600' : 'text-slate-400';
-                        const pulseClass = user.isOnline ? 'animate-pulse' : '';
-                        const statusText = user.isOnline ? 'Online' : 'Offline';
-                        return `
-                        <div class="bg-white p-3 rounded-lg flex items-center justify-between shadow-sm">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 mr-3">${user.name ? user.name.charAt(0).toUpperCase() : '?'}</div>
-                                <div>
-                                    <p class="font-semibold">${user.name || 'Usuário'}</p>
-                                    <p class="text-sm text-slate-500">${user.email}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center ${statusClass}">
-                                <div class="w-2 h-2 bg-current rounded-full mr-2 ${pulseClass}"></div>
-                                <span class="text-sm font-medium">${statusText}</span>
-                            </div>
-                        </div>`;
-                    }).join('');
-                };
-
-                const firestoreUnsubscribe = onSnapshot(usersRef, (snapshot) => {
-                    snapshot.docs.forEach(doc => { usersData[doc.id] = doc.data(); });
-                    combineAndRender();
-                });
-
-                const rtdbUnsubscribe = onValue(statusRef, (snapshot) => {
-                    statusData = snapshot.val() || {};
-                    combineAndRender();
-                });
-                
-                appState.unsubscribeUsers = { firestore: firestoreUnsubscribe, rtdb: rtdbUnsubscribe };
-            }
-
-
-            async function renderRanking() {
-                const usersRef = collection(db, "users");
-                const querySnapshot = await getDocs(usersRef);
-                const rankingData = [];
-                querySnapshot.forEach((doc) => {
-                    const userData = doc.data();
-                    rankingData.push({
-                        name: userData.name || 'Usuário',
-                        email: userData.email,
-                        totalTime: userData.studyCycle?.completedSeconds || 0
-                    });
-                });
-                rankingData.sort((a, b) => b.totalTime - a.totalTime);
-                const rankingList = document.getElementById('ranking-list');
-                if (rankingData.length === 0) return rankingList.innerHTML = `<li class="p-4 text-center text-slate-500">Nenhum usuário no ranking.</li>`;
-                rankingList.innerHTML = rankingData.map((user, index) => {
-                    let rankDisplay = index < 3 ? ['🥇','🥈','🥉'][index] : `${index + 1}`;
-                    const isCurrentUser = appState.currentUser && appState.currentUser.email === user.email;
-                    return `
-                        <li class="p-4 flex items-center ${isCurrentUser ? 'bg-blue-50' : ''}">
-                            <span class="text-xl font-bold w-10 text-center">${rankDisplay}</span>
-                            <p class="flex-grow font-semibold">${user.name}</p>
-                            <p class="text-slate-600 font-medium">${formatTime(user.totalTime)}</p>
-                        </li>`;
-                }).join('');
-            }
-             
-            // --- Resumos e Questões (Lógica Inalterada) ---
-            const summariesDB = {
-                'lingua portuguesa': `<h3>Visão Geral da Banca FGV</h3><p>Disciplina de grande peso, que valoriza a interpretação e a aplicação prática da gramática. A banca testa o candidato 'cansado', com textos longos e complexos para verificar a atenção e a resistência. O foco é entender como a gramática constrói o sentido do texto.</p><h4>Interpretação de Textos</h4><p><strong>Foco:</strong> Compreender informações centrais, inferir sentidos, identificar a tese do autor e reconhecer a tipologia textual. <strong>Dica:</strong> Primeiro, leia as perguntas para saber o que procurar no texto. Desconfie de alternativas que generalizam ('sempre', 'nunca') ou extrapolam o que foi dito.</p><h4>Concordância Verbal e Nominal</h4><p><strong>Foco:</strong> Relação entre sujeito e verbo, e substantivo e seus determinantes. Cuidado com casos de sujeito composto (especialmente posposto ao verbo), sujeito oracional e verbos impessoais como 'haver' e 'fazer' indicando tempo.</p><h4>Regência Verbal e Nominal</h4><p><strong>Foco:</strong> Entender a preposição exigida. Verbos que mudam de sentido com a mudança de regência (aspirar, assistir, visar) são sempre cobrados. Crie uma lista com os mais traiçoeiros.</p><h4>Pontuação</h4><p><strong>Foco:</strong> Uso da vírgula é o principal. Estude como isolar orações adjetivas explicativas, adjuntos adverbiais deslocados, apostos e vocativos. A FGV avalia a pontuação como elemento que altera a estrutura e o sentido.</p>`,
-                'raciocinio logico matematico': `<h3>Visão Geral da Banca FGV</h3><p>Mais do que decorar fórmulas, a FGV exige que você traduza enunciados em português para a linguagem lógica formal. A interpretação correta do problema é 80% da questão.</p><h4>Estruturas Lógicas e Lógica Proposicional</h4><p><strong>Foco:</strong> Tabela-verdade, conectivos, negações e equivalências. <strong>Dica:</strong> A equivalência da condicional ('Se P, então Q' ⇔ 'Se não Q, então não P' ⇔ 'Não P ou Q') é o item mais cobrado na história da banca. Domine-a!</p><h4>Lógica de Argumentação e Diagramas Lógicos</h4><p><strong>Foco:</strong> Validade de argumentos e uso de diagramas de Venn (diagramas lógicos) para resolver problemas com quantificadores como 'todo', 'algum' e 'nenhum'. Treine visualizar os conjuntos e suas intersecções.</p><h4>Análise Combinatória e Probabilidade</h4><p><strong>Foco:</strong> Saber quando usar arranjo, combinação ou permutação. A chave é se perguntar: 'A ordem dos elementos importa?'. Em probabilidade, o cálculo de eventos simples (casos favoráveis / casos possíveis) é o mais comum.</p>`,
-                'historia e geografia de rondonia': `<h3>Visão Geral</h3><p>Exige conhecimento aprofundado sobre a formação e as características do estado. A banca pode usar fotos, mapas antigos ou trechos de jornais para contextualizar as questões.</p><h4>Processo de Colonização e Ciclos Econômicos</h4><p><strong>Foco:</strong> Entender os ciclos da borracha (e o papel dos 'soldados da borracha'), da cassiterita e da agropecuária. A construção da Estrada de Ferro Madeira-Mamoré é um ponto central e deve ser estudada em detalhes, incluindo suas motivações e consequências.</p><h4>Criação do Estado</h4><p><strong>Foco:</strong> Memorize o processo: criação do Território Federal do Guaporé (1943), mudança para Território de Rondônia (1956) e elevação a Estado (1981). A FGV pode contextualizar com os presidentes da época (Vargas, JK, Figueiredo).</p><h4>Aspectos Físicos</h4><p><strong>Foco:</strong> Conhecer o relevo (predomínio de planícies), a importância dos rios da bacia amazônica (Madeira, Guaporé, Mamoré) e as características do clima equatorial (quente e úmido).</p>`,
-                'direito constitucional': `<h3>Visão Geral da Banca FGV</h3><p>A banca foca na literalidade da Constituição, mas também cobra a interpretação consolidada do STF (jurisprudência sumulada). Não basta ler o artigo, é preciso entender como ele é aplicado.</p><h4>Direitos e Garantias Fundamentais (Art. 5º)</h4><p><strong>Foco:</strong> Memorização dos incisos. <strong>Dica:</strong> Agrupe os incisos por tema (direitos individuais, de associação, remédios constitucionais) para facilitar. Entenda a aplicabilidade e os requisitos de cada remédio (Habeas Corpus, Mandado de Segurança, etc.).</p><h4>Administração Pública (Art. 37 a 41)</h4><p><strong>Foco:</strong> Princípios da Administração (L.I.M.P.E.), regras de concurso, estabilidade e acumulação de cargos. A FGV adora criar casos práticos sobre acumulação.</p><h4>Organização do Estado</h4><p><strong>Foco:</strong> Repartição de competências (Arts. 21 a 24). É um tema complexo. <strong>Dica:</strong> Crie uma tabela para visualizar o que é competência privativa da União, concorrente entre União e Estados, e comum a todos.</p>`,
-                'direito administrativo': `<h3>Visão Geral da Banca FGV</h3><p>Matéria extremamente relevante. A FGV ama criar 'historinhas' e casos práticos para testar a aplicação da teoria. Ao estudar, imagine-se como um servidor público resolvendo o problema.</p><h4>Atos Administrativos</h4><p><strong>Foco:</strong> Atributos (presunção de legitimidade, autoexecutoriedade, tipicidade, imperatividade) e os elementos de validade. <strong>Dica:</strong> Decore o mnemônico <strong>COFIFOMOB</strong> (Competência, Finalidade, Forma, Motivo, Objeto).</p><h4>Poderes da Administração</h4><p><strong>Foco:</strong> Diferenciar os poderes, especialmente o poder de polícia (suas fases e limites) do poder disciplinar e hierárquico. Entenda a diferença entre uso e abuso de poder.</p><h4>Licitações e Contratos (Lei 14.133/2021)</h4><p><strong>Foco:</strong> Conhecer as novas modalidades (diálogo competitivo), os princípios e os critérios de julgamento. Não precisa decorar todos os prazos, mas entenda o fluxo geral do processo licitatório.</p><h4>Improbidade Administrativa</h4><p><strong>Foco:</strong> As atualizações recentes são cruciais. A principal mudança é a exigência de <strong>dolo específico</strong> para a caracterização do ato ímprobo. Atos culposos não são mais punidos por esta lei.</p>`,
-                'legislacao especifica': `<h3>Visão Geral</h3><p>Aqui, o conhecimento literal das normas é crucial. A banca costuma trocar uma única palavra para tornar a alternativa incorreta. O método de estudo é a repetição.</p><h4>Constituição do Estado de Rondônia</h4><p><strong>Foco:</strong> Dê atenção especial às competências da Assembleia Legislativa (Art. 34) e do Governador do Estado (Art. 65). Leia também os artigos sobre os servidores públicos estaduais.</p><h4>Regimento Interno da ALE-RO</h4><p><strong>Foco:</strong> É um conteúdo denso. Priorize a composição da Mesa Diretora, o funcionamento das sessões (tipos, quóruns) e o processo de tramitação das proposições (leis, resoluções, etc.). <strong>Dica:</strong> Crie flashcards com os prazos e números importantes (quórum de votação, número de deputados nas comissões, etc.).</p>`
-            };
-            
-            function showSummaryModal(subjectName) {
-                const summaryHTML = summariesDB[normalizeString(subjectName)];
-                if (summaryHTML) {
-                    summaryModalTitle.textContent = subjectName;
-                    summaryModalBody.innerHTML = summaryHTML;
-                    summaryModal.classList.add('is-open');
-                } else {
-                    alert('Nenhum resumo encontrado para esta disciplina.');
-                }
-            }
-
-            function hideSummaryModal() {
-                summaryModal.classList.remove('is-open');
-            }
-
-            const questionsDB = {
-                'lingua portuguesa': [ { topic: 'Interpretação de Textos', questions: [ { banca: 'FGV', year: '2023', prompt: 'Considerando o trecho "A persistência é o caminho do êxito", de Charles Chaplin, julgue a afirmativa.', statement: 'O autor sugere que o sucesso é um evento instantâneo, não dependendo de esforço contínuo.', answer: 'errado' }, { banca: 'FGV', year: '2022', prompt: 'Em "O homem, que é um ser racional, muitas vezes age por impulso."', statement: 'A informação de que o homem é um ser racional é apresentada como uma verdade universal e indispensável para o sentido da frase.', answer: 'errado' }, { banca: 'FGV', year: '2024', prompt: 'No fragmento "Embora chovesse, fomos à praia."', statement: 'A oração "Embora chovesse" expressa uma ideia de concessão em relação à oração principal.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Texto: "A tecnologia aproxima os distantes e distancia os próximos."', statement: 'O texto constrói seu sentido a partir de uma relação de paradoxo.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'A partir da leitura de um editorial de jornal que critica a burocracia estatal.', statement: 'É correto inferir que a principal função desse gênero textual é apresentar uma opinião sobre um tema relevante.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'No ditado popular "Água mole em pedra dura, tanto bate até que fura".', statement: 'A ideia central do provérbio é a valorização da insistência para superar obstáculos.', answer: 'certo' }, ]}, { topic: 'Concordância Verbal e Nominal', questions: [ { banca: 'FGV', year: '2023', prompt: 'Analise a concordância na frase a seguir.', statement: 'Na frase "Faz muitos anos que não vejo meus amigos", o verbo "Fazer" está empregado corretamente, indicando tempo decorrido.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Julgue a correção da frase.', statement: 'A frase "Houveram muitos problemas na reunião" está gramaticalmente correta.', answer: 'errado' }, { banca: 'FGV', year: '2024', prompt: 'Julgue a concordância na expressão "meio-dia e meia".', statement: 'A palavra "meia" concorda com a palavra "hora", que está subentendida.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre a frase "A maioria dos concurseiros sonha com a aprovação".', statement: 'O verbo "sonha" poderia ser flexionado no plural ("sonham"), concordando com "concurseiros", sem que houvesse erro gramatical.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Julgue a frase "É proibido entrada de estranhos".', statement: 'A concordância está correta, pois o sujeito "entrada" não está determinado por artigo.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Analise a frase "Segue anexo os documentos solicitados".', statement: 'A concordância nominal está incorreta; o correto seria "Seguem anexos os documentos solicitados".', answer: 'certo' }, ]}, { topic: 'Regência Verbal e Nominal', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a regência do verbo "assistir" na frase "O paciente assistiu o médico durante o procedimento".', statement: 'O verbo "assistir", no sentido de "ajudar", é transitivo direto, portanto a regência está correta.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Analise a frase "Eu aspiro o cargo de Técnico Legislativo".', statement: 'O verbo "aspirar", no sentido de "almejar", exige a preposição "a", sendo a forma correta: "Eu aspiro ao cargo...".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Julgue a regência do verbo "implicar".', statement: 'Na frase "Estudar implica aprovação", o verbo "implicar" é transitivo direto, não exigindo a preposição "em".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Analise a frase "O filme que assisti ontem foi excelente".', statement: 'A regência do verbo "assistir" (no sentido de ver) está incorreta, pois ele exige a preposição "a". O correto seria "ao qual assisti".', answer: 'certo' }, ]}, { topic: 'Crase', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre o uso do acento indicativo de crase, julgue o item.', statement: 'Na frase "O pesquisador se referiu àquelas teorias ultrapassadas", o uso da crase é facultativo.', answer: 'errado' }, { banca: 'FGV', year: '2023', prompt: 'Julgue a frase "Ele foi à França".', statement: 'O uso do acento indicativo de crase é obrigatório, pois o nome do país "França" admite o artigo "a".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Analise a frase "A reunião começará às 14h".', statement: 'A crase é obrigatória antes de locuções adverbiais femininas que indicam hora.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Na frase "Ele escreve a lápis".', statement: 'O uso da crase antes de "lápis" é incorreto, pois "lápis" é uma palavra masculina.', answer: 'certo' }, ]}, { topic: 'Pontuação', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue o uso da vírgula na seguinte frase: "O candidato, um jovem muito esforçado, passou no concurso."', statement: 'A vírgula foi utilizada para isolar um aposto explicativo.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre a frase "Quando o edital foi publicado, todos começaram a estudar."', statement: 'A vírgula é utilizada para separar a oração subordinada adverbial deslocada da oração principal.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Na frase "O diretor solicitou aos servidores: dedicação, empenho e pontualidade."', statement: 'Os dois-pontos foram usados para introduzir uma enumeração.', answer: 'certo' }, ]}, { topic: 'Morfologia', questions: [ { banca: 'FGV', year: '2024', prompt: 'Na frase "O concurseiro que estuda, passa", analise a função da palavra "que".', statement: 'A palavra "que" é um pronome relativo, retomando o termo "concurseiro".', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Em "Estuda-se muito para concursos", analise a partícula "se".', statement: 'A partícula "se" atua como índice de indeterminação do sujeito.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Na frase "Se você estudar, será aprovado".', statement: 'A palavra "Se" é uma conjunção subordinativa condicional.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Em "O edital é bastante claro".', statement: 'A palavra "bastante" funciona como um advérbio de intensidade, modificando o adjetivo "claro".', answer: 'certo' }, ]}, { topic: 'Semântica', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a relação de sentido entre as palavras "eminente" e "iminente".', statement: 'As palavras são parônimas, ou seja, possuem grafia e pronúncia parecidas, mas significados diferentes.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Na frase "O servidor deferiu o pedido".', statement: 'O verbo "deferir" é sinônimo de "conceder" ou "atender".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Analise a frase "Ele acendeu a luz" e "Ele ascendeu na carreira".', statement: 'Os verbos "acender" e "ascender" são homônimos, pois possuem a mesma pronúncia, mas grafia e significados diferentes.', answer: 'certo' }, ]}, { topic: 'Figuras de Linguagem', questions: [ { banca: 'FGV', year: '2023', prompt: 'Na expressão "O plenário explodiu em aplausos".', statement: 'Ocorre uma hipérbole, que é a figura do exagero.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Na frase "Aquele servidor é uma raposa".', statement: 'Há uma metáfora, que consiste em uma comparação implícita.', answer: 'certo' }, ]} ],
-                'raciocinio logico matematico': [ { topic: 'Estruturas Lógicas', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue a equivalência lógica.', statement: 'A proposição "Se chove, então o chão molha" é logicamente equivalente a "Se o chão não molha, então não chove".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Considere a proposição "João é servidor e Maria não é advogada".', statement: 'A negação dessa proposição é "João não é servidor ou Maria é advogada".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A proposição "O servidor é eficiente ou não é promovido".', statement: 'Sua equivalência lógica, utilizando a regra da condicional, é "Se o servidor não é eficiente, então não é promovido".', answer: 'certo' }, ]}, { topic: 'Lógica de Argumentação', questions: [ { banca: 'FGV', year: '2023', prompt: 'Considere o argumento: "Todos os rondonienses são brasileiros. João é rondoniense. Logo, João é brasileiro."', statement: 'Este argumento é um exemplo de silogismo válido.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Premissas: 1. Se o processo é urgente, o analista trabalha. 2. O analista não trabalha.', statement: 'A conclusão lógica que se pode extrair é que "o processo não é urgente".', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Premissas: 1. Ou Ana estuda, ou Bia viaja. 2. Ana não estuda.', statement: 'A conclusão válida do argumento é que "Bia viaja".', answer: 'certo' }, ]}, { topic: 'Diagramas Lógicos', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a representação por diagramas de Venn.', statement: 'A intersecção dos conjuntos "Servidores Públicos" e "Advogados" representa os servidores públicos que também são advogados.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sabe-se que "Algum servidor é feliz" e "Todo servidor é competente".', statement: 'A partir dessas premissas, é correto concluir que "Algum competente é feliz".', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Em uma repartição, todo analista é formado em Direito. Se Carlos não é formado em Direito.', statement: 'É correto concluir que Carlos não é analista nessa repartição.', answer: 'certo' }, ]}, { topic: 'Verdades e Mentiras', questions: [ { banca: 'FGV', year: '2024', prompt: 'Três servidores, Ana, Bia e Carlos, fizeram uma afirmação. Sabe-se que apenas um deles diz a verdade. Ana diz: "Bia mentiu". Bia diz: "Carlos mentiu". Carlos diz: "Eu não menti".', statement: 'Quem disse a verdade foi Bia.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Dois suspeitos, A e B, são interrogados. A diz: "B é o culpado". B diz: "A está mentindo". Sabe-se que um deles mente e o outro diz a verdade.', statement: 'É possível concluir que A é o culpado.', answer: 'errado' }, ]}, { topic: 'Sequências Lógicas', questions: [ { banca: 'FGV', year: '2023', prompt: 'Considere a sequência: 2, 5, 11, 23, ...', statement: 'O próximo número da sequência, seguindo o padrão lógico, é 47.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Na sequência de palavras (LEI, MESA, CANETA, ...), o critério é o número de letras.', statement: 'A próxima palavra, seguindo a lógica, poderia ser "PROCESSO".', answer: 'certo' }, ]}, { topic: 'Correlação de Elementos', questions: [ { banca: 'FGV', year: '2024', prompt: 'Três amigos (Marcos, Paulo, João) têm três profissões (médico, engenheiro, advogado) e moram em três cidades (Porto Velho, Ji-Paraná, Ariquemes), não necessariamente na mesma ordem. Sabe-se que: 1. Marcos não é médico e não mora em Porto Velho. 2. O engenheiro mora em Ji-Paraná. 3. João é o advogado.', statement: 'É correto concluir que Paulo é o engenheiro e mora em Ji-Paraná.', answer: 'certo' }, ]}, { topic: 'Análise Combinatória', questions: [ { banca: 'FGV', year: '2024', prompt: 'Julgue o item sobre arranjos e combinações.', statement: 'O número de comissões de 3 pessoas que podem ser formadas a partir de um grupo de 5 pessoas é calculado por um arranjo simples.', answer: 'errado' }, { banca: 'FGV', year: '2022', prompt: 'Para formar uma senha de 4 dígitos distintos usando os algarismos de 1 a 7.', statement: 'O número de senhas possíveis é calculado pela fórmula de Arranjo de 7 elementos tomados 4 a 4.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'De quantas maneiras distintas 5 servidores podem sentar-se em 5 cadeiras em fila?', statement: 'O número de maneiras é calculado por uma permutação de 5 elementos (5!).', answer: 'certo' }, ]}, { topic: 'Probabilidade', questions: [ { banca: 'FGV', year: '2023', prompt: 'Ao lançar um dado não viciado, julgue a probabilidade.', statement: 'A probabilidade de se obter um número par é de 1/2.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Em uma urna com 5 bolas brancas e 3 bolas pretas, retira-se uma bola ao acaso.', statement: 'A probabilidade de a bola retirada ser preta é de 3/8.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Lançando duas moedas, a probabilidade de se obter duas "caras".', statement: 'A probabilidade do evento é de 1/4.', answer: 'certo' }, ]} ],
-                'historia e geografia de rondonia': [ { topic: 'Processo de Colonização', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre a colonização de Rondônia, julgue o item.', statement: 'Projetos de colonização agrícola implementados pelo INCRA a partir da década de 1970 foram um fator determinante para o adensamento populacional do estado.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A ocupação inicial do Vale do Guaporé esteve fortemente ligada à mineração de ouro no período colonial.', statement: 'Esta afirmação está correta e remonta ao século XVIII.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'A Marcha para o Oeste, política do governo de Getúlio Vargas, foi um dos impulsos para a ocupação e integração da região amazônica, incluindo Rondônia.', statement: 'A política de Vargas teve impacto direto na futura criação do Território do Guaporé.', answer: 'certo' }, ]}, { topic: 'Ciclos Econômicos', questions: [ { banca: 'FGV', year: '2022', prompt: 'Acerca dos ciclos econômicos que marcaram a história de Rondônia, julgue o item.', statement: 'O primeiro ciclo da borracha, no final do século XIX, foi o principal fator para a construção da Estrada de Ferro Madeira-Mamoré.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'O ciclo da cassiterita, em meados do século XX, atraiu um grande contingente de migrantes para o território, consolidando novos núcleos urbanos.', statement: 'Esta afirmação sobre o ciclo da cassiterita é historicamente precisa.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'O segundo ciclo da borracha está diretamente relacionado à demanda dos Aliados durante a Segunda Guerra Mundial.', statement: 'Os "soldados da borracha" foram trabalhadores nordestinos recrutados para extrair látex na Amazônia nesse período.', answer: 'certo' }, ]}, { topic: 'Criação do Estado', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue a afirmativa sobre a formação político-administrativa de Rondônia.', statement: 'Rondônia foi elevado à categoria de Estado da Federação em 1981, desmembrando-se do estado do Amazonas.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Antes de se tornar Estado, Rondônia foi um Território Federal, criado em 1943 com o nome de Território Federal do Guaporé.', statement: 'A criação do Território Federal do Guaporé é um marco inicial na autonomia política da região.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A escolha do nome "Rondônia" para o território foi uma homenagem ao Marechal Cândido Rondon.', statement: 'Rondon foi um sertanista e desbravador de grande importância para a integração da região.', answer: 'certo' }, ]}, { topic: 'Questões Ambientais', questions: [ { banca: 'FGV', year: '2023', prompt: 'Sobre a dinâmica ambiental de Rondônia, julgue o item.', statement: 'O "arco do desmatamento" é uma expressão que designa uma área de intensa pressão sobre a floresta amazônica, na qual Rondônia está inserida.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'As hidrelétricas de Santo Antônio e Jirau, construídas no Rio Madeira.', statement: 'São projetos de grande impacto socioambiental no estado, gerando debates sobre desenvolvimento e conservação.', answer: 'certo' }, ]}, { topic: 'População e Demografia', questions: [ { banca: 'FGV', year: '2024', prompt: 'A respeito da composição populacional de Rondônia.', statement: 'A população do estado foi majoritariamente formada por correntes migratórias de outras regiões do Brasil, especialmente do Sul e Sudeste, a partir da segunda metade do século XX.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Porto Velho, a capital do estado.', statement: 'Sua origem está diretamente ligada à construção da Estrada de Ferro Madeira-Mamoré.', answer: 'certo' }, ]}, { topic: 'Aspectos Físicos e Relevo', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre as características geográficas de Rondônia, julgue o item.', statement: 'O relevo rondoniense é predominantemente caracterizado por planícies e baixas altitudes, sendo parte da planície amazônica.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'O ponto mais elevado do estado é o Pico do Tracuá.', statement: 'Esta afirmação está incorreta; o relevo do estado é de baixa altitude e o Pico do Tracuá não se localiza em Rondônia.', answer: 'errado' }, ]}, { topic: 'Hidrografia e Clima', questions: [ { banca: 'FGV', year: '2023', prompt: 'A respeito do clima de Rondônia, julgue a afirmativa.', statement: 'O clima predominante em Rondônia é o Equatorial, caracterizado por altas temperaturas e elevada umidade, com uma estação seca bem definida.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Os rios Madeira, Mamoré e Guaporé são os principais cursos d\'água que banham o estado.', statement: 'Esses rios pertencem à Bacia Amazônica e têm grande importância econômica e histórica.', answer: 'certo' }, ]} ],
-                'direito constitucional': [ { topic: 'Direitos e Garantias Fundamentais (Art. 5º)', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue o item a respeito dos direitos e deveres individuais e coletivos.', statement: 'A casa é asilo inviolável do indivíduo, ninguém nela podendo penetrar sem consentimento do morador, salvo em caso de flagrante delito ou desastre, ou, durante o dia, por determinação judicial.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre a liberdade de associação.', statement: 'A criação de associações e, na forma da lei, a de cooperativas independem de autorização, sendo vedada a interferência estatal em seu funcionamento.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A respeito dos remédios constitucionais.', statement: 'O mandado de segurança coletivo pode ser impetrado por partido político com representação no Congresso Nacional.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre o direito à propriedade.', statement: 'A pequena propriedade rural, assim definida em lei, desde que trabalhada pela família, não será objeto de penhora para pagamento de débitos decorrentes de sua atividade produtiva.', answer: 'certo' }, ]}, { topic: 'Direitos Sociais', questions: [ { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre direitos sociais previstos no Art. 6º da CF.', statement: 'A moradia, a alimentação e o transporte são exemplos de direitos sociais expressamente previstos na Constituição Federal.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre o direito de greve.', statement: 'O direito de greve é assegurado aos trabalhadores, competindo a eles decidir sobre a oportunidade de exercê-lo e sobre os interesses que devam por meio dele defender.', answer: 'certo' }, ]}, { topic: 'Nacionalidade e Direitos Políticos', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre os cargos privativos de brasileiro nato.', statement: 'O cargo de Presidente do Senado Federal é privativo de brasileiro nato.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre direitos políticos.', statement: 'O alistamento eleitoral e o voto são obrigatórios para os maiores de dezoito anos e facultativos para os analfabetos.', answer: 'certo' }, ]}, { topic: 'Administração Pública (Art. 37 a 41)', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre os princípios da Administração Pública, julgue a afirmativa.', statement: 'O princípio da publicidade admite exceções, como nos casos em que a defesa da intimidade ou o interesse social o exigirem.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre a acumulação de cargos, um servidor ocupante de cargo técnico.', statement: 'Um servidor que ocupa um cargo técnico pode acumular com um cargo de professor, desde que haja compatibilidade de horários.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'A investidura em cargo ou emprego público depende de aprovação prévia em concurso público de provas ou de provas e títulos.', statement: 'Esta regra geral não se aplica às nomeações para cargo em comissão, declarado em lei de livre nomeação e exoneração.', answer: 'certo' }, ]}, { topic: 'Organização do Estado', questions: [ { banca: 'FGV', year: '2023', prompt: 'Acerca da repartição de competências entre os entes federativos, julgue o item.', statement: 'Compete privativamente à União legislar sobre direito civil, comercial, penal, processual, eleitoral, agrário, marítimo, aeronáutico, espacial e do trabalho.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Julgue o item sobre as competências.', statement: 'Legislar sobre procedimentos em matéria processual é competência concorrente da União, dos Estados e do Distrito Federal.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Sobre a intervenção federal.', statement: 'A União não intervirá nos Estados nem no Distrito Federal, exceto para, entre outras hipóteses, repelir invasão estrangeira ou de uma unidade da Federação em outra.', answer: 'certo' }, ]}, { topic: 'Poder Legislativo', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre o processo legislativo, julgue a afirmativa.', statement: 'Uma medida provisória, após sua edição pelo Presidente da República, tem força de lei e vigência imediata, mas precisa ser convertida em lei pelo Congresso Nacional para não perder sua eficácia.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Sobre as comissões parlamentares de inquérito (CPI).', statement: 'As CPIs têm poderes de investigação próprios das autoridades judiciais e podem determinar a quebra de sigilo bancário, fiscal e de dados.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A respeito da imunidade parlamentar.', statement: 'Os Deputados e Senadores são invioláveis, civil e penalmente, por quaisquer de suas opiniões, palavras e votos. Isso se refere à imunidade material.', answer: 'certo' }, ]}, { topic: 'Controle de Constitucionalidade', questions: [ { banca: 'FGV', year: '2024', prompt: 'Acerca do controle de constitucionalidade no Brasil, julgue a afirmativa.', statement: 'Na Ação Direta de Inconstitucionalidade (ADI), a decisão de mérito proferida pelo STF possui eficácia contra todos (erga omnes) e efeito vinculante.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre o controle difuso.', statement: 'Qualquer juiz ou tribunal pode, no julgamento de um caso concreto, declarar incidentalmente a inconstitucionalidade de uma lei.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre a Ação Declaratória de Constitucionalidade (ADC).', statement: 'A ADC visa transformar uma presunção relativa de constitucionalidade de uma lei federal em uma presunção absoluta.', answer: 'certo' }, ]} ],
-                'direito administrativo': [ { topic: 'Princípios Administrativos', questions: [ { banca: 'FGV', year: '2024', prompt: 'Um agente público, ao aplicar uma multa, age com rigor excessivo e desproporcional à infração cometida.', statement: 'A conduta do agente viola o princípio da razoabilidade e da proporcionalidade.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Um edital de concurso que exige altura mínima para o cargo de técnico administrativo, sem justificativa legal.', statement: 'Este edital fere o princípio da isonomia e da razoabilidade.', answer: 'certo' }, ]}, { topic: 'Atos Administrativos', questions: [ { banca: 'FGV', year: '2023', prompt: 'A respeito dos atributos do ato administrativo, julgue o item.', statement: 'A autoexecutoriedade é o atributo que permite à Administração Pública anular seus próprios atos, quando eivados de vícios que os tornam ilegais.', answer: 'errado' }, { banca: 'FGV', year: '2022', prompt: 'Um prefeito desapropria um imóvel para construir uma praça, mas na verdade o utiliza para beneficiar um amigo.', statement: 'O ato administrativo está viciado no elemento "finalidade", caracterizando desvio de poder.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A anulação de um ato administrativo ilegal.', statement: 'Opera efeitos retroativos (ex tunc), desfazendo as relações jurídicas desde a origem do ato.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A revogação de um ato administrativo.', statement: 'É feita por motivos de conveniência e oportunidade e opera efeitos prospectivos (ex nunc).', answer: 'certo' }, ]}, { topic: 'Poderes da Administração', questions: [ { banca: 'FGV', year: '2022', prompt: 'Julgue a afirmativa sobre o poder de polícia.', statement: 'O poder de polícia pode ser delegado a pessoas jurídicas de direito privado, como empresas públicas, para a execução de sanções.', answer: 'errado' }, { banca: 'FGV', year: '2023', prompt: 'O Secretário de Obras avoca para si a competência de um subordinado para decidir sobre um processo específico.', statement: 'Esta é uma manifestação do poder hierárquico.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A aplicação de uma penalidade a um servidor que cometeu uma infração funcional.', statement: 'Decorre do poder disciplinar da Administração.', answer: 'certo' }, ]}, { topic: 'Organização da Administração', questions: [ { banca: 'FGV', year: '2024', prompt: 'Sobre a Administração Indireta.', statement: 'As autarquias, como o INSS, são pessoas jurídicas de direito público, criadas por lei específica, com autonomia administrativa e financeira.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre empresas estatais.', statement: 'As sociedades de economia mista, como o Banco do Brasil, são pessoas jurídicas de direito privado, com capital misto (público e privado), mas com controle acionário do Poder Público.', answer: 'certo' }, ]}, { topic: 'Bens Públicos', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre as características dos bens públicos.', statement: 'Os bens de uso comum do povo, como rios e praças, são, em regra, inalienáveis, ou seja, não podem ser vendidos enquanto mantiverem essa qualificação.', answer: 'certo' } ]}, { topic: 'Licitações e Contratos (Lei 14.133)', questions: [ { banca: 'FGV', year: '2024', prompt: 'De acordo com a Nova Lei de Licitações (Lei nº 14.133/2021), julgue o item.', statement: 'A modalidade de licitação denominada "diálogo competitivo" é restrita a contratações que envolvam inovação tecnológica ou técnica.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A inexigibilidade de licitação ocorre em situações onde há inviabilidade de competição.', statement: 'A contratação de um artista consagrado pela crítica especializada é um exemplo clássico de inexigibilidade.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A dispensa de licitação ocorre em casos especificados em lei, onde, embora a competição seja possível, o legislador optou por não exigi-la.', statement: 'A contratação de pequeno valor é um exemplo de dispensa de licitação.', answer: 'certo' }, ]}, { topic: 'Controle da Administração', questions: [ { banca: 'FGV', year: '2022', prompt: 'Sobre o controle exercido pelos Tribunais de Contas.', statement: 'O Tribunal de Contas da União (TCU) aprecia as contas do Presidente da República, mas o julgamento final compete ao Congresso Nacional.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'O controle judicial dos atos administrativos.', statement: 'Incide sobre a legalidade dos atos, não podendo o Poder Judiciário, em regra, analisar o mérito administrativo (conveniência e oportunidade).', answer: 'certo' }, ]}, { topic: 'Improbidade Administrativa (Lei 8.429)', questions: [ { banca: 'FGV', year: '2023', prompt: 'Conforme as alterações recentes na Lei de Improbidade Administrativa, julgue a afirmativa.', statement: 'Para a caracterização de ato de improbidade administrativa, é indispensável a comprovação do dolo específico do agente.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Um prefeito que, por mera negligência, causa um pequeno prejuízo ao erário.', statement: 'Após as alterações na Lei de Improbidade, essa conduta culposa não mais caracteriza ato de improbidade administrativa.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Uma das sanções previstas na Lei de Improbidade.', statement: 'A suspensão dos direitos políticos é uma das penalidades aplicáveis aos condenados por improbidade administrativa.', answer: 'certo' }, ]} ],
-                'legislacao especifica': [ { topic: 'Constituição do Estado de Rondônia', questions: [ { banca: 'FGV', year: '2023', prompt: 'Com base na Constituição do Estado de Rondônia, julgue o item.', statement: 'O Poder Legislativo do Estado de Rondônia é exercido pela Assembleia Legislativa, composta por Deputados Estaduais eleitos pelo sistema majoritário.', answer: 'errado' }, { banca: 'FGV', year: '2024', prompt: 'Conforme a Constituição Estadual, compete à Assembleia Legislativa processar e julgar o Governador nos crimes de responsabilidade.', statement: 'Esta é uma das competências privativas da Assembleia Legislativa.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'A Constituição de Rondônia veda a nomeação, para cargo em comissão, de cônjuge ou parente de até segundo grau do Governador.', statement: 'Esta norma estadual configura uma medida contra o nepotismo.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Segundo a Constituição Estadual, o Tribunal de Contas do Estado é composto por sete Conselheiros.', statement: 'Este número está correto conforme a disposição da Constituição de Rondônia.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A iniciativa popular de projetos de lei é prevista na Constituição Estadual.', statement: 'A Constituição de Rondônia admite a proposição de leis pela população, na forma da lei.', answer: 'certo' }, ]}, { topic: 'Regimento Interno da ALE-RO', questions: [ { banca: 'FGV', year: '2024', prompt: 'De acordo com o Regimento Interno da ALE-RO, julgue a afirmativa.', statement: 'As sessões legislativas ordinárias da Assembleia Legislativa são independentes de convocação e ocorrem em períodos predeterminados anualmente.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Sobre o processo legislativo no âmbito da ALE-RO.', statement: 'Um projeto de lei aprovado pela Assembleia, caso seja vetado pelo Governador, pode ter seu veto derrubado pelo voto da maioria absoluta dos Deputados.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'A respeito da Mesa Diretora da ALE-RO.', statement: 'A Mesa é o órgão de direção dos trabalhos da Assembleia, sendo seus membros eleitos para um mandato de dois anos.', answer: 'certo' }, { banca: 'FGV', year: '2023', prompt: 'Julgue o item sobre as Comissões Permanentes.', statement: 'As Comissões Permanentes, como a de Constituição e Justiça, têm a função de analisar e emitir parecer sobre as proposições antes de serem votadas em Plenário.', answer: 'certo' }, { banca: 'FGV', year: '2022', prompt: 'Sobre o quórum para deliberações em Plenário.', statement: 'Salvo disposição em contrário, as deliberações da Assembleia Legislativa são tomadas por maioria de votos, presente a maioria absoluta de seus membros.', answer: 'certo' }, { banca: 'FGV', year: '2024', prompt: 'Um deputado que falta a um terço das sessões ordinárias de uma sessão legislativa.', statement: 'Conforme o Regimento Interno, o deputado pode perder o mandato por falta de decoro parlamentar.', answer: 'certo' }, ]} ]
-            };
-            
-            function normalizeString(str) {
-                return str ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ç/g, "c").replace(/-/g,' ').replace('º','').replace('(','').replace(')','').trim() : '';
-            }
-
-            function startQuiz(subjectId, topicId = null) {
-                const subject = appState.subjects.find(s => s.id === subjectId);
-                if (!subject) return;
-                const normalizedSubjectName = normalizeString(subject.name);
-                const subjectTopicsData = questionsDB[normalizedSubjectName];
-                let questions = [];
-                let topicName = null;
-                if (topicId) {
-                    const topic = subject.topics.find(t => t.id === topicId);
-                    if (!topic) return;
-                    topicName = topic.name;
-                    const normalizedTopicName = normalizeString(topic.name);
-                    const topicData = subjectTopicsData?.find(t => normalizeString(t.topic) === normalizedTopicName);
-                    questions = topicData?.questions || [];
-                } else {
-                    if (subjectTopicsData) {
-                        questions = subjectTopicsData.flatMap(topicObj => topicObj.questions);
-                    }
-                }
-                if (questions.length > 0) {
-                    questions.sort(() => Math.random() - 0.5);
-                    appState.quiz = { active: true, subjectName: subject.name, topicName, questions, currentIndex: 0, score: 0 };
-                    renderQuizView(); // Chamar renderQuizView em vez de switchView
-                    switchView('questoes');
-                } else {
-                    alert(`Nenhuma questão encontrada para "${topicName || subject.name}".`);
-                }
-            }
-
-            function renderQuizView() {
-                if (!appState.currentUser) {
-                     quizContainer.innerHTML = `<div class="text-center p-4"><p class="font-semibold text-slate-700">Faça login para praticar com questões.</p></div>`;
-                     return;
-                }
-                if (!appState.quiz.active) {
-                    quizContainer.innerHTML = `<div class="text-center p-4"><p class="font-semibold text-slate-700">Pronto para praticar?</p><p class="text-sm text-slate-500 mt-1">Escolha uma disciplina ou assunto e clique em "Praticar".</p></div>`;
-                    return;
-                }
-                const q = appState.quiz.questions[appState.quiz.currentIndex];
-                if (!q) {
-                    appState.quiz.active = false;
-                    const totalQuestions = appState.quiz.questions.length;
-                    const score = appState.quiz.score;
-                    const percentage = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(1) : 0;
-                    quizContainer.innerHTML = `<div class="bg-white p-4 rounded-lg shadow text-center"><h3 class="text-lg font-bold text-blue-600">Quiz Concluído!</h3><p class="mt-2 text-slate-700">Você acertou ${score} de ${totalQuestions} questões (${percentage}%).</p><button id="back-to-home-btn" class="mt-4 w-full bg-slate-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-slate-700 transition">Voltar ao Início</button></div>`;
-                    quizContainer.querySelector('#back-to-home-btn').addEventListener('click', () => switchView('cronometro'));
-                    return;
-                }
-                const quizTitle = appState.quiz.topicName ? `${appState.quiz.subjectName} > ${appState.quiz.topicName}` : appState.quiz.subjectName;
-                quizContainer.innerHTML = `<p class="text-sm text-slate-600 mb-4">Praticando: <span class="font-bold">${quizTitle}</span> (${appState.quiz.currentIndex + 1}/${appState.quiz.questions.length})</p><div id="question-container" class="bg-white p-4 rounded-lg shadow"><p class="text-xs text-slate-500">${q.banca} • ${q.year}</p><p class="mt-2">${q.prompt}</p><p class="font-semibold mt-1">${q.statement}</p><div class="flex space-x-4 mt-4 text-sm"><button id="certo-btn" class="bg-green-200 text-green-800 px-4 py-1 rounded-md hover:bg-green-300 transition-colors">Certo</button><button id="errado-btn" class="bg-red-200 text-red-800 px-4 py-1 rounded-md hover:bg-red-300 transition-colors">Errado</button></div><div id="question-feedback" class="mt-4 text-sm font-semibold h-5"></div><button id="next-question-btn" class="hidden mt-4 w-full text-center bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Próxima Questão</button></div>`;
-                quizContainer.querySelector('#certo-btn').addEventListener('click', () => checkAnswer('certo'));
-                quizContainer.querySelector('#errado-btn').addEventListener('click', () => checkAnswer('errado'));
-                quizContainer.querySelector('#next-question-btn').addEventListener('click', loadNextQuestion);
-            }
-
-            function checkAnswer(selectedAnswer) {
-                const q = appState.quiz.questions[appState.quiz.currentIndex];
-                const feedbackEl = quizContainer.querySelector('#question-feedback');
-                quizContainer.querySelector('#certo-btn').disabled = true;
-                quizContainer.querySelector('#errado-btn').disabled = true;
-                if (selectedAnswer === q.answer) {
-                    appState.quiz.score++;
-                    feedbackEl.textContent = 'Resposta Correta!';
-                    feedbackEl.className = `mt-4 text-sm font-semibold h-5 text-green-600`;
-                } else {
-                    feedbackEl.textContent = 'Resposta Incorreta!';
-                    feedbackEl.className = `mt-4 text-sm font-semibold h-5 text-red-600`;
-                }
-                quizContainer.querySelector('#next-question-btn').classList.remove('hidden');
-            }
-
-            function loadNextQuestion() {
-                appState.quiz.currentIndex++;
-                renderQuizView();
-            }
-
-            // --- Event Listeners ---
-            addSubjectBtn.addEventListener('click', addSubject);
-            setCycleGoalBtn.addEventListener('click', setStudyCycleGoal);
-            subjectsList.addEventListener('click', (e) => {
-                const target = e.target;
-                const subjectLi = target.closest('.subject-item');
-                if (!subjectLi) return;
-                const subjectId = parseInt(subjectLi.dataset.subjectId);
-                if (target.closest('[data-toggle-topics-id]')) subjectLi.classList.toggle('is-expanded');
-                if (target.closest('[data-add-topic-id]')) {
-                    const input = subjectLi.querySelector(`[data-topic-input-id='${subjectId}']`);
-                    addTopic(subjectId, input.value.trim());
-                    input.value = '';
-                }
-                if (target.closest('[data-select-subject-id]')) selectItem('subject', subjectId);
-                const selectTopicBtn = target.closest('[data-select-topic-id]');
-                if (selectTopicBtn) selectItem('topic', parseInt(selectTopicBtn.dataset.parentId), parseFloat(selectTopicBtn.dataset.selectTopicId));
-                if (target.closest('[data-delete-subject-id]')) deleteSubject(subjectId);
-                const deleteTopicBtn = target.closest('[data-delete-topic-id]');
-                if (deleteTopicBtn) deleteTopic(parseInt(deleteTopicBtn.dataset.parentId), parseFloat(deleteTopicBtn.dataset.deleteTopicId));
-                if (target.closest('[data-practice-subject-id]')) startQuiz(subjectId);
-                const practiceTopicBtn = target.closest('[data-practice-topic-id]');
-                if (practiceTopicBtn) startQuiz(parseInt(practiceTopicBtn.dataset.parentId), parseFloat(practiceTopicBtn.dataset.practiceTopicId));
-                const summaryBtn = target.closest('[data-summary-subject-name]');
-                if (summaryBtn) showSummaryModal(summaryBtn.dataset.summarySubjectName);
-            });
-
-            subjectsList.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && e.target.matches('[data-topic-input-id]')) {
-                    const subjectId = parseInt(e.target.dataset.topicInputId);
-                    addTopic(subjectId, e.target.value.trim());
-                    e.target.value = '';
+                    content.classList.add('hidden');
                 }
             });
-            
-            startPauseBtn.addEventListener('click', () => appState.timer.isRunning ? pauseTimer() : startTimer());
-            stopBtn.addEventListener('click', () => stopTimer(true));
-            reviewsList.addEventListener('click', (e) => {
-                if (e.target.closest('.complete-review-btn')) {
-                    completeReview(parseFloat(e.target.closest('.complete-review-btn').dataset.reviewId));
-                }
-            });
-
-            document.querySelector('nav').addEventListener('click', (e) => {
-                const navItem = e.target.closest('.nav-item');
-                if (navItem) switchView(navItem.dataset.view);
-            });
-
-            closeSummaryModalBtn.addEventListener('click', hideSummaryModal);
-            summaryModal.addEventListener('click', (e) => {
-                if (e.target === summaryModal) hideSummaryModal();
-            });
-
-            showRegisterBtn.addEventListener('click', (e) => { e.preventDefault(); toggleAuthForms(); });
-            showLoginBtn.addEventListener('click', (e) => { e.preventDefault(); toggleAuthForms(); });
-
-            registerForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const name = document.getElementById('register-name').value;
-                const email = document.getElementById('register-email').value;
-                const password = document.getElementById('register-password').value;
-                createUserWithEmailAndPassword(auth, email, password)
-                    .then(async (userCredential) => {
-                        await updateProfile(userCredential.user, { displayName: name });
-                        
-                        const userDocRef = doc(db, 'users', userCredential.user.uid);
-                        await setDoc(userDocRef, {
-                            name: name,
-                            email: email,
-                            subjects: [],
-                            studyCycle: { goalSeconds: 0, completedSeconds: 0 },
-                            reviews: []
-                        });
-                        
-                        // Garante que o usuário apareça imediatamente na lista da comunidade
-                        const userStatusRef = ref(rtdb, 'status/' + userCredential.user.uid);
-                        await set(userStatusRef, false);
-
-                        alert('Cadastro realizado com sucesso!');
-                        registerForm.reset();
-                        toggleAuthForms();
-                    })
-                    .catch((error) => {
-                        console.error("Erro no cadastro:", error);
-                        alert(`Erro ao cadastrar: ${error.message}`);
-                    });
-            });
-
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                signInWithEmailAndPassword(auth, email, password)
-                    .catch(err => alert('E-mail ou senha incorretos.'));
-            });
-
-            logoutBtn.addEventListener('click', async () => {
-                if (auth.currentUser) {
-                    const userStatusRef = ref(rtdb, 'status/' + auth.currentUser.uid);
-                    await set(userStatusRef, false); // Define como offline ANTES de deslogar
-                    await signOut(auth);
-                }
-            });
-
-            function toggleAuthForms() {
-                loginFormContainer.classList.toggle('hidden');
-                registerFormContainer.classList.toggle('hidden');
+            if (window.innerWidth < 768) {
+                 document.getElementById('nav-menu').classList.add('hidden');
             }
         });
-    </script>
+    });
+
+    // =========================
+    // LÓGICA DE AUTENTICAÇÃO
+    // =========================
+    const authStatus = document.getElementById('auth-status');
+    const loginView = document.getElementById('login-view');
+    const logoutView = document.getElementById('logout-view');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const mainContent = document.getElementById('main-content');
+    const authContainer = document.getElementById('auth-container');
+
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            authStatus.textContent = ``;
+            mainContent.classList.remove('hidden');
+            tabsContainer.classList.remove('hidden');
+            authContainer.classList.add('hidden');
+            document.querySelector('.tab-button[data-tab="estudo"]').click();
+            inicializarApp(user);
+        } else {
+            authStatus.textContent = 'Você não está conectado.';
+            mainContent.classList.add('hidden');
+            tabsContainer.classList.add('hidden');
+            authContainer.classList.remove('hidden');
+            limparDadosUI();
+        }
+    });
+
+    document.getElementById('btn-login').addEventListener('click', () => {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        if (!email || !password) {
+            alert("Por favor, preencha e-mail e senha.");
+            return;
+        }
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(error => alert('Erro no login: ' + error.message));
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', () => {
+        signOut(auth);
+    });
+
+    function limparDadosUI() {
+        ['seletorDisciplina', 'listaAssuntos', 'progressoDisciplinas', 'evolucaoDiaria', 'evolucaoSemanal', 'evolucaoMensal', 'evolucaoTotal', 'listaRevisoes', 'edital-verticalizado-container', 'perfil-usuario', 'listaMedalhas', 'hall-da-fama', 'ranking-geral-container', 'desafios-container']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if(el.tagName === 'SPAN') el.textContent = '0';
+                else el.innerHTML = '';
+            }
+        });
+        
+        if (graficoPizza) { graficoPizza.destroy(); graficoPizza = null; }
+        if (graficoDesempenhoModos) { graficoDesempenhoModos.destroy(); graficoDesempenhoModos = null; }
+        if (graficoLinhaModos) { graficoLinhaModos.destroy(); graficoLinhaModos = null; }
+    }
+    
+    // =========================
+    // FUNÇÃO AUXILIAR
+    // =========================
+    function calcularProgresso(metaHoras, horasEstudadas) {
+      if (!metaHoras || metaHoras === 0) return 0;
+      return Math.min((horasEstudadas / metaHoras) * 100, 100);
+    }
+
+    // =========================
+    // INICIALIZAÇÃO DO APLICATIVO
+    // =========================
+    async function inicializarApp(user) {
+        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        if(userDoc.exists()) {
+            const userData = userDoc.data();
+            metaAcertosGlobal = userData.metaAcertos || 80;
+            document.getElementById('meta-geral-horas').value = userData.metaGeralHoras || '';
+            const cicloNome = userData.cicloAtualNome || 'Ciclo 1: Rumo à Aprovação (ALE-RO)';
+            document.getElementById('ciclo-nome-input').value = cicloNome;
+            await carregarPrioridades(user.uid, userData.prioridadeDisciplinas);
+        } else {
+            await carregarPrioridades(user.uid, []);
+        }
+        
+        const funcoesCarregamento = [
+            carregarDisciplinas,
+            () => carregarProgressoDisciplinas(user.uid),
+            () => carregarEvolucaoQuestoes(user.uid),
+            () => carregarRevisoes(user.uid),
+            () => carregarDesempenhoPorModo(user.uid),
+            () => carregarEvolucaoCronologicaPorModo(user.uid),
+            gerarEditalVerticalizado,
+            () => carregarPerfil(user.uid),
+            () => carregarMedalhas(user.uid),
+            () => carregarRanking(user.uid),
+            () => carregarDesafios(user.uid),
+            carregarSimulados,
+            carregarTemasRedacao
+        ];
+        
+        for(const funcao of funcoesCarregamento) {
+            try {
+                await funcao();
+            } catch (error) {
+                console.error(`Erro ao executar ${funcao.name}:`, error);
+            }
+        }
+
+        // Adiciona listeners
+        document.getElementById('seletorDisciplina').addEventListener('change', carregarAssuntos);
+        document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(user.uid));
+        document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => {
+            carregarDesempenhoPorModo(user.uid);
+            carregarEvolucaoCronologicaPorModo(user.uid);
+        });
+        document.getElementById('btnCompararMeta').addEventListener('click', () => toggleLinhaMeta());
+        document.getElementById('btn-download-pdf').addEventListener('click', baixarEditalPDF);
+        document.getElementById('btn-iniciar-pratica').addEventListener('click', () => {
+            const idDisciplina = document.getElementById("seletorDisciplina").value;
+            if (!idDisciplina) {
+                alert("Por favor, escolha uma disciplina no 'Menu de Disciplinas' para praticar.");
+                return;
+            }
+            iniciarSimulado(idDisciplina, null, null, 'pratica');
+        });
+        document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(user.uid));
+        document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(user.uid));
+    }
+    
+    // =========================
+    // 1. MENU DE DISCIPLINAS E ASSUNTOS
+    // =========================
+    async function carregarDisciplinas() {
+      const q = query(collection(db, "disciplinas"), orderBy("nome"));
+      const snapshot = await getDocs(q);
+      const seletor = document.getElementById("seletorDisciplina");
+      seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+      snapshot.forEach(doc => {
+        seletor.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
+      });
+    }
+
+    async function carregarAssuntos() {
+      const idDisciplina = document.getElementById("seletorDisciplina").value;
+      const container = document.getElementById("listaAssuntos");
+      container.innerHTML = "";
+
+      if (!idDisciplina) return;
+
+      const disciplinaDoc = await getDoc(doc(db, "disciplinas", idDisciplina));
+      if (!disciplinaDoc.exists()) return;
+      
+      const assuntos = disciplinaDoc.data().assuntos || {};
+
+      for (const assuntoId in assuntos) {
+        const a = assuntos[assuntoId];
+        container.innerHTML += `
+          <div class="border p-3 rounded-lg">
+            <h4 class="font-bold text-lg">${a.nome}</h4>
+            <p class="text-sm text-gray-600 my-2">${a.resumo || 'Sem resumo.'}</p>
+            <button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button>
+          </div>
+        `;
+      }
+      
+      document.querySelectorAll('.btn-praticar-assunto').forEach(btn => btn.addEventListener('click', (e) => iniciarSimulado(e.currentTarget.dataset.disciplinaId, e.currentTarget.dataset.assuntoNome, null, 'pratica')));
+    }
+
+    // =========================
+    // 2. METAS, PROGRESSO E PRIORIDADES
+    // =========================
+    
+    async function carregarPrioridades(uid, prioridadesSalvas = []) {
+        const container = document.getElementById('lista-prioridades');
+        const q = query(collection(db, "disciplinas"), orderBy("nome"));
+        const snapshot = await getDocs(q);
+        let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
+
+        disciplinas.sort((a, b) => {
+            const indexA = prioridadesSalvas.indexOf(a.id);
+            const indexB = prioridadesSalvas.indexOf(b.id);
+            if (indexA > -1 && indexB > -1) return indexA - indexB;
+            if (indexA > -1) return -1;
+            if (indexB > -1) return 1;
+            return 0;
+        });
+
+        container.innerHTML = disciplinas.map(d => `
+            <div class="priority-item p-2 border rounded bg-gray-50" draggable="true" data-id="${d.id}">
+                ${d.nome}
+            </div>
+        `).join('');
+
+        const draggables = container.querySelectorAll('.priority-item');
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', () => draggable.classList.add('dragging'));
+            draggable.addEventListener('dragend', () => draggable.classList.remove('dragging'));
+        });
+
+        container.addEventListener('dragover', e => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(container, e.clientY);
+            const dragging = document.querySelector('.dragging');
+            if (afterElement == null) {
+                container.appendChild(dragging);
+            } else {
+                container.insertBefore(dragging, afterElement);
+            }
+        });
+    }
+    
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.priority-item:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    async function salvarMetasEDistribuir(uid) {
+        const metaGeralHoras = parseInt(document.getElementById('meta-geral-horas').value);
+        const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim();
+
+        if (isNaN(metaGeralHoras) || metaGeralHoras <= 0) {
+            alert("Por favor, defina uma meta de horas válida.");
+            return;
+        }
+
+        const container = document.getElementById('lista-prioridades');
+        const prioridadeDisciplinas = [...container.querySelectorAll('.priority-item')].map(el => el.dataset.id);
+        
+        const totalDisciplinas = prioridadeDisciplinas.length;
+        const pesos = Array.from({ length: totalDisciplinas }, (_, i) => totalDisciplinas - i);
+        const somaPesos = pesos.reduce((acc, peso) => acc + peso, 0);
+
+        const metasPorDisciplina = {};
+        prioridadeDisciplinas.forEach((id, index) => {
+            const horas = (metaGeralHoras * pesos[index]) / somaPesos;
+            metasPorDisciplina[id] = horas;
+        });
+
+        const userDocRef = doc(db, "usuarios", uid);
+        try {
+            await setDoc(userDocRef, { metaGeralHoras, prioridadeDisciplinas, metasPorDisciplina, cicloAtualNome: nomeCiclo }, { merge: true });
+            alert("Metas salvas e horas distribuídas com sucesso!");
+            await carregarProgressoDisciplinas(uid);
+        } catch(e) {
+            console.error("Erro ao salvar metas:", e);
+            alert("Não foi possível salvar as metas. Verifique as regras de segurança do Firestore para permitir a escrita na coleção 'usuarios'.");
+        }
+    }
+
+    async function carregarProgressoDisciplinas(uid) {
+        const container = document.getElementById("progressoDisciplinas");
+        container.innerHTML = "<p class='text-slate-500'>Carregando progresso...</p>";
+        
+        const userDoc = await getDoc(doc(db, "usuarios", uid));
+        const metasPorDisciplina = userDoc.exists() ? userDoc.data().metasPorDisciplina || {} : {};
+
+        const qTempo = query(collection(db, "registro_tempo"), where("usuarioId", "==", uid));
+        const registrosSnapshot = await getDocs(qTempo);
+        
+        const tempoPorDisciplina = {};
+        registrosSnapshot.forEach(r => {
+            const data = r.data();
+            tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos;
+        });
+
+        const disciplinasSnapshot = await getDocs(query(collection(db, "disciplinas"), orderBy("nome")));
+        container.innerHTML = "";
+        
+        if (disciplinasSnapshot.empty) {
+            container.innerHTML = "<p class='text-slate-500'>Nenhuma disciplina encontrada.</p>";
+            return;
+        }
+
+        disciplinasSnapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            const idDisciplina = docSnap.id;
+            const metaHoras = metasPorDisciplina[idDisciplina] || 0;
+            const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0;
+            const horasEstudadas = minutosEstudados / 60;
+            const percentual = calcularProgresso(metaHoras, horasEstudadas);
+            container.innerHTML += `
+                <div class="mb-4">
+                  <p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p>
+                  <div class="w-full bg-gray-200 rounded-full h-4 mt-1">
+                    <div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div>
+                  </div>
+                </div>
+            `;
+        });
+    }
+
+    // =========================
+    // 3. PAINEL DE EVOLUÇÃO E GRÁFICO DE PIZZA
+    // =========================
+    async function carregarEvolucaoQuestoes(uid) {
+        const q = query(collection(db, "historico_questoes"), where("usuarioId", "==", uid));
+        const snapshot = await getDocs(q);
+
+        let hoje = 0, semana = 0, mes = 0, total = 0;
+        const agora = new Date();
+        const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+        const inicioSemana = new Date(agora); inicioSemana.setDate(agora.getDate() - agora.getDay());
+        const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+
+        snapshot.forEach(doc => {
+            const dataString = doc.data().dataResposta;
+            if (typeof dataString === 'string') {
+                 const data = new Date(dataString);
+                 if(!isNaN(data.getTime())) {
+                    total++;
+                    if (data >= inicioHoje) hoje++;
+                    if (data >= inicioSemana) semana++;
+                    if (data >= inicioMes) mes++;
+                 }
+            }
+        });
+        document.getElementById("evolucaoDiaria").textContent = hoje;
+        document.getElementById("evolucaoSemanal").textContent = semana;
+        document.getElementById("evolucaoMensal").textContent = mes;
+        document.getElementById("evolucaoTotal").textContent = total;
+        gerarGraficoPizza([hoje, semana, mes, total]);
+    }
+
+    function gerarGraficoPizza(valores) {
+        const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d");
+        if (graficoPizza) graficoPizza.destroy();
+        graficoPizza = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Hoje', 'Semana', 'Mês', 'Total'],
+                datasets: [{
+                    data: valores,
+                    backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB', '#FF6384']
+                }]
+            }
+        });
+    }
+
+    // =========================
+    // 4. PRÁTICA DE QUESTÕES E SIMULADO
+    // =========================
+    async function buscarQuestoes(idDisciplina, nomeAssunto, quantidade) {
+        const dificuldade = document.getElementById("nivelDificuldade").value;
+        
+        let q = query(collection(db, "questoes"));
+
+        if (idDisciplina) {
+             q = query(q, where("disciplinaId", "==", idDisciplina));
+             if (nomeAssunto) q = query(q, where("nomeAssunto", "==", nomeAssunto));
+        }
+        if (dificuldade) q = query(q, where("dificuldade", "==", dificuldade));
+        
+        const snapshot = await getDocs(q);
+        let questoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        questoes.sort(() => Math.random() - 0.5); // Embaralha para variedade
+
+        return questoes.slice(0, quantidade);
+    }
+    
+    async function iniciarSimulado(idDisciplina, nomeAssunto, questoesPredefinidas = null, modo = "pratica") {
+        const uid = auth.currentUser ? auth.currentUser.uid : null;
+        
+        let quantidade;
+        if (modo === 'revisao') {
+            quantidade = parseInt(document.getElementById("quantidadeQuestoesInteligente").value) || 20;
+        } else {
+            quantidade = parseInt(document.getElementById("quantidadeQuestoes").value) || 10;
+        }
+
+        const questoes = questoesPredefinidas || await buscarQuestoes(idDisciplina, nomeAssunto, quantidade);
+       
+        if (questoes.length === 0) {
+            alert("Nenhuma questão encontrada com os filtros selecionados.");
+            return;
+        }
+        
+        if (questoes.length < quantidade && !questoesPredefinidas) {
+            alert(`Você solicitou ${quantidade} questões, mas apenas ${questoes.length} foram encontradas com os filtros atuais. O simulado iniciará com as questões disponíveis.`);
+        }
+
+        questoesDoSimulado = questoes;
+        questaoAtualIndex = 0;
+        pontuacao = 0;
+        
+        document.getElementById('modal-titulo').textContent = `Simulado de ${nomeAssunto || idDisciplina || 'Revisão'}`;
+        exibirQuestao();
+        
+        const modal = document.getElementById('modal-questoes');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    };
+
+    function exibirQuestao() {
+        if (questaoAtualIndex >= questoesDoSimulado.length) {
+            exibirResultadoFinal();
+            return;
+        }
+
+        const q = questoesDoSimulado[questaoAtualIndex];
+        let alternativasHTML = (q.alternativas || []).map(alt => 
+            `<button class="option-button p-2 border rounded">${alt}</button>`
+        ).join('');
+
+        modalCorpo.innerHTML = `
+            <div class="mb-4">
+              <p class="font-semibold">Questão ${questaoAtualIndex + 1}/${questoesDoSimulado.length}: (${q.dificuldade})</p>
+              <p class="my-2">${q.texto || q.enunciado}</p>
+              <div class="mt-4">${alternativasHTML}</div>
+              <div id="feedback-container" class="mt-2"></div>
+              <button id="btn-proxima-questao" class="hidden w-full bg-blue-500 text-white font-semibold mt-4 py-2">Próxima Questão</button>
+            </div>
+        `;
+
+        modalCorpo.querySelectorAll('.option-button').forEach(btn => {
+            btn.addEventListener('click', (e) => verificarResposta(e.target.textContent));
+        });
+        document.getElementById('btn-proxima-questao').addEventListener('click', () => {
+            questaoAtualIndex++;
+            exibirQuestao();
+        });
+    }
+    
+    function verificarResposta(respostaSelecionada) {
+        const q = questoesDoSimulado[questaoAtualIndex];
+        const acertou = respostaSelecionada === q.respostaCorreta;
+        const feedbackContainer = modalCorpo.querySelector('#feedback-container');
+        
+        if (acertou) {
+            pontuacao++;
+            feedbackContainer.innerHTML = `<p class="text-green-600 font-semibold">Resposta Correta!</p>`;
+        } else {
+            feedbackContainer.innerHTML = `<p class="text-red-600 font-semibold">Resposta Incorreta!</p><p><b>Correta:</b> ${q.respostaCorreta}</p>`;
+        }
+        
+        if (q.comentario) {
+            feedbackContainer.innerHTML += `<p class="text-sm mt-2 p-2 bg-gray-100 rounded">${q.comentario}</p>`;
+        }
+
+        modalCorpo.querySelectorAll('.option-button').forEach(btn => {
+            btn.disabled = true;
+            if (btn.textContent === q.respostaCorreta) {
+                btn.classList.add('correct');
+            } else if (btn.textContent === respostaSelecionada) {
+                btn.classList.add('incorrect');
+            }
+        });
+        
+        modalCorpo.querySelector('#btn-proxima-questao').classList.remove('hidden');
+    }
+
+    function exibirResultadoFinal() {
+        const total = questoesDoSimulado.length;
+        const percentual = total > 0 ? (pontuacao / total * 100).toFixed(1) : 0;
+        modalCorpo.innerHTML = `
+            <div class="text-center">
+                <h3 class="text-2xl font-bold">Simulado Concluído!</h3>
+                <p class="text-lg mt-4">Você acertou ${pontuacao} de ${total} questões.</p>
+                <p class="text-4xl font-bold my-4">${percentual}% de acerto</p>
+                <button id="btn-fechar-resultado" class="w-full bg-slate-600 text-white font-semibold py-2">Fechar</button>
+            </div>
+        `;
+        document.getElementById('btn-fechar-resultado').addEventListener('click', () => {
+             document.getElementById('modal-questoes').classList.add('hidden');
+        });
+    }
+
+
+    document.getElementById('btn-fechar-modal').addEventListener('click', () => {
+        const modal = document.getElementById('modal-questoes');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+
+    // =========================
+    // 5. REVISÃO INTELIGENTE
+    // =========================
+    async function iniciarRevisaoInteligente(uid) {
+        const quantidade = parseInt(document.getElementById("quantidadeQuestoesInteligente").value) || 20;
+
+        const allQuestoesSnapshot = await getDocs(collection(db, "questoes"));
+        let allQuestoes = allQuestoesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        allQuestoes.sort((a, b) => {
+            const perfA = (a.acertosUsuario || 0) - (a.errosUsuario || 0);
+            const perfB = (b.acertosUsuario || 0) - (b.errosUsuario || 0);
+            return perfA - perfB;
+        });
+        
+        let treino = allQuestoes.slice(0, quantidade);
+
+        await iniciarSimulado(null, 'Revisão Inteligente', treino, "revisao");
+    }
+
+
+    // =========================
+    // 6. REVISÃO ESPAÇADA
+    // =========================
+    async function carregarRevisoes(uid) {
+        const container = document.getElementById("listaRevisoes");
+        container.innerHTML = "<p class='text-slate-500'>Carregando revisões...</p>";
+
+        const q = query(collection(db, "revisoes"), where("usuarioId", "==", uid));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            container.innerHTML = "<p class='text-slate-500'>Nenhuma revisão encontrada.</p>";
+            return;
+        }
+
+        const agora = new Date();
+        let revisoesPendentesHTML = "";
+        let revisoesPendentesCount = 0;
+
+        snapshot.forEach(doc => {
+            const r = doc.data();
+            if (r.status !== 'pendente') return;
+
+            const revisoesAgendadas = r.revisoesAgendadas || [];
+            revisoesAgendadas.forEach(dataStr => {
+                const dataRevisao = new Date(dataStr);
+                if (dataRevisao <= agora) {
+                    revisoesPendentesCount++;
+                    revisoesPendentesHTML += `
+                        <div class="border p-2 rounded mb-2 bg-yellow-100">
+                          <p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p>
+                          <p class="text-sm">Revisão agendada para: ${dataRevisao.toLocaleDateString()}</p>
+                        </div>
+                    `;
+                }
+            });
+        });
+
+        if (revisoesPendentesCount === 0) {
+             container.innerHTML = "<p class='text-slate-500'>Nenhuma revisão pendente. Bom trabalho!</p>";
+        } else {
+            container.innerHTML = revisoesPendentesHTML;
+        }
+    }
+
+    // =========================
+    // 7. HISTÓRICO DE DESEMPENHO
+    // =========================
+    function getDateRange(periodo) {
+        const agora = new Date();
+        let dataInicio;
+        if (periodo === 'semana') {
+            dataInicio = new Date(agora.setDate(agora.getDate() - 7));
+        } else if (periodo === 'mes') {
+            dataInicio = new Date(agora.setMonth(agora.getMonth() - 1));
+        } else {
+            dataInicio = new Date(0);
+        }
+        return Timestamp.fromDate(dataInicio);
+    }
+
+    async function carregarDesempenhoPorModo(uid) {
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
+        const dataInicio = getDateRange(periodo).toDate();
+
+        const q = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
+        const snapshot = await getDocs(q);
+
+        const dados = {
+            simulado: { acertos: 0, erros: 0 },
+            pratica: { acertos: 0, erros: 0 }
+        };
+
+        snapshot.forEach(doc => {
+            const treino = doc.data();
+            const dataTreino = new Date(treino.data);
+            if (dataTreino >= dataInicio) {
+                if (dados[treino.modo]) {
+                    dados[treino.modo].acertos += treino.acertos || 0;
+                    dados[treino.modo].erros += treino.erros || 0;
+                }
+            }
+        });
+
+        const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d');
+        if(graficoDesempenhoModos) graficoDesempenhoModos.destroy();
+        graficoDesempenhoModos = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Simulado', 'Prática'],
+                datasets: [
+                    {
+                        label: 'Acertos',
+                        data: [dados.simulado.acertos, dados.pratica.acertos],
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    },
+                    {
+                        label: 'Erros',
+                        data: [dados.simulado.erros, dados.pratica.erros],
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    }
+                ]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Desempenho por Modo de Treino' } } }
+        });
+    }
+
+    async function carregarEvolucaoCronologicaPorModo(uid) {
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
+        const dataInicio = getDateRange(periodo).toDate();
+        
+        const q = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
+        const snapshot = await getDocs(q);
+
+        const dadosPorData = {}; 
+        snapshot.forEach(doc => {
+            const treino = doc.data();
+            const dataTreino = new Date(treino.data);
+
+            if (dataTreino >= dataInicio) {
+                const data = dataTreino.toISOString().split('T')[0];
+                if (!dadosPorData[data]) {
+                    dadosPorData[data] = { acertos: 0, total: 0 };
+                }
+                dadosPorData[data].acertos += treino.acertos;
+                dadosPorData[data].total += (treino.acertos + treino.erros);
+            }
+        });
+
+        const labels = Object.keys(dadosPorData).sort();
+        const dataPoints = labels.map(label => {
+            const dia = dadosPorData[label];
+            return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0;
+        });
+
+        const ctx = document.getElementById('graficoLinhaModos').getContext('2d');
+        if(graficoLinhaModos) graficoLinhaModos.destroy();
+        graficoLinhaModos = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '% de Acertos',
+                    data: dataPoints,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Evolução de Acertos ao Longo do Tempo' } } }
+        });
+    }
+
+    function toggleLinhaMeta() {
+        if (!graficoLinhaModos) return;
+
+        const metaDataset = {
+            label: `Meta (${metaAcertosGlobal}%)`,
+            data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal),
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0
+        };
+
+        const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta'));
+
+        if (metaIndex > -1) {
+            graficoLinhaModos.data.datasets.splice(metaIndex, 1);
+        } else {
+            graficoLinhaModos.data.datasets.push(metaDataset);
+        }
+        graficoLinhaModos.update();
+    }
+    
+    // =========================
+    // 8. EDITAL VERTICALIZADO
+    // =========================
+    const editalALERO = {
+        "Língua Portuguesa": ["Interpretação de textos: compreensão de textos verbais e não verbais","Morfologia: classes de palavras (verbos, pronomes, substantivos, etc.) e suas flexões","Sintaxe: concordância verbal e nominal, regência, crase","Pontuação: uso correto dos sinais de pontuação","Problemas da língua culta: ortografia, semântica, homônimos e parônimos"],
+        "História e Geografia de Rondônia": ["Processo de colonização e ciclos econômicos (borracha, cassiterita)","Criação do Território Federal do Guaporé e do Estado de Rondônia","Aspectos físicos: relevo, hidrografia e clima","População e demografia"],
+        "Direito Administrativo": ["Organização administrativa: administração direta e indireta","Atos administrativos: atributos, elementos, anulação e revogação","Poderes da Administração: vinculado, discricionário, hierárquico, disciplinar e de polícia","Licitações e Contratos (Lei 14.133/2021)","Servidores públicos: regime jurídico, direitos e deveres"],
+        "Legislação Estadual": ["Constituição do Estado de Rondônia: principais títulos e capítulos","Regimento Interno da ALE-RO: estrutura e funcionamento"],
+        "Direito Constitucional": ["Princípios fundamentais da República","Direitos e garantias fundamentais (Art. 5º)","Organização do Estado: União, Estados, Municípios","Poder Legislativo: estrutura e atribuições"],
+        "Gestão de Pessoas": ["Motivação no serviço público", "Liderança e estilos de liderança", "Trabalho em equipe e gestão de conflitos"],
+        "Matemática": ["Operações com números reais", "Porcentagem e juros simples", "Regra de três simples e composta"],
+        "Raciocínio Lógico": ["Estruturas lógicas e lógica de argumentação", "Sequências lógicas de números, letras e figuras", "Problemas de lógica com diagramas e tabelas"],
+        "Noções de Informática": ["Sistema Operacional Windows: arquivos e pastas", "Editor de textos: Microsoft Word", "Planilhas eletrônicas: Microsoft Excel", "Conceitos de hardware e software", "Internet: navegação, e-mail e segurança da informação"],
+        "Administração Geral": ["Redação oficial: padrões e normas","Arquivologia: conceitos fundamentais e gestão de documentos","Administração de recursos materiais e patrimoniais","Conceitos de administração pública e governança"]
+    };
+
+    function gerarEditalVerticalizado() {
+        const container = document.getElementById('edital-verticalizado-container');
+        container.innerHTML = '';
+        for (const disciplina in editalALERO) {
+            let assuntosHTML = editalALERO[disciplina].map(assunto => `<li class="ml-4 list-disc">${assunto}</li>`).join('');
+            container.innerHTML += `
+                <div class="border p-4 rounded-lg">
+                    <h3 class="font-bold text-lg text-blue-700">${disciplina}</h3>
+                    <ul class="mt-2">${assuntosHTML}</ul>
+                </div>
+            `;
+        }
+    }
+
+    async function baixarEditalPDF() {
+        alert("Gerando seu PDF. Aguarde um momento...");
+        const { jsPDF } = window.jspdf;
+        const editalContainer = document.getElementById('card-edital-para-pdf');
+        
+        const button = editalContainer.querySelector('#btn-download-pdf');
+        button.style.display = 'none';
+
+        const canvas = await html2canvas(editalContainer);
+        
+        button.style.display = 'block';
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        
+        let canvasHeightOnPdf = pdfWidth / ratio;
+        let yPos = 0;
+        let heightLeft = canvasHeightOnPdf;
+
+        pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, canvasHeightOnPdf);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            yPos -= pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, canvasHeightOnPdf);
+            heightLeft -= pdfHeight;
+        }
+        
+        pdf.save("edital-verticalizado-alero.pdf");
+    }
+    
+    // =========================
+    // 9. PERFIL, MEDALHAS E RANKING
+    // =========================
+    async function carregarPerfil(uid) {
+        const container = document.getElementById('perfil-usuario');
+        const userDoc = await getDoc(doc(db, "usuarios", uid)); 
+        if(userDoc.exists()) {
+            const data = userDoc.data();
+            container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos}%</p>`;
+        }
+    }
+    
+    async function baixarRelatorioPDF(uid) {
+        alert("Gerando seu relatório em PDF. Aguarde um momento...");
+        const { jsPDF } = window.jspdf;
+
+        const userDoc = await getDoc(doc(db, "usuarios", uid));
+        const qTempo = query(collection(db, "registro_tempo"), where("usuarioId", "==", uid));
+        const qTreinos = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
+
+        const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
+
+        let totalMinutos = 0;
+        tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
+
+        let totalAcertos = 0;
+        let totalQuestoes = 0;
+        treinosSnap.forEach(doc => {
+            totalAcertos += doc.data().acertos || 0;
+            totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0);
+        });
+        const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
+        
+        const reportHTML = `
+            <div style="font-family: Arial, sans-serif; padding: 20px; width: 600px; border: 1px solid #ccc;">
+                <h1 style="color: #1e3a8a; text-align: center; border-bottom: 2px solid #93c5fd; padding-bottom: 10px;">Relatório de Desempenho</h1>
+                <h2 style="color: #3b82f6; margin-top: 20px;">Resumo Geral</h2>
+                <p><strong>Usuário:</strong> ${auth.currentUser.email}</p>
+                <p><strong>Meta de Acertos:</strong> ${metaAcertosGlobal}%</p>
+                <p><strong>Tempo Total de Estudo:</strong> ${(totalMinutos / 60).toFixed(1)} horas</p>
+                <p><strong>Percentual Geral de Acertos:</strong> ${percentualGeral}%</p>
+                <hr style="margin: 20px 0;" />
+                <h2 style="color: #3b82f6;">Suas Conquistas</h2>
+                <p>🏆 Hall da Fama e Medalhas serão adicionados aqui.</p>
+            </div>
+        `;
+        
+        const hiddenContainer = document.createElement('div');
+        hiddenContainer.style.position = 'absolute';
+        hiddenContainer.style.left = '-9999px';
+        hiddenContainer.innerHTML = reportHTML;
+        document.body.appendChild(hiddenContainer);
+
+        html2canvas(hiddenContainer).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save("relatorio-de-desempenho.pdf");
+            document.body.removeChild(hiddenContainer);
+        });
+    }
+
+    async function carregarMedalhas(uid) {
+        // Exemplo estático
+        const container = document.getElementById('listaMedalhas');
+        container.innerHTML = `
+          <div class="flex flex-col items-center border p-2 rounded w-24 text-center">
+            <span class="text-3xl">🏅</span>
+            <p class="text-xs mt-1">Regularidade</p>
+          </div>
+           <div class="flex flex-col items-center border p-2 rounded w-24 text-center">
+            <span class="text-3xl">🎯</span>
+            <p class="text-xs mt-1">Meta Cumprida</p>
+          </div>
+        `;
+    }
+
+    // =========================
+    // 10. RANKING E DESAFIOS
+    // =========================
+    async function carregarRanking(currentUid) {
+        const container = document.getElementById('ranking-geral-container');
+        container.innerHTML = "<p class='text-slate-500'>Carregando ranking...</p>";
+
+        const usersSnapshot = await getDocs(collection(db, "usuarios"));
+        const ranking = [];
+
+        for(const userDoc of usersSnapshot.docs) {
+            const uid = userDoc.id;
+            const userData = userDoc.data();
+            let pontuacao = 0;
+
+            const qTempo = query(collection(db, "registro_tempo"), where("usuarioId", "==", uid));
+            const qTreinos = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
+            
+            const [tempoSnap, treinosSnap] = await Promise.all([getDocs(qTempo), getDocs(qTreinos)]);
+
+            let totalMinutos = 0;
+            tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
+            pontuacao += totalMinutos; // 1 ponto por minuto estudado
+
+            let totalAcertos = 0;
+            treinosSnap.forEach(doc => totalAcertos += doc.data().acertos);
+            pontuacao += totalAcertos * 10; // 10 pontos por acerto
+
+            ranking.push({
+                uid: uid,
+                nome: userData.nome || userDoc.id,
+                pontuacao: pontuacao
+            });
+        }
+        
+        ranking.sort((a, b) => b.pontuacao - a.pontuacao);
+
+        container.innerHTML = ranking.map((user, index) => `
+            <div class="flex items-center justify-between p-2 rounded ${user.uid === currentUid ? 'bg-blue-100' : ''}">
+                <p class="font-semibold">${index + 1}. ${user.nome}</p>
+                <p>${user.pontuacao.toLocaleString()} pontos</p>
+            </div>
+        `).join('');
+    }
+
+    async function carregarDesafios(currentUid) {
+        const container = document.getElementById('desafios-container');
+        container.innerHTML = "<p class='text-slate-500'>Carregando usuários para desafiar...</p>";
+        
+        const usersSnapshot = await getDocs(collection(db, "usuarios"));
+        let usersHTML = "";
+        
+        usersSnapshot.forEach(doc => {
+            if (doc.id !== currentUid) {
+                const user = doc.data();
+                usersHTML += `
+                    <div class="flex items-center justify-between p-3 border rounded-lg">
+                        <p class="font-semibold">${user.nome || doc.id}</p>
+                        <button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white font-semibold px-3 py-1 text-sm">Desafiar</button>
+                    </div>
+                `;
+            }
+        });
+        
+        container.innerHTML = usersHTML;
+        
+        document.querySelectorAll('.btn-desafiar').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const oponenteNome = e.currentTarget.dataset.oponenteNome;
+                alert(`Iniciando desafio contra ${oponenteNome}!`);
+                
+                const q = query(collection(db, "questoes"));
+                const snapshot = await getDocs(q);
+                let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                todasQuestoes.sort(() => 0.5 - Math.random());
+                
+                await iniciarSimulado(null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio');
+            });
+        });
+    }
+
+    // =========================
+    // 11. SIMULADOS DE PROVAS ANTERIORES
+    // =========================
+    async function carregarSimulados() {
+        const container = document.getElementById('lista-simulados');
+        container.innerHTML = "<p class='text-slate-500'>Carregando simulados...</p>";
+        
+        const q = query(collection(db, "simulados"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            container.innerHTML = "<p class='text-slate-500'>Nenhum simulado de prova anterior encontrado.</p>";
+            return;
+        }
+
+        container.innerHTML = snapshot.docs.map(doc => {
+            const s = doc.data();
+            return `
+                <div class="border p-3 rounded-lg flex justify-between items-center">
+                    <div>
+                        <p class="font-bold">${s.banca} - ${s.ano}</p>
+                        <p class="text-slate-600">${s.cargo}</p>
+                    </div>
+                    <button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white font-semibold px-4 py-2">Iniciar Simulado</button>
+                </div>
+            `;
+        }).join('');
+
+        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const simuladoId = e.currentTarget.dataset.simuladoId;
+                const simuladoDoc = await getDoc(doc(db, "simulados", simuladoId));
+                if (simuladoDoc.exists()) {
+                    const questoesIds = simuladoDoc.data().questoes;
+                    const questoesPromises = [];
+                    for (let i = 0; i < questoesIds.length; i += 30) {
+                        const chunk = questoesIds.slice(i, i + 30);
+                        const qQuestoes = query(collection(db, "questoes"), where(documentId(), 'in', chunk));
+                        questoesPromises.push(getDocs(qQuestoes));
+                    }
+                    
+                    const questoesSnapshots = await Promise.all(questoesPromises);
+                    const questoes = [];
+                    questoesSnapshots.forEach(snap => {
+                        snap.forEach(d => questoes.push({ id: d.id, ...d.data() }));
+                    });
+
+                    iniciarSimulado(null, simuladoDoc.data().nome, questoes, "simulado");
+                }
+            });
+        });
+    }
+
+    // =========================
+    // 12. REDAÇÃO
+    // =========================
+    async function carregarTemasRedacao() {
+        // Esta função agora será chamada, mas o banco de temas é estático por enquanto.
+    }
+
+  </script>
+
 </body>
 </html>
 
