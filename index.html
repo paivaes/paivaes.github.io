@@ -1354,41 +1354,43 @@
 
     // =========================
     // 12. REDAÇÃO
-    // =========================
-    async function carregarTemasRedacao() {
-    const container = document.getElementById('lista-temas-redacao');
-    container.innerHTML = '';
+// =========================
 
+async function carregarTemasRedacao() {
+    // Lista estática de temas (pode futuramente vir do Firestore)
     const temas = [
-        { titulo: "A importância da educação para o desenvolvimento social", ano: 2023, banca: "FGV" },
-        { titulo: "Os desafios da mobilidade urbana nas grandes cidades", ano: 2022, banca: "FGV" },
-        { titulo: "Tecnologia e privacidade: limites e responsabilidades", ano: 2021, banca: "FGV" }
+        { titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" },
+        { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" },
+        { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }
     ];
 
-    temas.forEach(tema => {
-        container.innerHTML += `
-            <div class="border p-4 rounded-lg">
-                <h3 class="font-bold text-lg text-blue-700">${tema.titulo}</h3>
-                <p class="text-sm text-gray-600">Ano: ${tema.ano} | Banca: ${tema.banca}</p>
-                <button class="mt-2 bg-green-500 text-white px-3 py-1 rounded" onclick="abrirModalRedacao('${tema.titulo}')">Escrever Redação</button>
-            </div>
+    const container = document.getElementById("temas-redacao");
+    if (!container) return; // Evita erro se o elemento não existir
+
+    container.innerHTML = ""; // Limpa antes de renderizar
+
+    temas.forEach((tema) => {
+        const div = document.createElement("div");
+        div.className = "p-4 bg-white rounded shadow";
+
+        div.innerHTML = `
+            <h3 class="text-lg font-semibold">${tema.titulo}</h3>
+            <p class="text-sm text-gray-600">Ano: ${tema.ano} | Banca: ${tema.banca}</p>
+            <button class="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Escrever Redação
+            </button>
         `;
+
+        // Adiciona evento ao botão
+        const botao = div.querySelector("button");
+        botao.addEventListener("click", () => abrirModalRedacao(tema.titulo));
+
+        container.appendChild(div);
     });
 }
-
-function abrirModalRedacao(titulo) {
-    temaRedacaoAtual = titulo;
-    document.getElementById('modal-redacao-titulo').textContent = `Tema: ${titulo}`;
-    document.getElementById('modal-redacao').classList.remove('hidden');
-    document.getElementById('modal-redacao').classList.add('flex');
-}
-
-document.getElementById('btn-fechar-modal-redacao').addEventListener('click', () => {
-    document.getElementById('modal-redacao').classList.add('hidden');
-    document.getElementById('modal-redacao').classList.remove('flex');
-});
 
   </script>
 
 </body>
 </html>
+
