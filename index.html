@@ -11,6 +11,34 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body class="font-[Inter] bg-gray-50 text-gray-900">
+
+  <main class="max-w-4xl mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Temas de Redação</h1>
+    <div id="temas-redacao" class="space-y-4"></div>
+  </main>
+
+  <!-- Modal de Redação -->
+  <div id="modal-redacao" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-full max-w-lg mx-auto mt-20">
+      <h2 id="titulo-redacao" class="text-xl font-semibold mb-4"></h2>
+      <textarea id="texto-redacao" class="w-full border border-gray-300 rounded p-2" rows="10" placeholder="Escreva sua redação aqui..."></textarea>
+      <div class="mt-4 flex justify-end gap-2">
+        <button onclick="fecharModalRedacao()" class="bg-gray-500 text-white px-4 py-2 rounded">Fechar</button>
+        <button onclick="salvarRedacao()" class="bg-green-600 text-white px-4 py-2 rounded">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+  <script>
+    window.onload = carregarTemasRedacao;
+  </script>
+</body>
+</html>
+
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
     .container { max-width: 1200px; margin: auto; padding: 20px; }
@@ -1356,44 +1384,40 @@
     // 12. REDAÇÃO
     // =========================
     async function carregarTemasRedacao() {
-        // Esta função agora será chamada, mas o banco de temas é estático por enquanto.
-    }
+    const container = document.getElementById('lista-temas-redacao');
+    container.innerHTML = '';
+
+    const temas = [
+        { titulo: "A importância da educação para o desenvolvimento social", ano: 2023, banca: "FGV" },
+        { titulo: "Os desafios da mobilidade urbana nas grandes cidades", ano: 2022, banca: "FGV" },
+        { titulo: "Tecnologia e privacidade: limites e responsabilidades", ano: 2021, banca: "FGV" }
+    ];
+
+    temas.forEach(tema => {
+        container.innerHTML += `
+            <div class="border p-4 rounded-lg">
+                <h3 class="font-bold text-lg text-blue-700">${tema.titulo}</h3>
+                <p class="text-sm text-gray-600">Ano: ${tema.ano} | Banca: ${tema.banca}</p>
+                <button class="mt-2 bg-green-500 text-white px-3 py-1 rounded" onclick="abrirModalRedacao('${tema.titulo}')">Escrever Redação</button>
+            </div>
+        `;
+    });
+}
+
+function abrirModalRedacao(titulo) {
+    temaRedacaoAtual = titulo;
+    document.getElementById('modal-redacao-titulo').textContent = `Tema: ${titulo}`;
+    document.getElementById('modal-redacao').classList.remove('hidden');
+    document.getElementById('modal-redacao').classList.add('flex');
+}
+
+document.getElementById('btn-fechar-modal-redacao').addEventListener('click', () => {
+    document.getElementById('modal-redacao').classList.add('hidden');
+    document.getElementById('modal-redacao').classList.remove('flex');
+});
 
   </script>
 
 </body>
 </html>
 
-
-function carregarTemasRedacao() {
-  const temas = [
-    { titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" },
-    { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" },
-    { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }
-  ];
-
-  const container = document.getElementById("temas-redacao");
-  container.innerHTML = "";
-
-  temas.forEach((tema, index) => {
-    const div = document.createElement("div");
-    div.className = "tema-redacao";
-    div.innerHTML = `
-      <h3>${tema.titulo}</h3>
-      <p><strong>Ano:</strong> ${tema.ano} | <strong>Banca:</strong> ${tema.banca}</p>
-      <button onclick="abrirModalRedacao('${tema.titulo}')">Escrever Redação</button>
-    `;
-    container.appendChild(div);
-  });
-}
-
-function abrirModalRedacao(titulo) {
-  const modal = document.getElementById("modal-redacao");
-  const tituloModal = document.getElementById("titulo-redacao");
-  tituloModal.textContent = titulo;
-  modal.style.display = "block";
-}
-
-function fecharModalRedacao() {
-  document.getElementById("modal-redacao").style.display = "none";
-}
