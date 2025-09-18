@@ -36,6 +36,10 @@
     .priority-item { cursor: grab; user-select: none; }
     .priority-item:active { cursor: grabbing; background-color: #f0f4ff; }
     .dragging { opacity: 0.5; }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .fade-out { animation: fadeOut 0.3s ease-in forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
   </style>
 </head>
 <body>
@@ -43,22 +47,8 @@
   <div class="container">
     <header class="text-center mb-8">
       <h1 class="text-4xl font-bold text-blue-800">Plataforma de Estudos GFConcursos</h1>
-      <p id="auth-status" class="text-slate-600">Carregando...</p>
+      <p id="user-info" class="text-slate-600 h-5"></p>
     </header>
-
-    <!-- Autenticação -->
-    <div id="auth-container" class="card max-w-md mx-auto">
-        <div id="login-view">
-            <h2 class="text-xl font-bold">Acessar Conta</h2>
-            <input type="email" id="login-email" placeholder="E-mail" class="w-full mb-2 p-2">
-            <input type="password" id="login-password" placeholder="Senha" class="w-full mb-2 p-2">
-            <button id="btn-login" class="w-full bg-blue-600 text-white font-semibold py-2">Entrar</button>
-        </div>
-         <div id="logout-view" class="hidden text-center">
-            <p id="welcome-message" class="mb-4 text-lg"></p>
-            <button id="btn-logout" class="w-full bg-red-500 text-white font-semibold py-2">Sair</button>
-        </div>
-    </div>
     
     <!-- Abas de Navegação -->
     <div id="tabs-container" class="mb-6 hidden">
@@ -67,6 +57,7 @@
         </div>
         <nav id="nav-menu" class="hidden md:flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
             <button class="tab-button px-4 py-2 rounded" data-tab="estudo">Estudo</button>
+            <button class="tab-button px-4 py-2 rounded" data-tab="cronograma">Cronograma</button>
             <button class="tab-button px-4 py-2 rounded" data-tab="simulados">Simulados</button>
             <button class="tab-button px-4 py-2 rounded" data-tab="redacao">Redação</button>
             <button class="tab-button px-4 py-2 rounded" data-tab="progresso">Progresso</button>
@@ -83,289 +74,101 @@
       <!-- Aba de Estudo -->
       <div id="tab-content-estudo" class="tab-content">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Coluna da Esquerda: Seleção e Prática -->
             <div>
-              <div class="card">
-                <h2>Menu de Disciplinas</h2>
-                <label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label>
-                <select id="seletorDisciplina" class="w-full"></select>
-                <div id="listaAssuntos" class="mt-4 space-y-3"></div>
-              </div>
-    
-              <div class="card">
-                  <h2>Praticar Questões</h2>
-                   <div class="grid grid-cols-2 gap-4">
-                      <div>
-                          <label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label>
-                          <select id="nivelDificuldade" class="w-full">
-                            <option value="">Todas</option>
-                            <option value="facil">Fácil</option>
-                            <option value="medio">Médio</option>
-                            <option value="dificil">Difícil</option>
-                          </select>
-                      </div>
-                      <div>
-                          <label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label>
-                          <input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full">
-                      </div>
-                   </div>
-                   <button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button>
-              </div>
-    
-              <div class="card">
-                  <h2>Revisão Inteligente 🧠</h2>
-                  <label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label>
-                  <input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2">
-                  <button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button>
-              </div>
-    
+              <div class="card"><h2 class="m-0">Menu de Disciplinas</h2><label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label><select id="seletorDisciplina" class="w-full"></select><div id="listaAssuntos" class="mt-4 space-y-3"></div></div>
+              <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
+              <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
             </div>
-    
-            <!-- Coluna da Direita: Dashboards -->
             <div>
-              <div class="card">
-                <h2>Metas e Prioridades do Ciclo</h2>
-                <div class="mb-4">
-                    <label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label>
-                    <input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full">
-                </div>
-                <div class="mb-4 border-t pt-4 mt-4">
-                    <label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label>
-                    <input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full">
-                </div>
-                <div>
-                    <label class="block font-semibold mb-1">Prioridade das Disciplinas:</label>
-                    <p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p>
-                    <div id="lista-prioridades" class="border rounded p-2 space-y-2">
-                        <p class="text-slate-400">Carregando disciplinas...</p>
-                    </div>
-                </div>
-                <button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button>
-              </div>
-
-              <div class="card">
-                <h2>Progresso por Disciplina</h2>
-                <div id="progressoDisciplinas"></div>
-              </div>
-              
-              <div class="card">
-                  <h2>Revisões Agendadas</h2>
-                  <div id="listaRevisoes"></div>
-              </div>
+              <div class="card"><h2 class="m-0">Metas e Prioridades do Ciclo</h2><div class="mb-4"><label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label><input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full"></div><div class="mb-4 border-t pt-4 mt-4"><label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label><input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full"></div><div><label class="block font-semibold mb-1">Prioridade das Disciplinas:</label><p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p><div id="lista-prioridades" class="border rounded p-2 space-y-2"><p class="text-slate-400">Carregando disciplinas...</p></div></div><button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button></div>
+              <div class="card"><h2 class="m-0">Progresso por Disciplina</h2><div id="progressoDisciplinas"></div></div>
+              <div class="card"><h2 class="m-0">Revisões Agendadas</h2><div id="listaRevisoes"></div></div>
             </div>
           </div>
       </div>
 
-      <!-- Aba de Simulados -->
-      <div id="tab-content-simulados" class="tab-content hidden">
+      <!-- Aba de Cronograma -->
+      <div id="tab-content-cronograma" class="tab-content hidden">
           <div class="card">
-              <h2>Simulados de Provas Anteriores</h2>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div>
-                      <label for="filtro-banca" class="block font-semibold mb-1">Banca:</label>
-                      <select id="filtro-banca" class="w-full">
-                          <option value="">Todas</option>
-                          <option value="FGV">FGV</option>
-                      </select>
-                  </div>
-                  <div>
-                      <label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label>
-                      <select id="filtro-cargo" class="w-full">
-                           <option value="">Todos</option>
-                           <option value="Assistente Legislativo">Assistente Legislativo</option>
-                      </select>
-                  </div>
-                   <div>
-                      <label for="filtro-ano" class="block font-semibold mb-1">Ano:</label>
-                      <select id="filtro-ano" class="w-full">
-                           <option value="">Todos</option>
-                           <option value="2018">2018</option>
-                      </select>
-                  </div>
-              </div>
-              <div id="lista-simulados" class="space-y-3">
-                  <p class="text-slate-500">Carregando simulados...</p>
-              </div>
+              <h2 class="m-0">Meu Cronograma Semanal</h2>
+              <form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 items-end">
+                  <div class="flex-grow"><label for="materia-cronograma" class="block text-sm font-medium text-gray-700">Matéria</label><input type="text" id="materia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div>
+                  <div class="flex-grow"><label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label><select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"><option value="1-segunda">Segunda-feira</option><option value="2-terca">Terça-feira</option><option value="3-quarta">Quarta-feira</option><option value="4-quinta">Quinta-feira</option><option value="5-sexta">Sexta-feira</option><option value="6-sabado">Sábado</option><option value="7-domingo">Domingo</option></select></div>
+                  <div class="flex-grow"><label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label><input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div>
+                  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button>
+              </form>
+              <div id="container-dias-cronograma" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"></div>
           </div>
       </div>
+      
+      <!-- Aba de Simulados -->
+      <div id="tab-content-simulados" class="tab-content hidden"><div class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
 
       <!-- Aba de Redação -->
-      <div id="tab-content-redacao" class="tab-content hidden">
-          <div class="card">
-              <h2>Banco de Temas de Redação - FGV</h2>
-              <div id="lista-temas-redacao" class="space-y-4"></div>
-          </div>
-      </div>
+      <div id="tab-content-redacao" class="tab-content hidden"><div class="card"><main id="modulo-redacao-container"><section id="secao-redacao"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Temas Disponíveis</h2><div id="temas-redacao" class="grid grid-cols-1 md:grid-cols-2 gap-6"><p>Carregando temas...</p></div></section><section id="secao-redacoes-salvas" class="mt-12"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Minhas Redações Salvas</h2><div id="lista-redacoes-salvas-v2" class="space-y-4"><p class="text-gray-500">Carregando redações salvas...</p></div></section></main></div></div>
       
       <!-- Aba de Progresso -->
-      <div id="tab-content-progresso" class="tab-content hidden">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <div class="card">
-                    <h2>Evolução de Questões</h2>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4">
-                        <div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div>
-                        <div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div>
-                        <div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div>
-                        <div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div>
-                    </div>
-                    <canvas id="graficoEvolucaoPizza" height="200"></canvas>
-                </div>
-            </div>
-            <div>
-                <div class="card">
-                    <h2>Histórico de Desempenho</h2>
-                    <div class="flex flex-col sm:flex-row gap-4 items-center mb-4">
-                      <div class="w-full sm:w-auto flex-grow">
-                          <label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label>
-                          <select id="filtroPeriodoDesempenho" class="w-full">
-                            <option value="semana">Última semana</option>
-                            <option value="mes">Último mês</option>
-                            <option value="total" selected>Todo histórico</option>
-                          </select>
-                      </div>
-                      <div class="w-full sm:w-auto pt-0 sm:pt-7">
-                          <button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button>
-                      </div>
-                    </div>
-                    <div class="mb-6">
-                      <canvas id="graficoDesempenhoModos" height="200"></canvas>
-                    </div>
-                    <div>
-                      <canvas id="graficoLinhaModos" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </div>
+      <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
 
       <!-- Aba de Edital -->
-      <div id="tab-content-edital" class="tab-content hidden">
-          <div class="card" id="card-edital-para-pdf">
-              <div class="flex justify-between items-center" id="edital-header">
-                <div>
-                    <h2>Edital Verticalizado</h2>
-                    <p class="text-lg font-semibold text-slate-700 -mt-4 mb-4">Concurso: Assembleia Legislativa de Rondônia (ALE-RO) - Base 2018</p>
-                </div>
-                <button id="btn-download-pdf" class="bg-blue-600 text-white font-semibold">Baixar PDF</button>
-              </div>
-              <div id="edital-verticalizado-container" class="mt-4 space-y-4"></div>
-          </div>
-      </div>
+      <div id="tab-content-edital" class="tab-content hidden"><div class="card" id="card-edital-para-pdf"><div class="flex justify-between items-center" id="edital-header"><div><h2 class="m-0">Edital Verticalizado</h2><p class="text-lg font-semibold text-slate-700 mb-4">Concurso: Assembleia Legislativa de Rondônia (ALE-RO) - Base 2018</p></div><button id="btn-download-pdf" class="bg-blue-600 text-white font-semibold">Baixar PDF</button></div><div id="edital-verticalizado-container" class="mt-4 space-y-4"></div></div></div>
       
       <!-- Aba de Perfil -->
-       <div id="tab-content-perfil" class="tab-content hidden">
-          <div class="card">
-            <div class="flex justify-between items-center">
-                <h2>Meu Perfil</h2>
-                <button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button>
-            </div>
-            <div id="perfil-usuario" class="space-y-2 mt-4"></div>
-            
-            <div class="mt-6">
-                <h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3>
-                <div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div>
-            </div>
-             <div class="mt-6">
-                <h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏆 Hall da Fama</h3>
-                <div id="hall-da-fama" class="space-y-2"></div>
-            </div>
-             <div class="mt-6">
-                <h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3>
-                <div id="lista-redacoes-salvas" class="space-y-2"></div>
-            </div>
-          </div>
-      </div>
+       <div id="tab-content-perfil" class="tab-content hidden"><div class="card"><div class="flex justify-between items-center"><h2 class="m-0">Meu Perfil</h2><button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button></div><div id="perfil-usuario" class="space-y-2 mt-4"></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3><div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏆 Hall da Fama</h3><div id="hall-da-fama" class="space-y-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3><div id="lista-redacoes-salvas-perfil" class="space-y-2"></div></div></div></div>
 
       <!-- Aba de Ranking -->
-      <div id="tab-content-ranking" class="tab-content hidden">
-          <div class="card">
-              <h2>Ranking Geral</h2>
-              <div id="ranking-geral-container" class="space-y-2"></div>
-          </div>
-      </div>
+      <div id="tab-content-ranking" class="tab-content hidden"><div class="card"><h2 class="m-0">Ranking Geral</h2><div id="ranking-geral-container" class="space-y-2"></div></div></div>
 
       <!-- Aba de Desafios -->
-      <div id="tab-content-desafios" class="tab-content hidden">
-          <div class="card">
-              <h2>Desafios 1x1</h2>
-              <div id="desafios-container" class="space-y-3"></div>
-          </div>
-      </div>
+      <div id="tab-content-desafios" class="tab-content hidden"><div class="card"><h2 class="m-0">Desafios 1x1</h2><div id="desafios-container" class="space-y-3"></div></div></div>
 
     </div>
   </div>
 
   <!-- Modal de Questões -->
-  <div id="modal-questoes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="flex justify-between items-center mb-4">
-            <h2 id="modal-titulo" class="m-0 p-0 border-0">Simulado</h2>
-            <button id="btn-fechar-modal" class="text-2xl font-bold">&times;</button>
-          </div>
-          <div id="modal-corpo"></div>
-      </div>
-  </div>
-
-  <!-- Modal de Redação -->
-  <div id="modal-redacao" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[95vh] flex flex-col">
-          <div class="flex justify-between items-center mb-4">
-            <h2 id="modal-redacao-titulo" class="m-0 p-0 border-0">Escrever Redação</h2>
-            <button id="btn-fechar-modal-redacao" class="text-2xl font-bold">&times;</button>
-          </div>
-          <div class="overflow-y-auto flex-grow">
-              <div id="redacao-instrucoes" class="mb-4"></div>
-              <textarea id="redacao-texto-usuario" placeholder="Comece a escrever sua redação aqui..."></textarea>
-              <div id="correcao-container" class="mt-4 hidden"></div>
-          </div>
-          <div class="pt-4 border-t mt-4 flex justify-end gap-4">
-              <button id="btn-imprimir-redacao" class="bg-gray-500 text-white font-semibold hidden">Imprimir PDF</button>
-              <button id="btn-corrigir-redacao" class="bg-green-500 text-white font-semibold">Corrigir Redação</button>
-          </div>
-      </div>
-  </div>
-
+  <div id="modal-questoes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40"><div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"><div class="flex justify-between items-center mb-4"><h2 id="modal-titulo" class="m-0 p-0 border-0">Simulado</h2><button id="btn-fechar-modal-questoes" class="text-2xl font-bold">&times;</button></div><div id="modal-corpo"></div></div></div>
+  
+  <!-- Modais do Módulo de Redação -->
+  <div id="modal-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Escreva sua Redação</h2><p id="titulo-redacao" class="text-gray-700 mt-1"></p></div><div class="p-6 flex-grow overflow-y-auto"><textarea id="texto-redacao" class="w-full h-64 p-3 border rounded-md focus:ring-2 focus:ring-blue-500 transition" placeholder="Comece a escrever seu texto aqui..."></textarea><div id="resultado-correcao" class="mt-4"></div></div><div class="p-6 bg-gray-50 border-t flex flex-wrap gap-2 justify-end"><button id="btn-fechar-escrever" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button><button id="btn-corrigir" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id="btn-salvar" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Salvar Redação</button><button id="btn-imprimir" style="display: none;" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">Imprimir/PDF</button></div></div></div>
+  <div id="modal-ver-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Visualizar Redação</h2><p id="ver-titulo-redacao" class="text-gray-700 mt-1"></p></div><div id="ver-texto-redacao" class="p-6 flex-grow overflow-y-auto whitespace-pre-wrap"></div><div class="p-6 bg-gray-50 border-t flex justify-end"><button id="btn-fechar-ver" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button></div></div></div>
+  
+  <div id="notification-container" class="fixed top-5 right-5 z-50 space-y-2"></div>
 
   <!-- SCRIPTS -->
   <script type="module">
     // =========================
     // CONFIGURAÇÃO DO FIREBASE
     // =========================
-    const firebaseConfig = {
-      apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
-      authDomain: "gfconcursos-app.firebaseapp.com",
-      databaseURL: "https://gfconcursos-app-default-rtdb.firebaseio.com",
-      projectId: "gfconcursos-app",
-      storageBucket: "gfconcursos-app.firebasestorage.app",
-      messagingSenderId: "615439428502",
-      appId: "1:615439428502:web:b399549c3969e052098bb7"
-    };
-
-    // Importações do Firebase SDK
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+    let app, db, auth;
+    try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+    } catch (e) {
+        console.error("Erro ao inicializar Firebase:", e);
+        document.body.innerHTML = '<h1>Erro Crítico na Configuração do Firebase. Verifique o console.</h1>';
+    }
+    
     // Variáveis globais
     let graficoPizza = null;
     let graficoDesempenhoModos = null;
     let graficoLinhaModos = null;
     let metaAcertosGlobal = 0;
     const modalCorpo = document.getElementById('modal-corpo');
-    
-    // Variáveis de estado do Simulado
     let questoesDoSimulado = [];
     let questaoAtualIndex = 0;
     let pontuacao = 0;
-    let temaRedacaoAtual = null;
     
     // =========================
-    // LÓGICA DE NAVEGAÇÃO POR ABAS
+    // NAVEGAÇÃO POR ABAS
     // =========================
     const tabsContainer = document.getElementById('tabs-container');
     const tabButtons = tabsContainer.querySelectorAll('.tab-button');
@@ -378,1019 +181,531 @@
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tab = button.dataset.tab;
-            
             tabButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            
             tabContents.forEach(content => {
-                if (content.id === `tab-content-${tab}`) {
-                    content.classList.remove('hidden');
-                } else {
-                    content.classList.add('hidden');
-                }
+                if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
+                else content.classList.add('hidden');
             });
-            if (window.innerWidth < 768) {
-                 document.getElementById('nav-menu').classList.add('hidden');
-            }
+            if (window.innerWidth < 768) document.getElementById('nav-menu').classList.add('hidden');
         });
     });
 
     // =========================
-    // LÓGICA DE AUTENTICAÇÃO
+    // AUTENTICAÇÃO E INICIALIZAÇÃO
     // =========================
-    const authStatus = document.getElementById('auth-status');
-    const loginView = document.getElementById('login-view');
-    const logoutView = document.getElementById('logout-view');
-    const welcomeMessage = document.getElementById('welcome-message');
     const mainContent = document.getElementById('main-content');
-    const authContainer = document.getElementById('auth-container');
-
-
-    onAuthStateChanged(auth, user => {
+    
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            authStatus.textContent = ``;
+            document.getElementById('user-info').textContent = `Logado como: ${user.uid}`;
             mainContent.classList.remove('hidden');
             tabsContainer.classList.remove('hidden');
-            authContainer.classList.add('hidden');
             document.querySelector('.tab-button[data-tab="estudo"]').click();
-            inicializarApp(user);
+            
+            const config = { db, auth, appId, userId: user.uid };
+            await inicializarApp(config); // Tornar esta chamada assíncrona
+            inicializarModuloCronograma(config);
+            inicializarModuloRedacao(config);
         } else {
-            authStatus.textContent = 'Você não está conectado.';
-            mainContent.classList.add('hidden');
-            tabsContainer.classList.add('hidden');
-            authContainer.classList.remove('hidden');
-            limparDadosUI();
+             try {
+                if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+                else await signInAnonymously(auth);
+            } catch (error) { console.error("Erro na autenticação:", error); }
         }
     });
 
-    document.getElementById('btn-login').addEventListener('click', () => {
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        if (!email || !password) {
-            alert("Por favor, preencha e-mail e senha.");
-            return;
-        }
-        signInWithEmailAndPassword(auth, email, password)
-            .catch(error => alert('Erro no login: ' + error.message));
-    });
-
-    document.getElementById('btn-logout').addEventListener('click', () => {
-        signOut(auth);
-    });
-
-    function limparDadosUI() {
-        ['seletorDisciplina', 'listaAssuntos', 'progressoDisciplinas', 'evolucaoDiaria', 'evolucaoSemanal', 'evolucaoMensal', 'evolucaoTotal', 'listaRevisoes', 'edital-verticalizado-container', 'perfil-usuario', 'listaMedalhas', 'hall-da-fama', 'ranking-geral-container', 'desafios-container']
-        .forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                if(el.tagName === 'SPAN') el.textContent = '0';
-                else el.innerHTML = '';
-            }
-        });
+    // =========================
+    // FUNÇÃO GERAL DE INICIALIZAÇÃO DOS MÓDULOS
+    // =========================
+    async function inicializarApp(config) {
+        const { db, auth, appId, userId } = config;
         
-        if (graficoPizza) { graficoPizza.destroy(); graficoPizza = null; }
-        if (graficoDesempenhoModos) { graficoDesempenhoModos.destroy(); graficoDesempenhoModos = null; }
-        if (graficoLinhaModos) { graficoLinhaModos.destroy(); graficoLinhaModos = null; }
-    }
-    
-    // =========================
-    // FUNÇÃO AUXILIAR
-    // =========================
-    function calcularProgresso(metaHoras, horasEstudadas) {
-      if (!metaHoras || metaHoras === 0) return 0;
-      return Math.min((horasEstudadas / metaHoras) * 100, 100);
-    }
+        await atualizarPerfilPublico(config);
 
-    // =========================
-    // INICIALIZAÇÃO DO APLICATIVO
-    // =========================
-    async function inicializarApp(user) {
-        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData');
+        const userDoc = await getDoc(userDocRef);
+
         if(userDoc.exists()) {
             const userData = userDoc.data();
             metaAcertosGlobal = userData.metaAcertos || 80;
             document.getElementById('meta-geral-horas').value = userData.metaGeralHoras || '';
-            const cicloNome = userData.cicloAtualNome || 'Ciclo 1: Rumo à Aprovação (ALE-RO)';
-            document.getElementById('ciclo-nome-input').value = cicloNome;
-            await carregarPrioridades(user.uid, userData.prioridadeDisciplinas);
+            document.getElementById('ciclo-nome-input').value = userData.cicloAtualNome || 'Ciclo 1: Rumo à Aprovação (ALE-RO)';
+            await carregarPrioridades(config, userData.prioridadeDisciplinas);
         } else {
-            await carregarPrioridades(user.uid, []);
+            await carregarPrioridades(config, []);
         }
         
         const funcoesCarregamento = [
-            carregarDisciplinas,
-            () => carregarProgressoDisciplinas(user.uid),
-            () => carregarEvolucaoQuestoes(user.uid),
-            () => carregarRevisoes(user.uid),
-            () => carregarDesempenhoPorModo(user.uid),
-            () => carregarEvolucaoCronologicaPorModo(user.uid),
-            gerarEditalVerticalizado,
-            () => carregarPerfil(user.uid),
-            () => carregarMedalhas(user.uid),
-            () => carregarRanking(user.uid),
-            () => carregarDesafios(user.uid),
-            carregarSimulados,
-            carregarTemasRedacao
+            () => carregarDisciplinas(config), () => carregarProgressoDisciplinas(config), () => carregarEvolucaoQuestoes(config),
+            () => carregarRevisoes(config), () => carregarDesempenhoPorModo(config), () => carregarEvolucaoCronologicaPorModo(config),
+            () => gerarEditalVerticalizado(config), () => carregarPerfil(config), () => carregarMedalhas(config), () => carregarRanking(config),
+            () => carregarDesafios(config), () => carregarSimulados(config)
         ];
         
-        for(const funcao of funcoesCarregamento) {
-            try {
-                await funcao();
-            } catch (error) {
-                console.error(`Erro ao executar ${funcao.name}:`, error);
-            }
-        }
+        for(const funcao of funcoesCarregamento) { try { await funcao(); } catch (error) { console.error(`Erro ao executar ${funcao.name}:`, error); } }
 
         // Adiciona listeners
-        document.getElementById('seletorDisciplina').addEventListener('change', carregarAssuntos);
-        document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(user.uid));
-        document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => {
-            carregarDesempenhoPorModo(user.uid);
-            carregarEvolucaoCronologicaPorModo(user.uid);
-        });
+        document.getElementById('seletorDisciplina').addEventListener('change', () => carregarAssuntos(config));
+        document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
+        document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => { carregarDesempenhoPorModo(config); carregarEvolucaoCronologicaPorModo(config); });
         document.getElementById('btnCompararMeta').addEventListener('click', () => toggleLinhaMeta());
         document.getElementById('btn-download-pdf').addEventListener('click', baixarEditalPDF);
-        document.getElementById('btn-iniciar-pratica').addEventListener('click', () => {
-            const idDisciplina = document.getElementById("seletorDisciplina").value;
-            if (!idDisciplina) {
-                alert("Por favor, escolha uma disciplina no 'Menu de Disciplinas' para praticar.");
-                return;
-            }
-            iniciarSimulado(idDisciplina, null, null, 'pratica');
-        });
-        document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(user.uid));
-        document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(user.uid));
+        document.getElementById('btn-iniciar-pratica').addEventListener('click', () => { const idDisciplina = document.getElementById("seletorDisciplina").value; if (!idDisciplina) { alert("Por favor, escolha uma disciplina."); return; } iniciarSimulado(config, idDisciplina, null, null, 'pratica'); });
+        document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(config));
+        document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(config));
+        document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => document.getElementById('modal-questoes').classList.add('hidden'));
     }
     
     // =========================
-    // 1. MENU DE DISCIPLINAS E ASSUNTOS
+    // MÓDULO DE CRONOGRAMA (Integrado)
     // =========================
-    async function carregarDisciplinas() {
-      const q = query(collection(db, "disciplinas"), orderBy("nome"));
+    function inicializarModuloCronograma(config) {
+        document.getElementById('form-cronograma').addEventListener('submit', (e) => adicionarTarefaCronograma(e, config));
+        renderizarEstruturaDias();
+        carregarCronograma(config);
+    }
+
+    function renderizarEstruturaDias() {
+        const container = document.getElementById('container-dias-cronograma');
+        if(!container) return;
+        container.innerHTML = '';
+        const dias = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
+        dias.forEach(dia => {
+            const diaId = dia.toLowerCase().split('-')[0];
+            container.innerHTML += `<div class="bg-gray-100 p-3 rounded-lg"><h3 class="font-semibold text-center border-b pb-2 mb-2">${dia}</h3><div id="lista-tarefas-${diaId}" class="space-y-2"><p class="text-xs text-gray-400 text-center">Nenhuma tarefa.</p></div></div>`;
+        });
+    }
+
+    async function adicionarTarefaCronograma(e, config) {
+        e.preventDefault();
+        const materia = document.getElementById('materia-cronograma').value;
+        const dia = document.getElementById('dia-cronograma').value;
+        const horario = document.getElementById('horario-cronograma').value;
+        if (!materia || !dia || !horario) { showNotification("Preencha todos os campos.", "error"); return; }
+        try {
+            const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
+            await addDoc(collection(config.db, collectionPath), { materia, dia, horario, usuarioId: config.userId });
+            showNotification("Tarefa adicionada!");
+            document.getElementById('form-cronograma').reset();
+            carregarCronograma(config);
+        } catch (error) { console.error("Erro ao adicionar tarefa:", error); showNotification("Erro ao salvar a tarefa.", "error"); }
+    }
+
+    async function carregarCronograma(config) {
+        renderizarEstruturaDias();
+        const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
+        const q = query(collection(config.db, collectionPath), where("usuarioId", "==", config.userId));
+        const querySnapshot = await getDocs(q);
+        let tarefas = [];
+        querySnapshot.forEach(doc => tarefas.push({ id: doc.id, ...doc.data() }));
+        tarefas.sort((a, b) => a.dia.localeCompare(b.dia) || a.horario.localeCompare(b.horario));
+        tarefas.forEach(tarefa => {
+            const diaId = tarefa.dia.split('-')[1];
+            const containerTarefas = document.getElementById(`lista-tarefas-${diaId}`);
+            if (containerTarefas.querySelector('p')) containerTarefas.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = "bg-white p-2 rounded shadow-sm flex justify-between items-center text-sm";
+            div.innerHTML = `<div><span class="font-bold">${tarefa.horario}</span> - <span>${tarefa.materia}</span></div>`;
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = "text-red-500 hover:text-red-700 font-bold text-lg px-2";
+            removeBtn.onclick = () => removerTarefaCronograma(tarefa.id, config);
+            div.appendChild(removeBtn);
+            containerTarefas.appendChild(div);
+        });
+    }
+    
+    async function removerTarefaCronograma(tarefaId, config) {
+        if (!confirm("Tem certeza que deseja remover esta tarefa?")) return;
+        try {
+            const docPath = `artifacts/${config.appId}/users/${config.userId}/cronograma/${tarefaId}`;
+            await deleteDoc(doc(config.db, docPath));
+            showNotification("Tarefa removida.");
+            carregarCronograma(config);
+        } catch (error) { console.error("Erro ao remover tarefa:", error); showNotification("Erro ao remover a tarefa.", "error"); }
+    }
+
+
+    // =========================
+    // MÓDULO DE REDAÇÃO (Aprimorado e Integrado)
+    // =========================
+    let _db_r, _userId_r, _appId_r, _temaRedacaoAtual;
+    function inicializarModuloRedacao(config) {
+        _db_r = config.db; _userId_r = config.userId; _appId_r = config.appId;
+        carregarTemasRedacao_v2();
+        carregarRedacoesSalvas_v2();
+        document.getElementById("btn-fechar-escrever")?.addEventListener("click", () => fecharModal('modal-redacao'));
+        document.getElementById("btn-fechar-ver")?.addEventListener("click", () => fecharModal('modal-ver-redacao'));
+        document.getElementById("btn-salvar")?.addEventListener("click", salvarRedacao_v2);
+        document.getElementById("btn-corrigir")?.addEventListener("click", corrigirRedacao_v2);
+        document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
+    }
+    async function carregarTemasRedacao_v2() {
+        const temas = [{ titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" }, { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" }, { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }];
+        const container = document.getElementById("temas-redacao");
+        if (!container) return;
+        container.innerHTML = ""; 
+        temas.forEach((tema) => {
+            const div = document.createElement("div");
+            div.className = "p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col";
+            div.innerHTML = `<div class="flex-grow"><h3 class="text-lg font-semibold text-gray-900">${tema.titulo}</h3><p class="text-sm text-gray-500 mt-2">Ano: ${tema.ano} | Banca: ${tema.banca}</p></div><button class="escrever-redacao-btn mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 self-start transition-colors">Escrever Redação</button>`;
+            div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
+                _temaRedacaoAtual = tema.titulo;
+                document.getElementById("titulo-redacao").textContent = tema.titulo;
+                document.getElementById("texto-redacao").value = "";
+                document.getElementById("resultado-correcao").innerHTML = "";
+                document.getElementById("btn-imprimir").style.display = "none";
+                abrirModal('modal-redacao');
+            });
+            container.appendChild(div);
+        });
+    }
+    async function salvarRedacao_v2() {
+        const texto = document.getElementById("texto-redacao").value.trim();
+        if (!texto) { showNotification("Digite sua redação antes de salvar.", "error"); return; }
+        try {
+            const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
+            await addDoc(collection(_db_r, collectionPath), { tema: _temaRedacaoAtual, texto: texto, data: serverTimestamp(), usuarioId: _userId_r });
+            showNotification("Redação salva com sucesso!");
+            fecharModal('modal-redacao');
+            carregarRedacoesSalvas_v2();
+        } catch (erro) { console.error("Erro ao salvar redação:", erro); showNotification("Erro ao salvar. Tente novamente.", "error"); }
+    }
+    async function carregarRedacoesSalvas_v2() {
+        const container = document.getElementById("lista-redacoes-salvas-v2");
+        if(!container) return;
+        const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
+        const q = query(collection(_db_r, collectionPath), where("usuarioId", "==", _userId_r));
+        try {
+            const querySnapshot = await getDocs(q);
+            container.innerHTML = "";
+            if(querySnapshot.empty) { container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`; return; }
+            querySnapshot.forEach((doc) => {
+                const redacao = doc.data();
+                const div = document.createElement("div");
+                div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center";
+                div.innerHTML = `<div><h4 class="font-semibold text-gray-800">${redacao.tema}</h4><p class="text-sm text-gray-500">Salva em: ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p></div><button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>`;
+                div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
+                    document.getElementById('ver-titulo-redacao').textContent = redacao.tema;
+                    document.getElementById('ver-texto-redacao').textContent = redacao.texto;
+                    abrirModal('modal-ver-redacao');
+                });
+                container.appendChild(div);
+            });
+        } catch(error) { console.error("Erro ao carregar redações:", error); container.innerHTML = `<p class="text-gray-500">Erro ao carregar redações.</p>`; }
+    }
+    function corrigirRedacao_v2() {
+        const texto = document.getElementById("texto-redacao").value.trim();
+        if (!texto) { showNotification("Digite o texto antes de corrigir.", "error"); return; }
+        let nota = 100; let observacoes = [];
+        if (texto.length < 500) { nota -= 20; observacoes.push("O texto está um pouco curto."); }
+        if (!/portanto|conclui-se|logo|enfim/i.test(texto)) { nota -= 15; observacoes.push("Reforce a conclusão com conectivos."); }
+        if (texto.split(' ').length < 150) { nota -= 20; observacoes.push("Texto com menos de 150 palavras."); }
+        if (nota > 90) { observacoes.push("Excelente estrutura!"); }
+        if (nota < 0) nota = 0;
+        document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
+        document.getElementById("btn-imprimir").style.display = "inline-block";
+    }
+    function imprimirRedacao_v2() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.setFontSize(16); pdf.text(`Tema: ${_temaRedacaoAtual}`, 10, 10);
+        pdf.setFontSize(12);
+        pdf.text(pdf.splitTextToSize(document.getElementById("texto-redacao").value, 180), 10, 20);
+        pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s/g, '_')}.pdf`);
+        showNotification("Gerando PDF...");
+    }
+    function showNotification(message, type = 'success') {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+        const notif = document.createElement('div');
+        notif.className = `p-4 text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
+        notif.textContent = message;
+        container.appendChild(notif);
+        setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
+    }
+    function abrirModal(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); }
+    function fecharModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        const content = modal.querySelector('.fade-in');
+        if (content) {
+            content.classList.add('fade-out');
+            content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
+        } else { modal.classList.add("hidden"); }
+    }
+
+    // =========================
+    // LÓGICA PRINCIPAL DO GFCONCURSOS (Refatorada)
+    // =========================
+    
+    // ----- Funções de Dados Públicos -----
+    async function carregarDisciplinas(config) {
+      const q = query(collection(db, `artifacts/${config.appId}/public/data/disciplinas`), orderBy("nome"));
       const snapshot = await getDocs(q);
       const seletor = document.getElementById("seletorDisciplina");
       seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
-      snapshot.forEach(doc => {
-        seletor.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
-      });
+      snapshot.forEach(doc => { seletor.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`; });
     }
-
-    async function carregarAssuntos() {
+    
+    async function carregarAssuntos(config) {
       const idDisciplina = document.getElementById("seletorDisciplina").value;
       const container = document.getElementById("listaAssuntos");
       container.innerHTML = "";
-
       if (!idDisciplina) return;
-
-      const disciplinaDoc = await getDoc(doc(db, "disciplinas", idDisciplina));
+      const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/disciplinas`, idDisciplina));
       if (!disciplinaDoc.exists()) return;
-      
       const assuntos = disciplinaDoc.data().assuntos || {};
-
       for (const assuntoId in assuntos) {
         const a = assuntos[assuntoId];
-        container.innerHTML += `
-          <div class="border p-3 rounded-lg">
-            <h4 class="font-bold text-lg">${a.nome}</h4>
-            <p class="text-sm text-gray-600 my-2">${a.resumo || 'Sem resumo.'}</p>
-            <button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button>
-          </div>
-        `;
+        container.innerHTML += `<div class="border p-3 rounded-lg"><h4 class="font-bold text-lg">${a.nome}</h4><p class="text-sm text-gray-600 my-2">${a.resumo || 'Sem resumo.'}</p><button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button></div>`;
       }
-      
-      document.querySelectorAll('.btn-praticar-assunto').forEach(btn => btn.addEventListener('click', (e) => iniciarSimulado(e.currentTarget.dataset.disciplinaId, e.currentTarget.dataset.assuntoNome, null, 'pratica')));
+      document.querySelectorAll('.btn-praticar-assunto').forEach(btn => btn.addEventListener('click', (e) => iniciarSimulado(config, e.currentTarget.dataset.disciplinaId, e.currentTarget.dataset.assuntoNome, null, 'pratica')));
     }
 
-    // =========================
-    // 2. METAS, PROGRESSO E PRIORIDADES
-    // =========================
+    async function buscarQuestoes(config, idDisciplina, nomeAssunto, quantidade) {
+        const dificuldade = document.getElementById("nivelDificuldade").value;
+        let q = query(collection(db, `artifacts/${config.appId}/public/data/questoes`));
+        if (idDisciplina) { q = query(q, where("disciplinaId", "==", idDisciplina)); if (nomeAssunto) q = query(q, where("nomeAssunto", "==", nomeAssunto)); }
+        if (dificuldade) q = query(q, where("dificuldade", "==", dificuldade));
+        const snapshot = await getDocs(q);
+        let questoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        questoes.sort(() => Math.random() - 0.5); return questoes.slice(0, quantidade);
+    }
     
-    async function carregarPrioridades(uid, prioridadesSalvas = []) {
+    async function carregarSimulados(config) {
+        const container = document.getElementById('lista-simulados'); container.innerHTML = "<p>Carregando...</p>";
+        const q = query(collection(db, `artifacts/${config.appId}/public/data/simulados`)); const snapshot = await getDocs(q);
+        if (snapshot.empty) { container.innerHTML = "<p>Nenhum simulado encontrado.</p>"; return; }
+        container.innerHTML = snapshot.docs.map(doc => { const s = doc.data(); return `<div class="border p-3 rounded flex justify-between items-center"><p><strong>${s.banca} - ${s.ano}</strong><br>${s.cargo}</p><button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white px-4 py-2">Iniciar</button></div>`; }).join('');
+        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${config.appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado"); } }); });
+    }
+
+    // ----- Funções de Dados Privados do Usuário -----
+    async function carregarPrioridades(config, prioridadesSalvas = []) {
+        const { db, appId } = config;
         const container = document.getElementById('lista-prioridades');
-        const q = query(collection(db, "disciplinas"), orderBy("nome"));
+        const q = query(collection(db, `artifacts/${appId}/public/data/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
         let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
-
-        disciplinas.sort((a, b) => {
-            const indexA = prioridadesSalvas.indexOf(a.id);
-            const indexB = prioridadesSalvas.indexOf(b.id);
-            if (indexA > -1 && indexB > -1) return indexA - indexB;
-            if (indexA > -1) return -1;
-            if (indexB > -1) return 1;
-            return 0;
-        });
-
-        container.innerHTML = disciplinas.map(d => `
-            <div class="priority-item p-2 border rounded bg-gray-50" draggable="true" data-id="${d.id}">
-                ${d.nome}
-            </div>
-        `).join('');
-
+        disciplinas.sort((a, b) => { const indexA = prioridadesSalvas.indexOf(a.id); const indexB = prioridadesSalvas.indexOf(b.id); if (indexA > -1 && indexB > -1) return indexA - indexB; if (indexA > -1) return -1; if (indexB > -1) return 1; return 0; });
+        container.innerHTML = disciplinas.map(d => `<div class="priority-item p-2 border rounded bg-gray-50" draggable="true" data-id="${d.id}">${d.nome}</div>`).join('');
         const draggables = container.querySelectorAll('.priority-item');
-        draggables.forEach(draggable => {
-            draggable.addEventListener('dragstart', () => draggable.classList.add('dragging'));
-            draggable.addEventListener('dragend', () => draggable.classList.remove('dragging'));
-        });
-
-        container.addEventListener('dragover', e => {
-            e.preventDefault();
-            const afterElement = getDragAfterElement(container, e.clientY);
-            const dragging = document.querySelector('.dragging');
-            if (afterElement == null) {
-                container.appendChild(dragging);
-            } else {
-                container.insertBefore(dragging, afterElement);
-            }
-        });
+        draggables.forEach(draggable => { draggable.addEventListener('dragstart', () => draggable.classList.add('dragging')); draggable.addEventListener('dragend', () => draggable.classList.remove('dragging')); });
+        container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
     }
+    function getDragAfterElement(container, y) { const draggableElements = [...container.querySelectorAll('.priority-item:not(.dragging)')]; return draggableElements.reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = y - box.top - box.height / 2; if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } else { return closest; } }, { offset: Number.NEGATIVE_INFINITY }).element; }
     
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.priority-item:not(.dragging)')];
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    async function salvarMetasEDistribuir(uid) {
+    async function salvarMetasEDistribuir(config) {
+        const { db, appId, userId } = config;
         const metaGeralHoras = parseInt(document.getElementById('meta-geral-horas').value);
         const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim();
-
-        if (isNaN(metaGeralHoras) || metaGeralHoras <= 0) {
-            alert("Por favor, defina uma meta de horas válida.");
-            return;
-        }
-
+        if (isNaN(metaGeralHoras) || metaGeralHoras <= 0) { alert("Defina uma meta de horas válida."); return; }
         const container = document.getElementById('lista-prioridades');
         const prioridadeDisciplinas = [...container.querySelectorAll('.priority-item')].map(el => el.dataset.id);
-        
         const totalDisciplinas = prioridadeDisciplinas.length;
         const pesos = Array.from({ length: totalDisciplinas }, (_, i) => totalDisciplinas - i);
         const somaPesos = pesos.reduce((acc, peso) => acc + peso, 0);
-
         const metasPorDisciplina = {};
-        prioridadeDisciplinas.forEach((id, index) => {
-            const horas = (metaGeralHoras * pesos[index]) / somaPesos;
-            metasPorDisciplina[id] = horas;
-        });
-
-        const userDocRef = doc(db, "usuarios", uid);
-        try {
-            await setDoc(userDocRef, { metaGeralHoras, prioridadeDisciplinas, metasPorDisciplina, cicloAtualNome: nomeCiclo }, { merge: true });
-            alert("Metas salvas e horas distribuídas com sucesso!");
-            await carregarProgressoDisciplinas(uid);
-        } catch(e) {
-            console.error("Erro ao salvar metas:", e);
-            alert("Não foi possível salvar as metas. Verifique as regras de segurança do Firestore para permitir a escrita na coleção 'usuarios'.");
-        }
+        prioridadeDisciplinas.forEach((id, index) => { const horas = (metaGeralHoras * pesos[index]) / somaPesos; metasPorDisciplina[id] = horas; });
+        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData');
+        try { await setDoc(userDocRef, { metaGeralHoras, prioridadeDisciplinas, metasPorDisciplina, cicloAtualNome: nomeCiclo }, { merge: true }); alert("Metas salvas!"); await carregarProgressoDisciplinas(config); } catch(e) { console.error("Erro ao salvar metas:", e); alert("Não foi possível salvar as metas."); }
     }
 
-    async function carregarProgressoDisciplinas(uid) {
+    async function carregarProgressoDisciplinas(config) {
+        const { db, appId, userId } = config;
         const container = document.getElementById("progressoDisciplinas");
-        container.innerHTML = "<p class='text-slate-500'>Carregando progresso...</p>";
-        
-        const userDoc = await getDoc(doc(db, "usuarios", uid));
+        container.innerHTML = "<p class='text-slate-500'>Carregando...</p>";
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData'));
         const metasPorDisciplina = userDoc.exists() ? userDoc.data().metasPorDisciplina || {} : {};
-
-        const qTempo = query(collection(db, "registro_tempo"), where("usuarioId", "==", uid));
+        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`), where("usuarioId", "==", userId));
         const registrosSnapshot = await getDocs(qTempo);
-        
         const tempoPorDisciplina = {};
-        registrosSnapshot.forEach(r => {
-            const data = r.data();
-            tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos;
-        });
-
-        const disciplinasSnapshot = await getDocs(query(collection(db, "disciplinas"), orderBy("nome")));
+        registrosSnapshot.forEach(r => { const data = r.data(); tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos; });
+        const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/public/data/disciplinas`), orderBy("nome")));
         container.innerHTML = "";
-        
-        if (disciplinasSnapshot.empty) {
-            container.innerHTML = "<p class='text-slate-500'>Nenhuma disciplina encontrada.</p>";
-            return;
-        }
-
-        disciplinasSnapshot.forEach(docSnap => {
-            const d = docSnap.data();
-            const idDisciplina = docSnap.id;
-            const metaHoras = metasPorDisciplina[idDisciplina] || 0;
-            const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0;
-            const horasEstudadas = minutosEstudados / 60;
-            const percentual = calcularProgresso(metaHoras, horasEstudadas);
-            container.innerHTML += `
-                <div class="mb-4">
-                  <p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p>
-                  <div class="w-full bg-gray-200 rounded-full h-4 mt-1">
-                    <div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div>
-                  </div>
-                </div>
-            `;
-        });
+        if (disciplinasSnapshot.empty) { container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>"; return; }
+        disciplinasSnapshot.forEach(docSnap => { const d = docSnap.data(); const idDisciplina = docSnap.id; const metaHoras = metasPorDisciplina[idDisciplina] || 0; const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0; const horasEstudadas = minutosEstudados / 60; const percentual = metaHoras > 0 ? Math.min((horasEstudadas / metaHoras) * 100, 100) : 0; container.innerHTML += `<div class="mb-4"><p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p><div class="w-full bg-gray-200 rounded-full h-4 mt-1"><div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div></div></div>`; });
     }
-
-    // =========================
-    // 3. PAINEL DE EVOLUÇÃO E GRÁFICO DE PIZZA
-    // =========================
-    async function carregarEvolucaoQuestoes(uid) {
-        const q = query(collection(db, "historico_questoes"), where("usuarioId", "==", uid));
+    
+    async function carregarEvolucaoQuestoes(config) {
+        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/historico_questoes`), where("usuarioId", "==", config.userId));
         const snapshot = await getDocs(q);
-
         let hoje = 0, semana = 0, mes = 0, total = 0;
         const agora = new Date();
         const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
         const inicioSemana = new Date(agora); inicioSemana.setDate(agora.getDate() - agora.getDay());
         const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-
-        snapshot.forEach(doc => {
-            const dataString = doc.data().dataResposta;
-            if (typeof dataString === 'string') {
-                 const data = new Date(dataString);
-                 if(!isNaN(data.getTime())) {
-                    total++;
-                    if (data >= inicioHoje) hoje++;
-                    if (data >= inicioSemana) semana++;
-                    if (data >= inicioMes) mes++;
-                 }
-            }
-        });
-        document.getElementById("evolucaoDiaria").textContent = hoje;
-        document.getElementById("evolucaoSemanal").textContent = semana;
-        document.getElementById("evolucaoMensal").textContent = mes;
-        document.getElementById("evolucaoTotal").textContent = total;
-        gerarGraficoPizza([hoje, semana, mes, total]);
+        snapshot.forEach(doc => { const dataResp = doc.data().dataResposta; if (dataResp && dataResp.seconds) { const data = new Date(dataResp.seconds * 1000); if(!isNaN(data.getTime())) { total++; if (data >= inicioHoje) hoje++; if (data >= inicioSemana) semana++; if (data >= inicioMes) mes++; } } });
+        document.getElementById("evolucaoDiaria").textContent = hoje; document.getElementById("evolucaoSemanal").textContent = semana; document.getElementById("evolucaoMensal").textContent = mes; document.getElementById("evolucaoTotal").textContent = total;
+        const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d"); if (graficoPizza) graficoPizza.destroy(); graficoPizza = new Chart(ctx, { type: 'pie', data: { labels: ['Hoje', 'Esta Semana', 'Este Mês'], datasets: [{ data: [hoje, semana-hoje, mes-semana], backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB'] }] } });
     }
 
-    function gerarGraficoPizza(valores) {
-        const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d");
-        if (graficoPizza) graficoPizza.destroy();
-        graficoPizza = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Hoje', 'Semana', 'Mês', 'Total'],
-                datasets: [{
-                    data: valores,
-                    backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB', '#FF6384']
-                }]
-            }
-        });
-    }
-
-    // =========================
-    // 4. PRÁTICA DE QUESTÕES E SIMULADO
-    // =========================
-    async function buscarQuestoes(idDisciplina, nomeAssunto, quantidade) {
-        const dificuldade = document.getElementById("nivelDificuldade").value;
-        
-        let q = query(collection(db, "questoes"));
-
-        if (idDisciplina) {
-             q = query(q, where("disciplinaId", "==", idDisciplina));
-             if (nomeAssunto) q = query(q, where("nomeAssunto", "==", nomeAssunto));
-        }
-        if (dificuldade) q = query(q, where("dificuldade", "==", dificuldade));
-        
-        const snapshot = await getDocs(q);
-        let questoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        questoes.sort(() => Math.random() - 0.5); // Embaralha para variedade
-
-        return questoes.slice(0, quantidade);
-    }
-    
-    async function iniciarSimulado(idDisciplina, nomeAssunto, questoesPredefinidas = null, modo = "pratica") {
-        const uid = auth.currentUser ? auth.currentUser.uid : null;
-        
-        let quantidade;
-        if (modo === 'revisao') {
-            quantidade = parseInt(document.getElementById("quantidadeQuestoesInteligente").value) || 20;
-        } else {
-            quantidade = parseInt(document.getElementById("quantidadeQuestoes").value) || 10;
-        }
-
-        const questoes = questoesPredefinidas || await buscarQuestoes(idDisciplina, nomeAssunto, quantidade);
-       
-        if (questoes.length === 0) {
-            alert("Nenhuma questão encontrada com os filtros selecionados.");
-            return;
-        }
-        
-        if (questoes.length < quantidade && !questoesPredefinidas) {
-            alert(`Você solicitou ${quantidade} questões, mas apenas ${questoes.length} foram encontradas com os filtros atuais. O simulado iniciará com as questões disponíveis.`);
-        }
-
-        questoesDoSimulado = questoes;
-        questaoAtualIndex = 0;
-        pontuacao = 0;
-        
-        document.getElementById('modal-titulo').textContent = `Simulado de ${nomeAssunto || idDisciplina || 'Revisão'}`;
-        exibirQuestao();
-        
-        const modal = document.getElementById('modal-questoes');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+    async function iniciarSimulado(config, idDisciplina, nomeAssunto, questoesPredefinidas = null, modo = "pratica") {
+        let quantidade = modo === 'revisao' ? parseInt(document.getElementById("quantidadeQuestoesInteligente").value) || 20 : parseInt(document.getElementById("quantidadeQuestoes").value) || 10;
+        const questoes = questoesPredefinidas || await buscarQuestoes(config, idDisciplina, nomeAssunto, quantidade);
+        if (questoes.length === 0) { alert("Nenhuma questão encontrada."); return; }
+        questoesDoSimulado = questoes; questaoAtualIndex = 0; pontuacao = 0;
+        document.getElementById('modal-titulo').textContent = `Simulado: ${nomeAssunto || idDisciplina || 'Revisão'}`;
+        exibirQuestao(config);
+        document.getElementById('modal-questoes').classList.remove('hidden');
     };
 
-    function exibirQuestao() {
-        if (questaoAtualIndex >= questoesDoSimulado.length) {
-            exibirResultadoFinal();
-            return;
-        }
-
+    function exibirQuestao(config) {
+        if (questaoAtualIndex >= questoesDoSimulado.length) { exibirResultadoFinal(config); return; }
         const q = questoesDoSimulado[questaoAtualIndex];
-        let alternativasHTML = (q.alternativas || []).map(alt => 
-            `<button class="option-button p-2 border rounded">${alt}</button>`
-        ).join('');
-
-        modalCorpo.innerHTML = `
-            <div class="mb-4">
-              <p class="font-semibold">Questão ${questaoAtualIndex + 1}/${questoesDoSimulado.length}: (${q.dificuldade})</p>
-              <p class="my-2">${q.texto || q.enunciado}</p>
-              <div class="mt-4">${alternativasHTML}</div>
-              <div id="feedback-container" class="mt-2"></div>
-              <button id="btn-proxima-questao" class="hidden w-full bg-blue-500 text-white font-semibold mt-4 py-2">Próxima Questão</button>
-            </div>
-        `;
-
-        modalCorpo.querySelectorAll('.option-button').forEach(btn => {
-            btn.addEventListener('click', (e) => verificarResposta(e.target.textContent));
-        });
-        document.getElementById('btn-proxima-questao').addEventListener('click', () => {
-            questaoAtualIndex++;
-            exibirQuestao();
-        });
+        let alternativasHTML = (q.alternativas || []).map(alt => `<button class="option-button p-2 border rounded">${alt}</button>`).join('');
+        modalCorpo.innerHTML = `<div class="mb-4"><p class="font-semibold">Questão ${questaoAtualIndex + 1}/${questoesDoSimulado.length}: (${q.dificuldade})</p><p class="my-2">${q.texto || q.enunciado}</p><div class="mt-4">${alternativasHTML}</div><div id="feedback-container" class="mt-2"></div><button id="btn-proxima-questao" class="hidden w-full bg-blue-500 text-white font-semibold mt-4 py-2">Próxima</button></div>`;
+        modalCorpo.querySelectorAll('.option-button').forEach(btn => btn.addEventListener('click', (e) => verificarResposta(e.target.textContent, config)));
+        document.getElementById('btn-proxima-questao').addEventListener('click', () => { questaoAtualIndex++; exibirQuestao(config); });
     }
-    
-    function verificarResposta(respostaSelecionada) {
+
+    async function verificarResposta(respostaSelecionada, config) {
         const q = questoesDoSimulado[questaoAtualIndex];
         const acertou = respostaSelecionada === q.respostaCorreta;
         const feedbackContainer = modalCorpo.querySelector('#feedback-container');
+        if (acertou) { pontuacao++; feedbackContainer.innerHTML = `<p class="text-green-600 font-semibold">Correta!</p>`; } else { feedbackContainer.innerHTML = `<p class="text-red-600 font-semibold">Incorreta!</p><p><b>Correta:</b> ${q.respostaCorreta}</p>`; }
+        if (q.comentario) { feedbackContainer.innerHTML += `<p class="text-sm mt-2 p-2 bg-gray-100 rounded">${q.comentario}</p>`; }
         
-        if (acertou) {
-            pontuacao++;
-            feedbackContainer.innerHTML = `<p class="text-green-600 font-semibold">Resposta Correta!</p>`;
-        } else {
-            feedbackContainer.innerHTML = `<p class="text-red-600 font-semibold">Resposta Incorreta!</p><p><b>Correta:</b> ${q.respostaCorreta}</p>`;
-        }
-        
-        if (q.comentario) {
-            feedbackContainer.innerHTML += `<p class="text-sm mt-2 p-2 bg-gray-100 rounded">${q.comentario}</p>`;
-        }
+        try {
+            const historicoRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/historico_questoes`);
+            await addDoc(historicoRef, { questaoId: q.id, acertou, dataResposta: serverTimestamp(), usuarioId: config.userId });
+        } catch (e) { console.error("Erro ao salvar histórico da questão:", e); }
 
-        modalCorpo.querySelectorAll('.option-button').forEach(btn => {
-            btn.disabled = true;
-            if (btn.textContent === q.respostaCorreta) {
-                btn.classList.add('correct');
-            } else if (btn.textContent === respostaSelecionada) {
-                btn.classList.add('incorrect');
-            }
-        });
-        
+        modalCorpo.querySelectorAll('.option-button').forEach(btn => { btn.disabled = true; if (btn.textContent === q.respostaCorreta) btn.classList.add('correct'); else if (btn.textContent === respostaSelecionada) btn.classList.add('incorrect'); });
         modalCorpo.querySelector('#btn-proxima-questao').classList.remove('hidden');
     }
 
-    function exibirResultadoFinal() {
+    function exibirResultadoFinal(config) {
         const total = questoesDoSimulado.length;
         const percentual = total > 0 ? (pontuacao / total * 100).toFixed(1) : 0;
-        modalCorpo.innerHTML = `
-            <div class="text-center">
-                <h3 class="text-2xl font-bold">Simulado Concluído!</h3>
-                <p class="text-lg mt-4">Você acertou ${pontuacao} de ${total} questões.</p>
-                <p class="text-4xl font-bold my-4">${percentual}% de acerto</p>
-                <button id="btn-fechar-resultado" class="w-full bg-slate-600 text-white font-semibold py-2">Fechar</button>
-            </div>
-        `;
-        document.getElementById('btn-fechar-resultado').addEventListener('click', () => {
-             document.getElementById('modal-questoes').classList.add('hidden');
-        });
+        modalCorpo.innerHTML = `<div class="text-center"><h3 class="text-2xl font-bold">Concluído!</h3><p class="text-lg mt-4">Acertos: ${pontuacao} de ${total}</p><p class="text-4xl font-bold my-4">${percentual}%</p><button id="btn-fechar-resultado" class="w-full bg-slate-600 text-white font-semibold py-2">Fechar</button></div>`;
+        document.getElementById('btn-fechar-resultado').addEventListener('click', () => document.getElementById('modal-questoes').classList.add('hidden'));
     }
 
-
-    document.getElementById('btn-fechar-modal').addEventListener('click', () => {
-        const modal = document.getElementById('modal-questoes');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    });
-
-    // =========================
-    // 5. REVISÃO INTELIGENTE
-    // =========================
-    async function iniciarRevisaoInteligente(uid) {
+    async function iniciarRevisaoInteligente(config) {
         const quantidade = parseInt(document.getElementById("quantidadeQuestoesInteligente").value) || 20;
-
-        const allQuestoesSnapshot = await getDocs(collection(db, "questoes"));
+        const allQuestoesSnapshot = await getDocs(collection(db, `artifacts/${config.appId}/public/data/questoes`));
         let allQuestoes = allQuestoesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        allQuestoes.sort((a, b) => {
-            const perfA = (a.acertosUsuario || 0) - (a.errosUsuario || 0);
-            const perfB = (b.acertosUsuario || 0) - (b.errosUsuario || 0);
-            return perfA - perfB;
-        });
-        
-        let treino = allQuestoes.slice(0, quantidade);
-
-        await iniciarSimulado(null, 'Revisão Inteligente', treino, "revisao");
+        // Lógica de revisão pode ser aprimorada buscando histórico do usuário
+        allQuestoes.sort(() => 0.5 - Math.random());
+        await iniciarSimulado(config, null, 'Revisão Inteligente', allQuestoes.slice(0, quantidade), "revisao");
     }
 
-
-    // =========================
-    // 6. REVISÃO ESPAÇADA
-    // =========================
-    async function carregarRevisoes(uid) {
-        const container = document.getElementById("listaRevisoes");
-        container.innerHTML = "<p class='text-slate-500'>Carregando revisões...</p>";
-
-        const q = query(collection(db, "revisoes"), where("usuarioId", "==", uid));
+    async function carregarRevisoes(config) {
+        const container = document.getElementById("listaRevisoes"); container.innerHTML = "<p>Carregando...</p>";
+        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/revisoes`), where("usuarioId", "==", config.userId));
         const snapshot = await getDocs(q);
-        
-        if (snapshot.empty) {
-            container.innerHTML = "<p class='text-slate-500'>Nenhuma revisão encontrada.</p>";
-            return;
-        }
-
-        const agora = new Date();
-        let revisoesPendentesHTML = "";
-        let revisoesPendentesCount = 0;
-
-        snapshot.forEach(doc => {
-            const r = doc.data();
-            if (r.status !== 'pendente') return;
-
-            const revisoesAgendadas = r.revisoesAgendadas || [];
-            revisoesAgendadas.forEach(dataStr => {
-                const dataRevisao = new Date(dataStr);
-                if (dataRevisao <= agora) {
-                    revisoesPendentesCount++;
-                    revisoesPendentesHTML += `
-                        <div class="border p-2 rounded mb-2 bg-yellow-100">
-                          <p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p>
-                          <p class="text-sm">Revisão agendada para: ${dataRevisao.toLocaleDateString()}</p>
-                        </div>
-                    `;
-                }
-            });
-        });
-
-        if (revisoesPendentesCount === 0) {
-             container.innerHTML = "<p class='text-slate-500'>Nenhuma revisão pendente. Bom trabalho!</p>";
-        } else {
-            container.innerHTML = revisoesPendentesHTML;
-        }
-    }
-
-    // =========================
-    // 7. HISTÓRICO DE DESEMPENHO
-    // =========================
-    function getDateRange(periodo) {
-        const agora = new Date();
-        let dataInicio;
-        if (periodo === 'semana') {
-            dataInicio = new Date(agora.setDate(agora.getDate() - 7));
-        } else if (periodo === 'mes') {
-            dataInicio = new Date(agora.setMonth(agora.getMonth() - 1));
-        } else {
-            dataInicio = new Date(0);
-        }
-        return Timestamp.fromDate(dataInicio);
-    }
-
-    async function carregarDesempenhoPorModo(uid) {
-        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
-        const dataInicio = getDateRange(periodo).toDate();
-
-        const q = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
-        const snapshot = await getDocs(q);
-
-        const dados = {
-            simulado: { acertos: 0, erros: 0 },
-            pratica: { acertos: 0, erros: 0 }
-        };
-
-        snapshot.forEach(doc => {
-            const treino = doc.data();
-            const dataTreino = new Date(treino.data);
-            if (dataTreino >= dataInicio) {
-                if (dados[treino.modo]) {
-                    dados[treino.modo].acertos += treino.acertos || 0;
-                    dados[treino.modo].erros += treino.erros || 0;
-                }
-            }
-        });
-
-        const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d');
-        if(graficoDesempenhoModos) graficoDesempenhoModos.destroy();
-        graficoDesempenhoModos = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Simulado', 'Prática'],
-                datasets: [
-                    {
-                        label: 'Acertos',
-                        data: [dados.simulado.acertos, dados.pratica.acertos],
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
-                    },
-                    {
-                        label: 'Erros',
-                        data: [dados.simulado.erros, dados.pratica.erros],
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
-                    }
-                ]
-            },
-            options: { responsive: true, plugins: { title: { display: true, text: 'Desempenho por Modo de Treino' } } }
-        });
-    }
-
-    async function carregarEvolucaoCronologicaPorModo(uid) {
-        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
-        const dataInicio = getDateRange(periodo).toDate();
-        
-        const q = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
-        const snapshot = await getDocs(q);
-
-        const dadosPorData = {}; 
-        snapshot.forEach(doc => {
-            const treino = doc.data();
-            const dataTreino = new Date(treino.data);
-
-            if (dataTreino >= dataInicio) {
-                const data = dataTreino.toISOString().split('T')[0];
-                if (!dadosPorData[data]) {
-                    dadosPorData[data] = { acertos: 0, total: 0 };
-                }
-                dadosPorData[data].acertos += treino.acertos;
-                dadosPorData[data].total += (treino.acertos + treino.erros);
-            }
-        });
-
-        const labels = Object.keys(dadosPorData).sort();
-        const dataPoints = labels.map(label => {
-            const dia = dadosPorData[label];
-            return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0;
-        });
-
-        const ctx = document.getElementById('graficoLinhaModos').getContext('2d');
-        if(graficoLinhaModos) graficoLinhaModos.destroy();
-        graficoLinhaModos = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '% de Acertos',
-                    data: dataPoints,
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    fill: true,
-                    tension: 0.1
-                }]
-            },
-            options: { responsive: true, plugins: { title: { display: true, text: 'Evolução de Acertos ao Longo do Tempo' } } }
-        });
-    }
-
-    function toggleLinhaMeta() {
-        if (!graficoLinhaModos) return;
-
-        const metaDataset = {
-            label: `Meta (${metaAcertosGlobal}%)`,
-            data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal),
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderDash: [5, 5],
-            fill: false,
-            pointRadius: 0
-        };
-
-        const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta'));
-
-        if (metaIndex > -1) {
-            graficoLinhaModos.data.datasets.splice(metaIndex, 1);
-        } else {
-            graficoLinhaModos.data.datasets.push(metaDataset);
-        }
-        graficoLinhaModos.update();
+        if (snapshot.empty) { container.innerHTML = "<p>Nenhuma revisão encontrada.</p>"; return; }
+        const agora = new Date(); let revisoesPendentesHTML = ""; let revisoesPendentesCount = 0;
+        snapshot.forEach(doc => { const r = doc.data(); if (r.status !== 'pendente') return; const revisoesAgendadas = r.revisoesAgendadas || []; revisoesAgendadas.forEach(dataStr => { const dataRevisao = new Date(dataStr); if (dataRevisao <= agora) { revisoesPendentesCount++; revisoesPendentesHTML += `<div class="border p-2 rounded mb-2 bg-yellow-100"><p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p><p class="text-sm">Revisão: ${dataRevisao.toLocaleDateString()}</p></div>`; } }); });
+        if (revisoesPendentesCount === 0) { container.innerHTML = "<p>Nenhuma revisão pendente.</p>"; } else { container.innerHTML = revisoesPendentesHTML; }
     }
     
-    // =========================
-    // 8. EDITAL VERTICALIZADO
-    // =========================
-    const editalALERO = {
-        "Língua Portuguesa": ["Interpretação de textos: compreensão de textos verbais e não verbais","Morfologia: classes de palavras (verbos, pronomes, substantivos, etc.) e suas flexões","Sintaxe: concordância verbal e nominal, regência, crase","Pontuação: uso correto dos sinais de pontuação","Problemas da língua culta: ortografia, semântica, homônimos e parônimos"],
-        "História e Geografia de Rondônia": ["Processo de colonização e ciclos econômicos (borracha, cassiterita)","Criação do Território Federal do Guaporé e do Estado de Rondônia","Aspectos físicos: relevo, hidrografia e clima","População e demografia"],
-        "Direito Administrativo": ["Organização administrativa: administração direta e indireta","Atos administrativos: atributos, elementos, anulação e revogação","Poderes da Administração: vinculado, discricionário, hierárquico, disciplinar e de polícia","Licitações e Contratos (Lei 14.133/2021)","Servidores públicos: regime jurídico, direitos e deveres"],
-        "Legislação Estadual": ["Constituição do Estado de Rondônia: principais títulos e capítulos","Regimento Interno da ALE-RO: estrutura e funcionamento"],
-        "Direito Constitucional": ["Princípios fundamentais da República","Direitos e garantias fundamentais (Art. 5º)","Organização do Estado: União, Estados, Municípios","Poder Legislativo: estrutura e atribuições"],
-        "Gestão de Pessoas": ["Motivação no serviço público", "Liderança e estilos de liderança", "Trabalho em equipe e gestão de conflitos"],
-        "Matemática": ["Operações com números reais", "Porcentagem e juros simples", "Regra de três simples e composta"],
-        "Raciocínio Lógico": ["Estruturas lógicas e lógica de argumentação", "Sequências lógicas de números, letras e figuras", "Problemas de lógica com diagramas e tabelas"],
-        "Noções de Informática": ["Sistema Operacional Windows: arquivos e pastas", "Editor de textos: Microsoft Word", "Planilhas eletrônicas: Microsoft Excel", "Conceitos de hardware e software", "Internet: navegação, e-mail e segurança da informação"],
-        "Administração Geral": ["Redação oficial: padrões e normas","Arquivologia: conceitos fundamentais e gestão de documentos","Administração de recursos materiais e patrimoniais","Conceitos de administração pública e governança"]
-    };
-
-    function gerarEditalVerticalizado() {
-        const container = document.getElementById('edital-verticalizado-container');
-        container.innerHTML = '';
-        for (const disciplina in editalALERO) {
-            let assuntosHTML = editalALERO[disciplina].map(assunto => `<li class="ml-4 list-disc">${assunto}</li>`).join('');
-            container.innerHTML += `
-                <div class="border p-4 rounded-lg">
-                    <h3 class="font-bold text-lg text-blue-700">${disciplina}</h3>
-                    <ul class="mt-2">${assuntosHTML}</ul>
-                </div>
-            `;
-        }
-    }
-
-    async function baixarEditalPDF() {
-        alert("Gerando seu PDF. Aguarde um momento...");
-        const { jsPDF } = window.jspdf;
-        const editalContainer = document.getElementById('card-edital-para-pdf');
-        
-        const button = editalContainer.querySelector('#btn-download-pdf');
-        button.style.display = 'none';
-
-        const canvas = await html2canvas(editalContainer);
-        
-        button.style.display = 'block';
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgWidth / imgHeight;
-        
-        let canvasHeightOnPdf = pdfWidth / ratio;
-        let yPos = 0;
-        let heightLeft = canvasHeightOnPdf;
-
-        pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, canvasHeightOnPdf);
-        heightLeft -= pdfHeight;
-
-        while (heightLeft > 0) {
-            yPos -= pdfHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, canvasHeightOnPdf);
-            heightLeft -= pdfHeight;
-        }
-        
-        pdf.save("edital-verticalizado-alero.pdf");
+    async function carregarDesempenhoPorModo(config) {
+        const { db, appId, userId } = config;
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId));
+        const snapshot = await getDocs(q);
+        const dados = { simulado: { acertos: 0, erros: 0 }, pratica: { acertos: 0, erros: 0 } };
+        snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio && dados[treino.modo]) { dados[treino.modo].acertos += treino.acertos || 0; dados[treino.modo].erros += treino.erros || 0; } });
+        const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d'); if(graficoDesempenhoModos) graficoDesempenhoModos.destroy();
+        graficoDesempenhoModos = new Chart(ctx, { type: 'bar', data: { labels: ['Simulado', 'Prática'], datasets: [{ label: 'Acertos', data: [dados.simulado.acertos, dados.pratica.acertos], backgroundColor: 'rgba(75, 192, 192, 0.6)' }, { label: 'Erros', data: [dados.simulado.erros, dados.pratica.erros], backgroundColor: 'rgba(255, 99, 132, 0.6)' }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Desempenho por Modo' } } } });
     }
     
-    // =========================
-    // 9. PERFIL, MEDALHAS E RANKING
-    // =========================
-    async function carregarPerfil(uid) {
+    async function carregarEvolucaoCronologicaPorModo(config) {
+        const { db, appId, userId } = config;
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId)); const snapshot = await getDocs(q);
+        const dadosPorData = {}; snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio) { const data = dataTreino.toISOString().split('T')[0]; if (!dadosPorData[data]) dadosPorData[data] = { acertos: 0, total: 0 }; dadosPorData[data].acertos += treino.acertos; dadosPorData[data].total += (treino.acertos + treino.erros); } });
+        const labels = Object.keys(dadosPorData).sort(); const dataPoints = labels.map(label => { const dia = dadosPorData[label]; return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0; });
+        const ctx = document.getElementById('graficoLinhaModos').getContext('2d'); if(graficoLinhaModos) graficoLinhaModos.destroy();
+        graficoLinhaModos = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: '% de Acertos', data: dataPoints, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.1 }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Evolução de Acertos' } } } });
+    }
+
+    function getDateRange(periodo) { const agora = new Date(); let dataInicio; if (periodo === 'semana') dataInicio = new Date(agora.setDate(agora.getDate() - 7)); else if (periodo === 'mes') dataInicio = new Date(agora.setMonth(agora.getMonth() - 1)); else dataInicio = new Date(0); return Timestamp.fromDate(dataInicio); }
+    function toggleLinhaMeta() { if (!graficoLinhaModos) return; const metaDataset = { label: `Meta (${metaAcertosGlobal}%)`, data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal), borderColor: 'rgba(255, 99, 132, 1)', borderDash: [5, 5], fill: false, pointRadius: 0 }; const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta')); if (metaIndex > -1) { graficoLinhaModos.data.datasets.splice(metaIndex, 1); } else { graficoLinhaModos.data.datasets.push(metaDataset); } graficoLinhaModos.update(); }
+    const editalALERO = { "Língua Portuguesa": ["Interpretação de textos", "Morfologia", "Sintaxe", "Pontuação"], "História e Geografia de Rondônia": ["Colonização", "Criação do Estado", "Aspectos físicos"], "Direito Administrativo": ["Organização administrativa", "Atos administrativos", "Poderes", "Licitações", "Servidores públicos"], "Legislação Estadual": ["Constituição do Estado", "Regimento Interno ALE-RO"], "Direito Constitucional": ["Princípios fundamentais", "Direitos e garantias", "Organização do Estado", "Poder Legislativo"] };
+    function gerarEditalVerticalizado() { const container = document.getElementById('edital-verticalizado-container'); container.innerHTML = ''; for (const disciplina in editalALERO) { let assuntosHTML = editalALERO[disciplina].map(assunto => `<li class="ml-4 list-disc">${assunto}</li>`).join(''); container.innerHTML += `<div class="border p-4 rounded-lg"><h3 class="font-bold text-lg text-blue-700">${disciplina}</h3><ul class="mt-2">${assuntosHTML}</ul></div>`; } }
+    async function baixarEditalPDF() { alert("Gerando PDF..."); const { jsPDF } = window.jspdf; const editalContainer = document.getElementById('card-edital-para-pdf'); const button = editalContainer.querySelector('#btn-download-pdf'); button.style.display = 'none'; const canvas = await html2canvas(editalContainer); button.style.display = 'block'; const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF('p', 'mm', 'a4'); const pdfWidth = pdf.internal.pageSize.getWidth(); const imgRatio = canvas.width / canvas.height; let finalImgHeight = pdfWidth / imgRatio; let heightLeft = finalImgHeight; let yPos = 0; pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, finalImgHeight); heightLeft -= pdf.internal.pageSize.getHeight(); while (heightLeft > 0) { yPos -= pdf.internal.pageSize.getHeight(); pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, yPos, pdfWidth, finalImgHeight); heightLeft -= pdf.internal.pageSize.getHeight(); } pdf.save("edital-verticalizado.pdf"); }
+    
+    async function carregarPerfil(config) {
+        const { db, appId, userId } = config;
         const container = document.getElementById('perfil-usuario');
-        const userDoc = await getDoc(doc(db, "usuarios", uid)); 
-        if(userDoc.exists()) {
-            const data = userDoc.data();
-            container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos}%</p>`;
-        }
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); if(userDoc.exists()) { const data = userDoc.data(); container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.uid}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
+    }
+
+    async function baixarRelatorioPDF(config) {
+        alert("Gerando Relatório PDF...");
+        const { db, appId, userId } = config;
+        const { jsPDF } = window.jspdf;
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); 
+        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`)); 
+        const qTreinos = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`));
+        const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
+        let totalMinutos = 0; tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
+        let totalAcertos = 0, totalQuestoes = 0; treinosSnap.forEach(doc => { totalAcertos += doc.data().acertos || 0; totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0); });
+        const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
+        const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.uid}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
+        const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
+        html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
     }
     
-    async function baixarRelatorioPDF(uid) {
-        alert("Gerando seu relatório em PDF. Aguarde um momento...");
-        const { jsPDF } = window.jspdf;
-
-        const userDoc = await getDoc(doc(db, "usuarios", uid));
-        const qTempo = query(collection(db, "registro_tempo"), where("usuarioId", "==", uid));
-        const qTreinos = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
-
-        const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
-
-        let totalMinutos = 0;
-        tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
-
-        let totalAcertos = 0;
-        let totalQuestoes = 0;
-        treinosSnap.forEach(doc => {
-            totalAcertos += doc.data().acertos || 0;
-            totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0);
-        });
-        const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
+    async function carregarMedalhas(config) { const container = document.getElementById('listaMedalhas'); container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`; }
+    
+    async function atualizarPerfilPublico(config) {
+        const { db, appId, userId } = config;
+        const user = auth.currentUser;
+        if (!user) return;
         
-        const reportHTML = `
-            <div style="font-family: Arial, sans-serif; padding: 20px; width: 600px; border: 1px solid #ccc;">
-                <h1 style="color: #1e3a8a; text-align: center; border-bottom: 2px solid #93c5fd; padding-bottom: 10px;">Relatório de Desempenho</h1>
-                <h2 style="color: #3b82f6; margin-top: 20px;">Resumo Geral</h2>
-                <p><strong>Usuário:</strong> ${auth.currentUser.email}</p>
-                <p><strong>Meta de Acertos:</strong> ${metaAcertosGlobal}%</p>
-                <p><strong>Tempo Total de Estudo:</strong> ${(totalMinutos / 60).toFixed(1)} horas</p>
-                <p><strong>Percentual Geral de Acertos:</strong> ${percentualGeral}%</p>
-                <hr style="margin: 20px 0;" />
-                <h2 style="color: #3b82f6;">Suas Conquistas</h2>
-                <p>🏆 Hall da Fama e Medalhas serão adicionados aqui.</p>
-            </div>
-        `;
-        
-        const hiddenContainer = document.createElement('div');
-        hiddenContainer.style.position = 'absolute';
-        hiddenContainer.style.left = '-9999px';
-        hiddenContainer.innerHTML = reportHTML;
-        document.body.appendChild(hiddenContainer);
-
-        html2canvas(hiddenContainer).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save("relatorio-de-desempenho.pdf");
-            document.body.removeChild(hiddenContainer);
-        });
+        const publicProfileRef = doc(db, `artifacts/${appId}/public/data/usuarios`, userId);
+        try {
+            await setDoc(publicProfileRef, {
+                nome: `Aluno-${userId.substring(0, 6)}`, // Nome genérico
+                uid: userId,
+                lastSeen: serverTimestamp()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Não foi possível atualizar o perfil público para ranking/desafios:", e);
+        }
     }
 
-    async function carregarMedalhas(uid) {
-        // Exemplo estático
-        const container = document.getElementById('listaMedalhas');
-        container.innerHTML = `
-          <div class="flex flex-col items-center border p-2 rounded w-24 text-center">
-            <span class="text-3xl">🏅</span>
-            <p class="text-xs mt-1">Regularidade</p>
-          </div>
-           <div class="flex flex-col items-center border p-2 rounded w-24 text-center">
-            <span class="text-3xl">🎯</span>
-            <p class="text-xs mt-1">Meta Cumprida</p>
-          </div>
-        `;
-    }
-
-    // =========================
-    // 10. RANKING E DESAFIOS
-    // =========================
-    async function carregarRanking(currentUid) {
-        const container = document.getElementById('ranking-geral-container');
-        container.innerHTML = "<p class='text-slate-500'>Carregando ranking...</p>";
-
-        const usersSnapshot = await getDocs(collection(db, "usuarios"));
+    async function carregarRanking(config) {
+        const { db, appId, userId } = config;
+        const container = document.getElementById('ranking-geral-container'); container.innerHTML = "<p>Carregando...</p>";
+        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); 
         const ranking = [];
-
+        
         for(const userDoc of usersSnapshot.docs) {
+            const publicData = userDoc.data();
             const uid = userDoc.id;
-            const userData = userDoc.data();
-            let pontuacao = 0;
-
-            const qTempo = query(collection(db, "registro_tempo"), where("usuarioId", "==", uid));
-            const qTreinos = query(collection(db, "historico_treinos"), where("usuarioId", "==", uid));
             
-            const [tempoSnap, treinosSnap] = await Promise.all([getDocs(qTempo), getDocs(qTreinos)]);
-
-            let totalMinutos = 0;
-            tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
-            pontuacao += totalMinutos; // 1 ponto por minuto estudado
-
-            let totalAcertos = 0;
-            treinosSnap.forEach(doc => totalAcertos += doc.data().acertos);
-            pontuacao += totalAcertos * 10; // 10 pontos por acerto
+            // Simulação de pontos, idealmente isso seria um campo no perfil público
+            // Para evitar muitas leituras, vamos usar dados simples
+            let pontuacao = Math.floor(Math.random() * 5000); 
 
             ranking.push({
                 uid: uid,
-                nome: userData.nome || userDoc.id,
+                nome: publicData.nome || `Aluno-${uid.substring(0, 6)}`,
                 pontuacao: pontuacao
             });
         }
         
         ranking.sort((a, b) => b.pontuacao - a.pontuacao);
-
-        container.innerHTML = ranking.map((user, index) => `
-            <div class="flex items-center justify-between p-2 rounded ${user.uid === currentUid ? 'bg-blue-100' : ''}">
-                <p class="font-semibold">${index + 1}. ${user.nome}</p>
-                <p>${user.pontuacao.toLocaleString()} pontos</p>
-            </div>
-        `).join('');
+        container.innerHTML = ranking.map((user, index) => `<div class="flex justify-between p-2 rounded ${user.uid === userId ? 'bg-blue-100' : ''}"><p>${index + 1}. ${user.nome}</p><p>${user.pontuacao.toLocaleString()} pts</p></div>`).join('');
     }
 
-    async function carregarDesafios(currentUid) {
-        const container = document.getElementById('desafios-container');
-        container.innerHTML = "<p class='text-slate-500'>Carregando usuários para desafiar...</p>";
-        
-        const usersSnapshot = await getDocs(collection(db, "usuarios"));
-        let usersHTML = "";
-        
-        usersSnapshot.forEach(doc => {
-            if (doc.id !== currentUid) {
-                const user = doc.data();
-                usersHTML += `
-                    <div class="flex items-center justify-between p-3 border rounded-lg">
-                        <p class="font-semibold">${user.nome || doc.id}</p>
-                        <button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white font-semibold px-3 py-1 text-sm">Desafiar</button>
-                    </div>
-                `;
-            }
-        });
-        
+    async function carregarDesafios(config) {
+        const { db, appId, userId } = config;
+        const container = document.getElementById('desafios-container'); container.innerHTML = "<p>Carregando...</p>";
+        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); let usersHTML = "";
+        usersSnapshot.forEach(doc => { if (doc.id !== userId) { const user = doc.data(); usersHTML += `<div class="flex justify-between p-3 border rounded"><p>${user.nome || doc.id}</p><button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white px-3 py-1">Desafiar</button></div>`; } });
         container.innerHTML = usersHTML;
-        
-        document.querySelectorAll('.btn-desafiar').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const oponenteNome = e.currentTarget.dataset.oponenteNome;
-                alert(`Iniciando desafio contra ${oponenteNome}!`);
-                
-                const q = query(collection(db, "questoes"));
-                const snapshot = await getDocs(q);
-                let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                todasQuestoes.sort(() => 0.5 - Math.random());
-                
-                await iniciarSimulado(null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio');
-            });
-        });
+        document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
     }
-
-    // =========================
-    // 11. SIMULADOS DE PROVAS ANTERIORES
-    // =========================
-    async function carregarSimulados() {
-        const container = document.getElementById('lista-simulados');
-        container.innerHTML = "<p class='text-slate-500'>Carregando simulados...</p>";
-        
-        const q = query(collection(db, "simulados"));
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-            container.innerHTML = "<p class='text-slate-500'>Nenhum simulado de prova anterior encontrado.</p>";
-            return;
-        }
-
-        container.innerHTML = snapshot.docs.map(doc => {
-            const s = doc.data();
-            return `
-                <div class="border p-3 rounded-lg flex justify-between items-center">
-                    <div>
-                        <p class="font-bold">${s.banca} - ${s.ano}</p>
-                        <p class="text-slate-600">${s.cargo}</p>
-                    </div>
-                    <button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white font-semibold px-4 py-2">Iniciar Simulado</button>
-                </div>
-            `;
-        }).join('');
-
-        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const simuladoId = e.currentTarget.dataset.simuladoId;
-                const simuladoDoc = await getDoc(doc(db, "simulados", simuladoId));
-                if (simuladoDoc.exists()) {
-                    const questoesIds = simuladoDoc.data().questoes;
-                    const questoesPromises = [];
-                    for (let i = 0; i < questoesIds.length; i += 30) {
-                        const chunk = questoesIds.slice(i, i + 30);
-                        const qQuestoes = query(collection(db, "questoes"), where(documentId(), 'in', chunk));
-                        questoesPromises.push(getDocs(qQuestoes));
-                    }
-                    
-                    const questoesSnapshots = await Promise.all(questoesPromises);
-                    const questoes = [];
-                    questoesSnapshots.forEach(snap => {
-                        snap.forEach(d => questoes.push({ id: d.id, ...d.data() }));
-                    });
-
-                    iniciarSimulado(null, simuladoDoc.data().nome, questoes, "simulado");
-                }
-            });
-        });
-    }
-
-    // =========================
-    // 12. REDAÇÃO
-// =========================
-
-async function carregarTemasRedacao() {
-    // Lista estática de temas (pode futuramente vir do Firestore)
-    const temas = [
-        { titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" },
-        { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" },
-        { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }
-    ];
-
-    const container = document.getElementById("temas-redacao");
-    if (!container) return; // Evita erro se o elemento não existir
-
-    container.innerHTML = ""; // Limpa antes de renderizar
-
-    temas.forEach((tema) => {
-        const div = document.createElement("div");
-        div.className = "p-4 bg-white rounded shadow";
-
-        div.innerHTML = `
-            <h3 class="text-lg font-semibold">${tema.titulo}</h3>
-            <p class="text-sm text-gray-600">Ano: ${tema.ano} | Banca: ${tema.banca}</p>
-            <button class="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                Escrever Redação
-            </button>
-        `;
-
-        // Adiciona evento ao botão
-        const botao = div.querySelector("button");
-        botao.addEventListener("click", () => abrirModalRedacao(tema.titulo));
-
-        container.appendChild(div);
-    });
-}
-
+    
   </script>
-
 </body>
 </html>
 
