@@ -143,21 +143,38 @@
     import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
+    // Variáveis globais de inicialização
     let app, db, auth;
-    try {
-        app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
-    } catch (e) {
-        console.error("Erro ao inicializar Firebase:", e);
-        document.body.innerHTML = '<h1>Erro Crítico na Configuração do Firebase. Verifique o console.</h1>';
+    let appInicializado = false;
+
+    // Função principal que inicia tudo
+    function iniciarAplicacao() {
+        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        const firebaseConfig = JSON.parse(firebaseConfigString);
+        
+        // **CORREÇÃO: Verifica se a configuração é válida antes de inicializar**
+        if (!firebaseConfig.projectId) {
+            console.error("Configuração do Firebase não encontrada ou inválida. O aplicativo não pode ser iniciado.");
+            document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente. Recarregue a página.</h1>';
+            return; // Para a execução
+        }
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            appInicializado = true;
+        } catch (e) {
+            console.error("Erro ao inicializar Firebase:", e);
+            document.body.innerHTML = `<h1>Erro ao inicializar Firebase: ${e.message}</h1>`;
+            return;
+        }
+
+        configurarNavegacaoAbas();
+        iniciarAutenticacao();
     }
     
-    // Variáveis globais
+    // Variáveis globais de estado
     let graficoPizza = null;
     let graficoDesempenhoModos = null;
     let graficoLinhaModos = null;
@@ -170,50 +187,61 @@
     // =========================
     // NAVEGAÇÃO POR ABAS
     // =========================
-    const tabsContainer = document.getElementById('tabs-container');
-    const tabButtons = tabsContainer.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
+    function configurarNavegacaoAbas() {
+        const tabsContainer = document.getElementById('tabs-container');
+        if (!tabsContainer) return;
 
-    document.getElementById('menu-toggle').addEventListener('click', () => {
-        document.getElementById('nav-menu').classList.toggle('hidden');
-    });
+        const tabButtons = tabsContainer.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tab = button.dataset.tab;
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            tabContents.forEach(content => {
-                if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
-                else content.classList.add('hidden');
-            });
-            if (window.innerWidth < 768) document.getElementById('nav-menu').classList.add('hidden');
+        document.getElementById('menu-toggle').addEventListener('click', () => {
+            document.getElementById('nav-menu').classList.toggle('hidden');
         });
-    });
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tab = button.dataset.tab;
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                tabContents.forEach(content => {
+                    if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
+                    else content.classList.add('hidden');
+                });
+                if (window.innerWidth < 768) document.getElementById('nav-menu').classList.add('hidden');
+            });
+        });
+    }
 
     // =========================
     // AUTENTICAÇÃO E INICIALIZAÇÃO
     // =========================
-    const mainContent = document.getElementById('main-content');
-    
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            document.getElementById('user-info').textContent = `Logado como: ${user.uid}`;
-            mainContent.classList.remove('hidden');
-            tabsContainer.classList.remove('hidden');
-            document.querySelector('.tab-button[data-tab="estudo"]').click();
-            
-            const config = { db, auth, appId, userId: user.uid };
-            await inicializarApp(config); // Tornar esta chamada assíncrona
-            inicializarModuloCronograma(config);
-            inicializarModuloRedacao(config);
-        } else {
-             try {
-                if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-                else await signInAnonymously(auth);
-            } catch (error) { console.error("Erro na autenticação:", error); }
-        }
-    });
+    function iniciarAutenticacao() {
+        const mainContent = document.getElementById('main-content');
+        const tabsContainer = document.getElementById('tabs-container');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('user-info').textContent = `Logado como: ${user.uid}`;
+                mainContent.classList.remove('hidden');
+                tabsContainer.classList.remove('hidden');
+                document.querySelector('.tab-button[data-tab="estudo"]').click();
+                
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const config = { db, auth, appId, userId: user.uid };
+                
+                await inicializarApp(config);
+                inicializarModuloCronograma(config);
+                inicializarModuloRedacao(config);
+            } else {
+                 try {
+                    if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+                    else await signInAnonymously(auth);
+                } catch (error) { console.error("Erro na autenticação:", error); }
+            }
+        });
+    }
+
 
     // =========================
     // FUNÇÃO GERAL DE INICIALIZAÇÃO DOS MÓDULOS
@@ -705,6 +733,8 @@
         document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
     }
     
+    // Inicia a aplicação quando o script é carregado
+    iniciarAplicacao();
   </script>
 </body>
 </html>
