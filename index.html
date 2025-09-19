@@ -49,6 +49,11 @@
       <h1 class="text-4xl font-bold text-blue-800">Plataforma de Estudos GFConcursos</h1>
     </header>
 
+    <div id="global-error-container" class="hidden my-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+      <h3 class="font-bold">Erro de Permissão do Banco de Dados</h3>
+      <p id="global-error-message" class="text-sm">Ocorreu um erro ao tentar salvar os dados. Verifique se as Regras de Segurança do seu Firestore estão configuradas corretamente.</p>
+    </div>
+
     <!-- Container de Autenticação (mostrado quando o usuário não está logado) -->
     <div id="auth-container" class="card max-w-md mx-auto">
         <!-- Visão de Login -->
@@ -398,7 +403,7 @@
             showNotification("Tarefa adicionada!");
             document.getElementById('form-cronograma').reset();
             carregarCronograma(config);
-        } catch (error) { console.error("Erro ao adicionar tarefa:", error); showNotification("Erro ao salvar a tarefa.", "error"); }
+        } catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
     }
 
     async function carregarCronograma(config) {
@@ -432,7 +437,7 @@
             await deleteDoc(doc(config.db, docPath));
             showNotification("Tarefa removida.");
             carregarCronograma(config);
-        } catch (error) { console.error("Erro ao remover tarefa:", error); showNotification("Erro ao remover a tarefa.", "error"); }
+        } catch (error) { handleFirestoreError(error, "Remover Tarefa do Cronograma"); }
     }
 
 
@@ -479,7 +484,7 @@
             showNotification("Redação salva com sucesso!");
             fecharModal('modal-redacao');
             carregarRedacoesSalvas_v2();
-        } catch (erro) { console.error("Erro ao salvar redação:", erro); showNotification("Erro ao salvar. Tente novamente.", "error"); }
+        } catch (erro) { handleFirestoreError(erro, "Salvar Redação"); }
     }
     async function carregarRedacoesSalvas_v2() {
         const container = document.getElementById("lista-redacoes-salvas-v2");
@@ -502,7 +507,7 @@
                 });
                 container.appendChild(div);
             });
-        } catch(error) { console.error("Erro ao carregar redações:", error); container.innerHTML = `<p class="text-gray-500">Erro ao carregar redações.</p>`; }
+        } catch(error) { handleFirestoreError(error, "Carregar Redações Salvas"); }
     }
     function corrigirRedacao_v2() {
         const texto = document.getElementById("texto-redacao").value.trim();
@@ -619,7 +624,7 @@
         const metasPorDisciplina = {};
         prioridadeDisciplinas.forEach((id, index) => { const horas = (metaGeralHoras * pesos[index]) / somaPesos; metasPorDisciplina[id] = horas; });
         const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData');
-        try { await setDoc(userDocRef, { metaGeralHoras, prioridadeDisciplinas, metasPorDisciplina, cicloAtualNome: nomeCiclo }, { merge: true }); alert("Metas salvas!"); await carregarProgressoDisciplinas(config); } catch(e) { console.error("Erro ao salvar metas:", e); alert("Não foi possível salvar as metas."); }
+        try { await setDoc(userDocRef, { metaGeralHoras, prioridadeDisciplinas, metasPorDisciplina, cicloAtualNome: nomeCiclo }, { merge: true }); alert("Metas salvas!"); await carregarProgressoDisciplinas(config); } catch(e) { handleFirestoreError(e, "Salvar Metas"); }
     }
 
     async function carregarProgressoDisciplinas(config) {
@@ -680,7 +685,7 @@
         try {
             const historicoRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/historico_questoes`);
             await addDoc(historicoRef, { questaoId: q.id, acertou, dataResposta: serverTimestamp(), usuarioId: config.userId });
-        } catch (e) { console.error("Erro ao salvar histórico da questão:", e); }
+        } catch (e) { handleFirestoreError(e, "Salvar Histórico da Questão"); }
 
         modalCorpo.querySelectorAll('.option-button').forEach(btn => { btn.disabled = true; if (btn.textContent === q.respostaCorreta) btn.classList.add('correct'); else if (btn.textContent === respostaSelecionada) btn.classList.add('incorrect'); });
         modalCorpo.querySelector('#btn-proxima-questao').classList.remove('hidden');
@@ -776,7 +781,7 @@
                 lastSeen: serverTimestamp()
             }, { merge: true });
         } catch (e) {
-            console.error("Não foi possível atualizar o perfil público para ranking/desafios:", e);
+            handleFirestoreError(e, "Atualizar Perfil Público");
         }
     }
 
@@ -812,6 +817,18 @@
         usersSnapshot.forEach(doc => { if (doc.id !== userId) { const user = doc.data(); usersHTML += `<div class="flex justify-between p-3 border rounded"><p>${user.nome || doc.id}</p><button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white px-3 py-1">Desafiar</button></div>`; } });
         container.innerHTML = usersHTML;
         document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
+    }
+
+    function handleFirestoreError(error, context) {
+        console.error(`Erro de Firestore em '${context}':`, error);
+        if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
+            const errorContainer = document.getElementById('global-error-container');
+            const errorMessage = document.getElementById('global-error-message');
+            errorMessage.textContent = `Falha na operação '${context}'. Parece que as Regras de Segurança do seu Firestore estão bloqueando a ação. Por favor, verifique se as regras corretas foram aplicadas ao seu projeto no Console do Firebase.`;
+            errorContainer.classList.remove('hidden');
+        } else {
+            showNotification(`Erro em '${context}': ${error.message}`, 'error');
+        }
     }
     
     document.addEventListener('DOMContentLoaded', iniciarAplicacao);
