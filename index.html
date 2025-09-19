@@ -265,6 +265,9 @@
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 const config = { db, auth, appId, userId: user.uid };
                 
+                // Ativa a primeira aba após o login bem-sucedido
+                document.querySelector('.tab-button[data-tab="estudo"]').click();
+                
                 await inicializarApp(config);
                 inicializarModuloCronograma(config);
                 inicializarModuloRedacao(config);
@@ -768,7 +771,7 @@
         const publicProfileRef = doc(db, `artifacts/${appId}/public/data/usuarios`, userId);
         try {
             await setDoc(publicProfileRef, {
-                nome: `Aluno-${userId.substring(0, 6)}`, // Nome genérico
+                nome: user.email, // Usa o e-mail como nome
                 uid: userId,
                 lastSeen: serverTimestamp()
             }, { merge: true });
