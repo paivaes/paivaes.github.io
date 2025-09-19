@@ -47,81 +47,85 @@
   <div class="container">
     <header class="text-center mb-8">
       <h1 class="text-4xl font-bold text-blue-800">Plataforma de Estudos GFConcursos</h1>
-      <p id="user-info" class="text-slate-600 h-5"></p>
     </header>
-    
-    <!-- Abas de Navegação -->
-    <div id="tabs-container" class="mb-6 hidden">
-        <div class="md:hidden text-right mb-4">
-            <button id="menu-toggle" class="p-2 rounded bg-gray-200">Menu</button>
+
+    <!-- Container de Autenticação (mostrado quando o usuário não está logado) -->
+    <div id="auth-container" class="card max-w-md mx-auto">
+        <!-- Visão de Login -->
+        <div id="login-view">
+            <h2 class="text-2xl font-bold text-center mb-4 border-0">Acessar Plataforma</h2>
+            <input type="email" id="login-email" placeholder="Seu e-mail" class="w-full mb-3 p-2 border rounded">
+            <input type="password" id="login-password" placeholder="Sua senha" class="w-full mb-4 p-2 border rounded">
+            <button id="btn-login" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">Entrar</button>
+            <p class="text-center text-sm mt-4">
+                Não tem uma conta? <a href="#" id="show-signup" class="text-blue-600 hover:underline">Cadastre-se</a>
+            </p>
         </div>
-        <nav id="nav-menu" class="hidden md:flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
-            <button class="tab-button px-4 py-2 rounded" data-tab="estudo">Estudo</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="cronograma">Cronograma</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="simulados">Simulados</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="redacao">Redação</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="progresso">Progresso</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="edital">Edital</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="perfil">Meu Perfil</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="ranking">Ranking</button>
-            <button class="tab-button px-4 py-2 rounded" data-tab="desafios">Desafios</button>
-        </nav>
+
+        <!-- Visão de Cadastro -->
+        <div id="signup-view" class="hidden">
+            <h2 class="text-2xl font-bold text-center mb-4 border-0">Criar Nova Conta</h2>
+            <input type="email" id="signup-email" placeholder="Seu e-mail" class="w-full mb-3 p-2 border rounded">
+            <input type="password" id="signup-password" placeholder="Crie uma senha (mínimo 6 caracteres)" class="w-full mb-4 p-2 border rounded">
+            <button id="btn-signup" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Cadastrar</button>
+            <p class="text-center text-sm mt-4">
+                Já tem uma conta? <a href="#" id="show-login" class="text-blue-600 hover:underline">Faça o login</a>
+            </p>
+        </div>
     </div>
-
-    <!-- Conteúdo principal do App (inicialmente oculto) -->
-    <div id="main-content" class="hidden">
-      
-      <!-- Aba de Estudo -->
-      <div id="tab-content-estudo" class="tab-content">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <div class="card"><h2 class="m-0">Menu de Disciplinas</h2><label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label><select id="seletorDisciplina" class="w-full"></select><div id="listaAssuntos" class="mt-4 space-y-3"></div></div>
-              <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
-              <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
-            </div>
-            <div>
-              <div class="card"><h2 class="m-0">Metas e Prioridades do Ciclo</h2><div class="mb-4"><label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label><input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full"></div><div class="mb-4 border-t pt-4 mt-4"><label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label><input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full"></div><div><label class="block font-semibold mb-1">Prioridade das Disciplinas:</label><p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p><div id="lista-prioridades" class="border rounded p-2 space-y-2"><p class="text-slate-400">Carregando disciplinas...</p></div></div><button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button></div>
-              <div class="card"><h2 class="m-0">Progresso por Disciplina</h2><div id="progressoDisciplinas"></div></div>
-              <div class="card"><h2 class="m-0">Revisões Agendadas</h2><div id="listaRevisoes"></div></div>
-            </div>
-          </div>
+    
+    <!-- Wrapper do App Principal (mostrado quando o usuário está logado) -->
+    <div id="app-wrapper" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <p id="user-info" class="text-slate-600"></p>
+        <button id="btn-logout" class="bg-red-500 text-white font-semibold py-2 px-4 rounded hover:bg-red-600">Sair</button>
       </div>
 
-      <!-- Aba de Cronograma -->
-      <div id="tab-content-cronograma" class="tab-content hidden">
-          <div class="card">
-              <h2 class="m-0">Meu Cronograma Semanal</h2>
-              <form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 items-end">
-                  <div class="flex-grow"><label for="materia-cronograma" class="block text-sm font-medium text-gray-700">Matéria</label><input type="text" id="materia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div>
-                  <div class="flex-grow"><label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label><select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"><option value="1-segunda">Segunda-feira</option><option value="2-terca">Terça-feira</option><option value="3-quarta">Quarta-feira</option><option value="4-quinta">Quinta-feira</option><option value="5-sexta">Sexta-feira</option><option value="6-sabado">Sábado</option><option value="7-domingo">Domingo</option></select></div>
-                  <div class="flex-grow"><label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label><input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div>
-                  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button>
-              </form>
-              <div id="container-dias-cronograma" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"></div>
+      <!-- Abas de Navegação -->
+      <div id="tabs-container" class="mb-6">
+          <div class="md:hidden text-right mb-4">
+              <button id="menu-toggle" class="p-2 rounded bg-gray-200">Menu</button>
           </div>
+          <nav id="nav-menu" class="hidden md:flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
+              <button class="tab-button px-4 py-2 rounded" data-tab="estudo">Estudo</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="cronograma">Cronograma</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="simulados">Simulados</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="redacao">Redação</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="progresso">Progresso</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="edital">Edital</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="perfil">Meu Perfil</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="ranking">Ranking</button>
+              <button class="tab-button px-4 py-2 rounded" data-tab="desafios">Desafios</button>
+          </nav>
       </div>
-      
-      <!-- Aba de Simulados -->
-      <div id="tab-content-simulados" class="tab-content hidden"><div class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
 
-      <!-- Aba de Redação -->
-      <div id="tab-content-redacao" class="tab-content hidden"><div class="card"><main id="modulo-redacao-container"><section id="secao-redacao"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Temas Disponíveis</h2><div id="temas-redacao" class="grid grid-cols-1 md:grid-cols-2 gap-6"><p>Carregando temas...</p></div></section><section id="secao-redacoes-salvas" class="mt-12"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Minhas Redações Salvas</h2><div id="lista-redacoes-salvas-v2" class="space-y-4"><p class="text-gray-500">Carregando redações salvas...</p></div></section></main></div></div>
-      
-      <!-- Aba de Progresso -->
-      <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
-
-      <!-- Aba de Edital -->
-      <div id="tab-content-edital" class="tab-content hidden"><div class="card" id="card-edital-para-pdf"><div class="flex justify-between items-center" id="edital-header"><div><h2 class="m-0">Edital Verticalizado</h2><p class="text-lg font-semibold text-slate-700 mb-4">Concurso: Assembleia Legislativa de Rondônia (ALE-RO) - Base 2018</p></div><button id="btn-download-pdf" class="bg-blue-600 text-white font-semibold">Baixar PDF</button></div><div id="edital-verticalizado-container" class="mt-4 space-y-4"></div></div></div>
-      
-      <!-- Aba de Perfil -->
-       <div id="tab-content-perfil" class="tab-content hidden"><div class="card"><div class="flex justify-between items-center"><h2 class="m-0">Meu Perfil</h2><button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button></div><div id="perfil-usuario" class="space-y-2 mt-4"></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3><div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏆 Hall da Fama</h3><div id="hall-da-fama" class="space-y-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3><div id="lista-redacoes-salvas-perfil" class="space-y-2"></div></div></div></div>
-
-      <!-- Aba de Ranking -->
-      <div id="tab-content-ranking" class="tab-content hidden"><div class="card"><h2 class="m-0">Ranking Geral</h2><div id="ranking-geral-container" class="space-y-2"></div></div></div>
-
-      <!-- Aba de Desafios -->
-      <div id="tab-content-desafios" class="tab-content hidden"><div class="card"><h2 class="m-0">Desafios 1x1</h2><div id="desafios-container" class="space-y-3"></div></div></div>
-
+      <!-- Conteúdo principal do App -->
+      <div id="main-content">
+        <!-- Aba de Estudo -->
+        <div id="tab-content-estudo" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div class="card"><h2 class="m-0">Menu de Disciplinas</h2><label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label><select id="seletorDisciplina" class="w-full"></select><div id="listaAssuntos" class="mt-4 space-y-3"></div></div>
+                <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
+                <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
+              </div>
+              <div>
+                <div class="card"><h2 class="m-0">Metas e Prioridades do Ciclo</h2><div class="mb-4"><label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label><input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full"></div><div class="mb-4 border-t pt-4 mt-4"><label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label><input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full"></div><div><label class="block font-semibold mb-1">Prioridade das Disciplinas:</label><p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p><div id="lista-prioridades" class="border rounded p-2 space-y-2"><p class="text-slate-400">Carregando disciplinas...</p></div></div><button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button></div>
+                <div class="card"><h2 class="m-0">Progresso por Disciplina</h2><div id="progressoDisciplinas"></div></div>
+                <div class="card"><h2 class="m-0">Revisões Agendadas</h2><div id="listaRevisoes"></div></div>
+              </div>
+            </div>
+        </div>
+        <!-- Outras Abas -->
+        <div id="tab-content-cronograma" class="tab-content hidden"><div class="card"><h2 class="m-0">Meu Cronograma Semanal</h2><form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 items-end"><div class="flex-grow"><label for="materia-cronograma" class="block text-sm font-medium text-gray-700">Matéria</label><input type="text" id="materia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div><div class="flex-grow"><label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label><select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"><option value="1-segunda">Segunda-feira</option><option value="2-terca">Terça-feira</option><option value="3-quarta">Quarta-feira</option><option value="4-quinta">Quinta-feira</option><option value="5-sexta">Sexta-feira</option><option value="6-sabado">Sábado</option><option value="7-domingo">Domingo</option></select></div><div class="flex-grow"><label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label><input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button></form><div id="container-dias-cronograma" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"></div></div></div>
+        <div id="tab-content-simulados" class="tab-content hidden"><div class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
+        <div id="tab-content-redacao" class="tab-content hidden"><div class="card"><main id="modulo-redacao-container"><section id="secao-redacao"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Temas Disponíveis</h2><div id="temas-redacao" class="grid grid-cols-1 md:grid-cols-2 gap-6"><p>Carregando temas...</p></div></section><section id="secao-redacoes-salvas" class="mt-12"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Minhas Redações Salvas</h2><div id="lista-redacoes-salvas-v2" class="space-y-4"><p class="text-gray-500">Carregando redações salvas...</p></div></section></main></div></div>
+        <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
+        <div id="tab-content-edital" class="tab-content hidden"><div class="card" id="card-edital-para-pdf"><div class="flex justify-between items-center" id="edital-header"><div><h2 class="m-0">Edital Verticalizado</h2><p class="text-lg font-semibold text-slate-700 mb-4">Concurso: Assembleia Legislativa de Rondônia (ALE-RO) - Base 2018</p></div><button id="btn-download-pdf" class="bg-blue-600 text-white font-semibold">Baixar PDF</button></div><div id="edital-verticalizado-container" class="mt-4 space-y-4"></div></div></div>
+        <div id="tab-content-perfil" class="tab-content hidden"><div class="card"><div class="flex justify-between items-center"><h2 class="m-0">Meu Perfil</h2><button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button></div><div id="perfil-usuario" class="space-y-2 mt-4"></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3><div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏆 Hall da Fama</h3><div id="hall-da-fama" class="space-y-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3><div id="lista-redacoes-salvas-perfil" class="space-y-2"></div></div></div></div>
+        <div id="tab-content-ranking" class="tab-content hidden"><div class="card"><h2 class="m-0">Ranking Geral</h2><div id="ranking-geral-container" class="space-y-2"></div></div></div>
+        <div id="tab-content-desafios" class="tab-content hidden"><div class="card"><h2 class="m-0">Desafios 1x1</h2><div id="desafios-container" class="space-y-3"></div></div></div>
+      </div>
     </div>
   </div>
 
@@ -140,17 +144,14 @@
     // CONFIGURAÇÃO DO FIREBASE
     // =========================
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     // Variáveis globais de inicialização
     let app, db, auth;
-    let appInicializado = false;
 
     // Função principal que inicia tudo
     function iniciarAplicacao() {
-        // CORREÇÃO: Usa a configuração fixa que você forneceu como principal
-        // e tenta usar a do ambiente como um fallback opcional.
         const hardcodedFirebaseConfig = {
           apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
           authDomain: "gfconcursos-app.firebaseapp.com",
@@ -162,13 +163,10 @@
         
         let firebaseConfig = hardcodedFirebaseConfig;
 
-        // Tenta usar a configuração do ambiente se existir, senão usa a fixa.
         if (typeof __firebase_config !== 'undefined' && __firebase_config !== '{}') {
             try {
                 const envConfig = JSON.parse(__firebase_config);
-                if (envConfig.projectId) {
-                    firebaseConfig = envConfig;
-                }
+                if (envConfig.projectId) firebaseConfig = envConfig;
             } catch (e) {
                 console.warn("Configuração do ambiente (__firebase_config) é inválida. Usando configuração fixa.");
             }
@@ -184,7 +182,6 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            appInicializado = true;
         } catch (e) {
             console.error("Erro ao inicializar Firebase:", e);
             document.body.innerHTML = `<h1>Erro ao inicializar Firebase: ${e.message}</h1>`;
@@ -206,7 +203,7 @@
     let pontuacao = 0;
     
     // =========================
-    // NAVEGAÇÃO POR ABAS
+    // NAVEGAÇÃO POR ABAS E UI
     // =========================
     function configurarNavegacaoAbas() {
         const tabsContainer = document.getElementById('tabs-container');
@@ -231,22 +228,39 @@
                 if (window.innerWidth < 768) document.getElementById('nav-menu').classList.add('hidden');
             });
         });
+
+        // Listeners para alternar entre Login e Cadastro
+        document.getElementById('show-signup').addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('login-view').classList.add('hidden');
+          document.getElementById('signup-view').classList.remove('hidden');
+        });
+
+        document.getElementById('show-login').addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('signup-view').classList.add('hidden');
+          document.getElementById('login-view').classList.remove('hidden');
+        });
     }
 
     // =========================
     // AUTENTICAÇÃO E INICIALIZAÇÃO
     // =========================
     function iniciarAutenticacao() {
-        const mainContent = document.getElementById('main-content');
-        const tabsContainer = document.getElementById('tabs-container');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
+        // Handlers de botões
+        document.getElementById('btn-login').addEventListener('click', handleLogin);
+        document.getElementById('btn-signup').addEventListener('click', handleSignUp);
+        document.getElementById('btn-logout').addEventListener('click', handleLogout);
+
         onAuthStateChanged(auth, async (user) => {
+            const authContainer = document.getElementById('auth-container');
+            const appWrapper = document.getElementById('app-wrapper');
+
             if (user) {
-                document.getElementById('user-info').textContent = `Logado como: ${user.uid}`;
-                mainContent.classList.remove('hidden');
-                tabsContainer.classList.remove('hidden');
-                document.querySelector('.tab-button[data-tab="estudo"]').click();
+                // Usuário está logado
+                authContainer.classList.add('hidden');
+                appWrapper.classList.remove('hidden');
+                document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 const config = { db, auth, appId, userId: user.uid };
@@ -255,14 +269,57 @@
                 inicializarModuloCronograma(config);
                 inicializarModuloRedacao(config);
             } else {
-                 try {
-                    if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-                    else await signInAnonymously(auth);
-                } catch (error) { console.error("Erro na autenticação:", error); }
+                // Usuário não está logado
+                authContainer.classList.remove('hidden');
+                appWrapper.classList.add('hidden');
             }
         });
     }
 
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        if (!email || !password) {
+            showNotification("Por favor, preencha e-mail e senha.", "error");
+            return;
+        }
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            showNotification("Login bem-sucedido!", "success");
+        } catch (error) {
+            console.error("Erro de login:", error.code);
+            showNotification(`Erro ao entrar: ${error.message}`, "error");
+        }
+    }
+
+    async function handleSignUp() {
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        if (!email || !password) {
+            showNotification("Por favor, preencha e-mail e senha.", "error");
+            return;
+        }
+        if (password.length < 6) {
+            showNotification("A senha deve ter pelo menos 6 caracteres.", "error");
+            return;
+        }
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            showNotification("Conta criada com sucesso! Bem-vindo!", "success");
+        } catch (error) {
+            console.error("Erro de cadastro:", error.code);
+            showNotification(`Erro ao cadastrar: ${error.message}`, "error");
+        }
+    }
+
+    async function handleLogout() {
+        try {
+            await signOut(auth);
+            showNotification("Você saiu com sucesso.", "success");
+        } catch (error) {
+            showNotification("Erro ao sair.", "error");
+        }
+    }
 
     // =========================
     // FUNÇÃO GERAL DE INICIALIZAÇÃO DOS MÓDULOS
@@ -682,7 +739,7 @@
     async function carregarPerfil(config) {
         const { db, appId, userId } = config;
         const container = document.getElementById('perfil-usuario');
-        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); if(userDoc.exists()) { const data = userDoc.data(); container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.uid}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); if(userDoc.exists()) { const data = userDoc.data(); container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
     }
 
     async function baixarRelatorioPDF(config) {
@@ -696,7 +753,7 @@
         let totalMinutos = 0; tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
         let totalAcertos = 0, totalQuestoes = 0; treinosSnap.forEach(doc => { totalAcertos += doc.data().acertos || 0; totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0); });
         const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
-        const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.uid}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
+        const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
         const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
         html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
     }
@@ -754,7 +811,6 @@
         document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
     }
     
-    // **CORREÇÃO: Espera o DOM estar pronto antes de iniciar o app**
     document.addEventListener('DOMContentLoaded', iniciarAplicacao);
   </script>
 </body>
