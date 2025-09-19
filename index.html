@@ -149,20 +149,34 @@
 
     // Função principal que inicia tudo
     function iniciarAplicacao() {
-        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        // CORREÇÃO: Usa a configuração fixa que você forneceu como principal
+        // e tenta usar a do ambiente como um fallback opcional.
+        const hardcodedFirebaseConfig = {
+          apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
+          authDomain: "gfconcursos-app.firebaseapp.com",
+          projectId: "gfconcursos-app",
+          storageBucket: "gfconcursos-app.firebasestorage.app",
+          messagingSenderId: "615439428502",
+          appId: "1:615439428502:web:b399549c3969e052098bb7"
+        };
         
-        let firebaseConfig = {};
-        try {
-            firebaseConfig = JSON.parse(firebaseConfigString);
-        } catch(e) {
-            console.error("Erro ao analisar a configuração do Firebase:", e);
-            document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase inválida.</h1>';
-            return;
+        let firebaseConfig = hardcodedFirebaseConfig;
+
+        // Tenta usar a configuração do ambiente se existir, senão usa a fixa.
+        if (typeof __firebase_config !== 'undefined' && __firebase_config !== '{}') {
+            try {
+                const envConfig = JSON.parse(__firebase_config);
+                if (envConfig.projectId) {
+                    firebaseConfig = envConfig;
+                }
+            } catch (e) {
+                console.warn("Configuração do ambiente (__firebase_config) é inválida. Usando configuração fixa.");
+            }
         }
         
         if (!firebaseConfig.projectId) {
-            console.error("Configuração do Firebase não encontrada ou inválida. O aplicativo não pode ser iniciado.");
-            document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente. Recarregue a página.</h1>';
+            console.error("Nenhuma configuração válida do Firebase foi encontrada.");
+            document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente.</h1>';
             return;
         }
 
