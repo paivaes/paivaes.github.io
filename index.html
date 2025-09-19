@@ -111,6 +111,15 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div class="card"><h2 class="m-0">Menu de Disciplinas</h2><label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label><select id="seletorDisciplina" class="w-full"></select><div id="listaAssuntos" class="mt-4 space-y-3"></div></div>
+                
+                <div class="card">
+                  <h2 class="m-0">Cadastrar Nova Disciplina</h2>
+                  <div class="flex flex-col sm:flex-row gap-2 mt-4">
+                    <input type="text" id="nova-disciplina-nome" placeholder="Nome da disciplina" class="w-full">
+                    <button id="btn-cadastrar-disciplina" class="bg-teal-500 text-white font-semibold px-4 py-2 rounded hover:bg-teal-600 whitespace-nowrap">Adicionar</button>
+                  </div>
+                </div>
+
                 <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
                 <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
               </div>
@@ -360,6 +369,7 @@
         for(const funcao of funcoesCarregamento) { try { await funcao(); } catch (error) { console.error(`Erro ao executar ${funcao.name}:`, error); } }
 
         // Adiciona listeners
+        document.getElementById('btn-cadastrar-disciplina').addEventListener('click', () => handleCadastrarDisciplina(config));
         document.getElementById('seletorDisciplina').addEventListener('change', () => carregarAssuntos(config));
         document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
         document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => { carregarDesempenhoPorModo(config); carregarEvolucaoCronologicaPorModo(config); });
@@ -595,6 +605,39 @@
         container.innerHTML = snapshot.docs.map(doc => { const s = doc.data(); return `<div class="border p-3 rounded flex justify-between items-center"><p><strong>${s.banca} - ${s.ano}</strong><br>${s.cargo}</p><button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white px-4 py-2">Iniciar</button></div>`; }).join('');
         document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${config.appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado"); } }); });
     }
+
+    async function handleCadastrarDisciplina(config) {
+        const nomeInput = document.getElementById('nova-disciplina-nome');
+        const nomeDisciplina = nomeInput.value.trim();
+
+        if (!nomeDisciplina) {
+            showNotification("Por favor, digite o nome da disciplina.", "error");
+            return;
+        }
+
+        try {
+            const disciplinasRef = collection(db, `artifacts/${config.appId}/public/data/disciplinas`);
+            await addDoc(disciplinasRef, {
+                nome: nomeDisciplina,
+                assuntos: {} // Inicia com um mapa de assuntos vazio
+            });
+            
+            showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
+            nomeInput.value = ''; // Limpa o campo de texto
+
+            // Atualiza a interface para mostrar a nova disciplina
+            await carregarDisciplinas(config);
+            
+            const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
+            const userDoc = await getDoc(userDocRef);
+            const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
+            await carregarPrioridades(config, prioridadesSalvas);
+
+        } catch (error) {
+            handleFirestoreError(error, "Cadastrar Nova Disciplina");
+        }
+    }
+
 
     // ----- Funções de Dados Privados do Usuário -----
     async function carregarPrioridades(config, prioridadesSalvas = []) {
