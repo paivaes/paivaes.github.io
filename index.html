@@ -150,13 +150,20 @@
     // Função principal que inicia tudo
     function iniciarAplicacao() {
         const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-        const firebaseConfig = JSON.parse(firebaseConfigString);
         
-        // **CORREÇÃO: Verifica se a configuração é válida antes de inicializar**
+        let firebaseConfig = {};
+        try {
+            firebaseConfig = JSON.parse(firebaseConfigString);
+        } catch(e) {
+            console.error("Erro ao analisar a configuração do Firebase:", e);
+            document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase inválida.</h1>';
+            return;
+        }
+        
         if (!firebaseConfig.projectId) {
             console.error("Configuração do Firebase não encontrada ou inválida. O aplicativo não pode ser iniciado.");
             document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente. Recarregue a página.</h1>';
-            return; // Para a execução
+            return;
         }
 
         try {
@@ -733,8 +740,8 @@
         document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
     }
     
-    // Inicia a aplicação quando o script é carregado
-    iniciarAplicacao();
+    // **CORREÇÃO: Espera o DOM estar pronto antes de iniciar o app**
+    document.addEventListener('DOMContentLoaded', iniciarAplicacao);
   </script>
 </body>
 </html>
