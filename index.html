@@ -408,7 +408,10 @@
         const materia = materiaSelect.options[materiaSelect.selectedIndex].text;
         const dia = document.getElementById('dia-cronograma').value;
         const horario = document.getElementById('horario-cronograma').value;
-        if (!materia || !dia || !horario) { showNotification("Preencha todos os campos.", "error"); return; }
+        if (!materia || !dia || !horario || materiaSelect.value === "") { 
+            showNotification("Preencha todos os campos, incluindo a matéria.", "error"); 
+            return; 
+        }
         try {
             const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
             await addDoc(collection(config.db, collectionPath), { materia, dia, horario, usuarioId: config.userId });
@@ -568,7 +571,7 @@
     
     // ----- Funções de Dados Públicos -----
     async function carregarDisciplinas(config) {
-      const q = query(collection(db, `artifacts/${config.appId}/public/data/disciplinas`), orderBy("nome"));
+      const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
       const snapshot = await getDocs(q);
       const seletor = document.getElementById("seletorDisciplina");
       seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
@@ -577,7 +580,7 @@
     }
     
     async function carregarDisciplinasNoCronograma(config) {
-      const q = query(collection(db, `artifacts/${config.appId}/public/data/disciplinas`), orderBy("nome"));
+      const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
       const snapshot = await getDocs(q);
       const seletorCronograma = document.getElementById("materia-cronograma");
       seletorCronograma.innerHTML = '<option value="">-- Escolha uma matéria --</option>';
@@ -591,7 +594,7 @@
       const container = document.getElementById("listaAssuntos");
       container.innerHTML = "";
       if (!idDisciplina) return;
-      const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/disciplinas`, idDisciplina));
+      const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, idDisciplina));
       if (!disciplinaDoc.exists()) return;
       const assuntos = disciplinaDoc.data().assuntos || {};
       for (const assuntoId in assuntos) {
@@ -629,7 +632,7 @@
         }
 
         try {
-            const disciplinasRef = collection(db, `artifacts/${config.appId}/public/data/disciplinas`);
+            const disciplinasRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`);
             await addDoc(disciplinasRef, {
                 nome: nomeDisciplina,
                 assuntos: {} // Inicia com um mapa de assuntos vazio
@@ -654,9 +657,9 @@
 
     // ----- Funções de Dados Privados do Usuário -----
     async function carregarPrioridades(config, prioridadesSalvas = []) {
-        const { db, appId } = config;
+        const { db, appId, userId } = config;
         const container = document.getElementById('lista-prioridades');
-        const q = query(collection(db, `artifacts/${appId}/public/data/disciplinas`), orderBy("nome"));
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
         let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
         disciplinas.sort((a, b) => { const indexA = prioridadesSalvas.indexOf(a.id); const indexB = prioridadesSalvas.indexOf(b.id); if (indexA > -1 && indexB > -1) return indexA - indexB; if (indexA > -1) return -1; if (indexB > -1) return 1; return 0; });
@@ -693,7 +696,7 @@
         const registrosSnapshot = await getDocs(qTempo);
         const tempoPorDisciplina = {};
         registrosSnapshot.forEach(r => { const data = r.data(); tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos; });
-        const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/public/data/disciplinas`), orderBy("nome")));
+        const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome")));
         container.innerHTML = "";
         if (disciplinasSnapshot.empty) { container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>"; return; }
         disciplinasSnapshot.forEach(docSnap => { const d = docSnap.data(); const idDisciplina = docSnap.id; const metaHoras = metasPorDisciplina[idDisciplina] || 0; const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0; const horasEstudadas = minutosEstudados / 60; const percentual = metaHoras > 0 ? Math.min((horasEstudadas / metaHoras) * 100, 100) : 0; container.innerHTML += `<div class="mb-4"><p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p><div class="w-full bg-gray-200 rounded-full h-4 mt-1"><div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div></div></div>`; });
