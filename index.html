@@ -403,11 +403,14 @@
         const container = document.getElementById('container-dias-cronograma');
         if(!container) return;
         container.innerHTML = '';
-        const dias = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
-        dias.forEach(dia => {
-            const diaId = dia.toLowerCase().split('-')[0];
-            container.innerHTML += `<div class="bg-gray-100 p-3 rounded-lg"><h3 class="font-semibold text-center border-b pb-2 mb-2">${dia}</h3><div id="lista-tarefas-${diaId}" class="space-y-2"><p class="text-xs text-gray-400 text-center">Nenhuma tarefa.</p></div></div>`;
-        });
+        const dias = {
+            "segunda": "Segunda-feira", "terca": "Terça-feira", "quarta": "Quarta-feira",
+            "quinta": "Quinta-feira", "sexta": "Sexta-feira", "sabado": "Sábado", "domingo": "Domingo"
+        };
+        for (const diaId in dias) {
+            const displayName = dias[diaId];
+            container.innerHTML += `<div class="bg-gray-100 p-3 rounded-lg"><h3 class="font-semibold text-center border-b pb-2 mb-2">${displayName}</h3><div id="lista-tarefas-${diaId}" class="space-y-2"><p class="text-xs text-gray-400 text-center">Nenhuma tarefa.</p></div></div>`;
+        }
     }
 
     async function adicionarTarefaCronograma(e, config) {
