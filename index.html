@@ -446,7 +446,7 @@
     }
     
     async function removerTarefaCronograma(tarefaId, config) {
-        if (!confirm("Tem certeza que deseja remover esta tarefa?")) return;
+        // REMOVED confirm() call as it doesn't work in the iframe environment.
         try {
             const docPath = `artifacts/${config.appId}/users/${config.userId}/cronograma/${tarefaId}`;
             await deleteDoc(doc(config.db, docPath));
@@ -663,10 +663,7 @@
     }
 
     async function handleExcluirDisciplina(config, disciplinaId) {
-        if (!confirm("Tem certeza que deseja excluir esta disciplina? Isso não pode ser desfeito.")) {
-            return;
-        }
-
+        // REMOVED confirm() call and replaced with immediate deletion for compatibility.
         try {
             const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
             await deleteDoc(docRef);
@@ -694,12 +691,18 @@
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
         let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
+        
+        if (snapshot.empty) {
+            container.innerHTML = '<p class="text-slate-500 text-center">Nenhuma disciplina cadastrada.</p>';
+            return;
+        }
+
         disciplinas.sort((a, b) => { const indexA = prioridadesSalvas.indexOf(a.id); const indexB = prioridadesSalvas.indexOf(b.id); if (indexA > -1 && indexB > -1) return indexA - indexB; if (indexA > -1) return -1; if (indexB > -1) return 1; return 0; });
         
         container.innerHTML = disciplinas.map(d => `
             <div class="priority-item p-2 border rounded bg-gray-50 flex justify-between items-center" draggable="true" data-id="${d.id}">
                 <span>${d.nome}</span>
-                <button data-id="${d.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-lg px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
+                <button data-id="${d.id}" class="excluir-disciplina-btn text-red-500 hover:text-red-700 font-bold px-2">Excluir</button>
             </div>
         `).join('');
 
