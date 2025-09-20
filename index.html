@@ -633,6 +633,16 @@
 
         try {
             const disciplinasRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`);
+            
+            // **FIX: Check for existing discipline**
+            const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                showNotification(`A disciplina "${nomeDisciplina}" já existe.`, "error");
+                return; // Stop if it already exists
+            }
+
             await addDoc(disciplinasRef, {
                 nome: nomeDisciplina,
                 assuntos: {} // Inicia com um mapa de assuntos vazio
