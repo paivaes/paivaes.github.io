@@ -634,24 +634,22 @@
         try {
             const disciplinasRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`);
             
-            // **FIX: Check for existing discipline**
             const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
                 showNotification(`A disciplina "${nomeDisciplina}" já existe.`, "error");
-                return; // Stop if it already exists
+                return;
             }
 
             await addDoc(disciplinasRef, {
                 nome: nomeDisciplina,
-                assuntos: {} // Inicia com um mapa de assuntos vazio
+                assuntos: {} 
             });
             
             showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
-            nomeInput.value = ''; // Limpa o campo de texto
+            nomeInput.value = '';
 
-            // Atualiza a interface para mostrar a nova disciplina
             await carregarDisciplinas(config);
             
             const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
@@ -664,6 +662,30 @@
         }
     }
 
+    async function handleExcluirDisciplina(config, disciplinaId) {
+        if (!confirm("Tem certeza que deseja excluir esta disciplina? Isso não pode ser desfeito.")) {
+            return;
+        }
+
+        try {
+            const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
+            await deleteDoc(docRef);
+            
+            showNotification("Disciplina excluída com sucesso!", "success");
+
+            await carregarDisciplinas(config);
+            
+            const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
+            const userDoc = await getDoc(userDocRef);
+            const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
+            await carregarPrioridades(config, prioridadesSalvas);
+            await carregarProgressoDisciplinas(config);
+
+        } catch (error) {
+            handleFirestoreError(error, "Excluir Disciplina");
+        }
+    }
+
 
     // ----- Funções de Dados Privados do Usuário -----
     async function carregarPrioridades(config, prioridadesSalvas = []) {
@@ -673,7 +695,22 @@
         const snapshot = await getDocs(q);
         let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
         disciplinas.sort((a, b) => { const indexA = prioridadesSalvas.indexOf(a.id); const indexB = prioridadesSalvas.indexOf(b.id); if (indexA > -1 && indexB > -1) return indexA - indexB; if (indexA > -1) return -1; if (indexB > -1) return 1; return 0; });
-        container.innerHTML = disciplinas.map(d => `<div class="priority-item p-2 border rounded bg-gray-50" draggable="true" data-id="${d.id}">${d.nome}</div>`).join('');
+        
+        container.innerHTML = disciplinas.map(d => `
+            <div class="priority-item p-2 border rounded bg-gray-50 flex justify-between items-center" draggable="true" data-id="${d.id}">
+                <span>${d.nome}</span>
+                <button data-id="${d.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-lg px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
+            </div>
+        `).join('');
+
+        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const disciplinaId = e.currentTarget.dataset.id;
+                handleExcluirDisciplina(config, disciplinaId);
+            });
+        });
+
         const draggables = container.querySelectorAll('.priority-item');
         draggables.forEach(draggable => { draggable.addEventListener('dragstart', () => draggable.classList.add('dragging')); draggable.addEventListener('dragend', () => draggable.classList.remove('dragging')); });
         container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
