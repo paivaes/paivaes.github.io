@@ -635,7 +635,7 @@
     }
 
     async function handleCadastrarDisciplina(config) {
-        const nomeInput = document.getElementById('nova-disciplina-nome');
+        const nomeInput = document.getElementById('nova-disciplina-nome-edital');
         const nomeDisciplina = nomeInput.value.trim();
 
         if (!nomeDisciplina) {
@@ -662,12 +662,9 @@
             showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
             nomeInput.value = '';
 
+            await carregarEdital(config);
             await carregarDisciplinas(config);
-            
-            const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
-            const userDoc = await getDoc(userDocRef);
-            const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
-            await carregarPrioridades(config, prioridadesSalvas);
+            await carregarPrioridades(config, []);
 
         } catch (error) {
             handleFirestoreError(error, "Cadastrar Nova Disciplina");
@@ -682,6 +679,7 @@
             
             showNotification("Disciplina excluída com sucesso!", "success");
 
+            await carregarEdital(config);
             await carregarDisciplinas(config);
             
             const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
