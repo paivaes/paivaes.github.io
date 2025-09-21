@@ -125,6 +125,7 @@
                       <button id="btn-toggle-sessao" class="w-full bg-green-600 text-white font-semibold py-2">Iniciar Estudo</button>
                   </div>
                 </div>
+                <div class="card"><h2 class="m-0">Menu de Disciplinas</h2><label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label><select id="seletorDisciplina" class="w-full"></select><div id="listaAssuntos" class="mt-4 space-y-3"></div></div>
                 <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
                 <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
               </div>
@@ -185,6 +186,8 @@
     
     // Variáveis globais de inicialização
     let app, db, auth;
+    let timerInterval;
+    let segundosCorridos = 0;
 
     // Função principal que inicia tudo
     function iniciarAplicacao() {
@@ -392,7 +395,6 @@
 
         // Adiciona listeners
         document.getElementById('btn-cadastrar-disciplina-edital').addEventListener('click', () => handleCadastrarDisciplina(config));
-        document.getElementById('seletorDisciplina').addEventListener('change', () => carregarAssuntos(config));
         document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
         document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => { carregarDesempenhoPorModo(config); carregarEvolucaoCronologicaPorModo(config); });
         document.getElementById('btnCompararMeta').addEventListener('click', () => toggleLinhaMeta());
@@ -401,7 +403,8 @@
         document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(config));
         document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => document.getElementById('modal-questoes').classList.add('hidden'));
         document.getElementById('btn-encerrar-ciclo').addEventListener('click', () => handleEncerrarCiclo(config));
-
+        document.getElementById('cronometro-disciplina').addEventListener('change', (e) => handleMateriaChangeCronometroEstudo(e, config));
+        document.getElementById('btn-toggle-sessao').addEventListener('click', () => toggleSessaoDeEstudo(config));
     }
     
     // =========================
@@ -619,8 +622,22 @@
       const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
       const snapshot = await getDocs(q);
       const seletor = document.getElementById("seletorDisciplina");
+      const cronometroSeletor = document.getElementById("cronometro-disciplina");
+      
       seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
-      snapshot.forEach(doc => { seletor.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`; });
+      cronometroSeletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+
+      if (snapshot.empty) {
+          const msg = '<option value="">Cadastre disciplinas no Edital</option>';
+          seletor.innerHTML = msg;
+          cronometroSeletor.innerHTML = msg;
+      } else {
+          snapshot.forEach(doc => {
+              const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
+              seletor.innerHTML += optionHTML;
+              cronometroSeletor.innerHTML += optionHTML;
+          });
+      }
       await carregarDisciplinasNoCronograma(config);
     }
     
@@ -629,9 +646,13 @@
       const snapshot = await getDocs(q);
       const seletorCronograma = document.getElementById("materia-cronograma");
       seletorCronograma.innerHTML = '<option value="">-- Escolha uma matéria --</option>';
-      snapshot.forEach(doc => {
-        seletorCronograma.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
-      });
+       if (snapshot.empty) {
+          seletorCronograma.innerHTML = '<option value="">Cadastre disciplinas no Edital</option>';
+      } else {
+        snapshot.forEach(doc => {
+            seletorCronograma.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
+        });
+      }
     }
     
     async function carregarAssuntos(config) {
@@ -639,9 +660,17 @@
       const container = document.getElementById("listaAssuntos");
       container.innerHTML = "";
       if (!idDisciplina) return;
+      
       const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, idDisciplina));
       if (!disciplinaDoc.exists()) return;
+      
       const assuntos = disciplinaDoc.data().assuntos || {};
+      
+      if (Object.keys(assuntos).length === 0) {
+        container.innerHTML = "<p class='text-slate-500 text-center'>Nenhum assunto cadastrado.<br>Adicione na aba 'Edital'.</p>";
+        return;
+      }
+
       for (const assuntoId in assuntos) {
         const a = assuntos[assuntoId];
         container.innerHTML += `<div class="border p-3 rounded-lg"><h4 class="font-bold text-lg">${a.nome}</h4><p class="text-sm text-gray-600 my-2">${a.resumo || 'Sem resumo.'}</p><button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button></div>`;
