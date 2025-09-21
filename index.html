@@ -110,7 +110,21 @@
         <div id="tab-content-estudo" class="tab-content">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <div class="card"><h2 class="m-0">Menu de Disciplinas</h2><label for="seletorDisciplina" class="block mb-2 font-semibold">1. Escolha a disciplina:</label><select id="seletorDisciplina" class="w-full"></select><div id="listaAssuntos" class="mt-4 space-y-3"></div></div>
+                <div class="card">
+                  <h2 class="m-0">Sessão de Estudo (Cronômetro)</h2>
+                  <div class="mt-4 space-y-3">
+                      <div>
+                          <label for="cronometro-disciplina" class="block mb-1 font-semibold">Disciplina:</label>
+                          <select id="cronometro-disciplina" class="w-full"></select>
+                      </div>
+                      <div id="cronometro-assunto-container" class="hidden">
+                          <label for="cronometro-assunto" class="block mb-1 font-semibold">Assunto:</label>
+                          <select id="cronometro-assunto" class="w-full"></select>
+                      </div>
+                      <div id="timer-display" class="text-center text-4xl font-bold my-4 text-slate-700">00:00:00</div>
+                      <button id="btn-toggle-sessao" class="w-full bg-green-600 text-white font-semibold py-2">Iniciar Estudo</button>
+                  </div>
+                </div>
                 <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
                 <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
               </div>
@@ -1006,7 +1020,67 @@
         const { db, appId, userId } = config;
         const container = document.getElementById('perfil-usuario');
         const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); if(userDoc.exists()) { const data = userDoc.data(); container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
+        carregarHistoricoCiclos(config);
     }
+    
+    async function handleEncerrarCiclo(config) {
+        const { db, appId, userId } = config;
+        const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim() || 'Ciclo sem nome';
+        
+        // 1. Arquivar o ciclo atual
+        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`));
+        const registrosSnapshot = await getDocs(qTempo);
+        let totalMinutosCiclo = 0;
+        registrosSnapshot.forEach(r => totalMinutosCiclo += r.data().minutos);
+
+        const historicoRef = collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`);
+        await addDoc(historicoRef, {
+            nome: nomeCiclo,
+            dataConclusao: serverTimestamp(),
+            totalHoras: (totalMinutosCiclo / 60).toFixed(1)
+        });
+
+        // 2. Limpar os registros de tempo do ciclo atual
+        const batch = writeBatch(db);
+        registrosSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+
+        // 3. Resetar a UI
+        document.getElementById('ciclo-nome-input').value = `Novo Ciclo`;
+        document.getElementById('meta-geral-horas').value = '';
+        showNotification("Ciclo encerrado e arquivado com sucesso!", "success");
+        
+        // 4. Recarregar dados
+        await carregarProgressoDisciplinas(config);
+        await carregarPerfil(config);
+    }
+
+    async function carregarHistoricoCiclos(config) {
+        const { db, appId, userId } = config;
+        const container = document.getElementById('historico-ciclos-container');
+        container.innerHTML = "<p>Carregando histórico...</p>";
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`), orderBy("dataConclusao", "desc"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            container.innerHTML = "<p class='text-slate-500'>Nenhum ciclo concluído ainda.</p>";
+            return;
+        }
+        
+        container.innerHTML = snapshot.docs.map(doc => {
+            const ciclo = doc.data();
+            const data = ciclo.dataConclusao ? new Date(ciclo.dataConclusao.seconds * 1000).toLocaleDateString() : 'Data indisponível';
+            return `
+                <div class="border-b pb-2">
+                    <p class="font-semibold">${ciclo.nome}</p>
+                    <p class="text-sm text-gray-600">Concluído em: ${data} - Total de ${ciclo.totalHoras} horas</p>
+                </div>
+            `;
+        }).join('');
+    }
+
 
     async function baixarRelatorioPDF(config) {
         alert("Gerando Relatório PDF...");
