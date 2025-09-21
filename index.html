@@ -417,38 +417,23 @@
         e.preventDefault();
         const materiaSelect = document.getElementById('materia-cronograma');
         const materia = materiaSelect.options[materiaSelect.selectedIndex].text;
-        const assuntoCheckboxes = document.querySelectorAll('#assunto-cronograma-checkboxes input[type="checkbox"]:checked');
+        const assuntoSelect = document.getElementById('assunto-cronograma');
+        const assunto = assuntoSelect.value;
         const dia = document.getElementById('dia-cronograma').value;
         const horario = document.getElementById('horario-cronograma').value;
 
-        if (!materia || materiaSelect.value === "" || !dia || !horario || assuntoCheckboxes.length === 0) { 
-            showNotification("Preencha todos os campos, incluindo pelo menos um assunto.", "error"); 
+        if (!materia || materiaSelect.value === "" || !dia || !horario || !assunto) { 
+            showNotification("Preencha todos os campos, incluindo matéria e assunto.", "error"); 
             return; 
         }
-
-        const tarefasParaAdicionar = [];
-        assuntoCheckboxes.forEach(checkbox => {
-            tarefasParaAdicionar.push({ 
-                materia, 
-                assunto: checkbox.value, 
-                dia, 
-                horario, 
-                usuarioId: config.userId 
-            });
-        });
-
         try {
             const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
-            for (const tarefa of tarefasParaAdicionar) {
-                await addDoc(collection(config.db, collectionPath), tarefa);
-            }
-            showNotification("Tarefa(s) adicionada(s) com sucesso!", "success");
+            await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId });
+            showNotification("Tarefa adicionada!");
             document.getElementById('form-cronograma').reset();
             document.getElementById('assunto-cronograma-container').classList.add('hidden');
             carregarCronograma(config);
-        } catch (error) { 
-            handleFirestoreError(error, "Adicionar Tarefa(s) ao Cronograma"); 
-        }
+        } catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
     }
 
     async function carregarCronograma(config) {
@@ -990,29 +975,23 @@
     async function handleMateriaChangeCronograma(event, config) {
         const disciplinaId = event.target.value;
         const assuntoContainer = document.getElementById('assunto-cronograma-container');
-        const assuntoCheckboxes = document.getElementById('assunto-cronograma-checkboxes');
+        const assuntoSelect = document.getElementById('assunto-cronograma');
 
         if (!disciplinaId) {
             assuntoContainer.classList.add('hidden');
-            assuntoCheckboxes.innerHTML = '';
+            assuntoSelect.innerHTML = '';
             return;
         }
 
         const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId));
         if (disciplinaDoc.exists()) {
             const assuntos = disciplinaDoc.data().assuntos || {};
-            assuntoCheckboxes.innerHTML = '';
+            assuntoSelect.innerHTML = '<option value="">-- Escolha um assunto --</option>';
             if(Object.keys(assuntos).length === 0){
-                assuntoCheckboxes.innerHTML = '<p class="text-xs text-gray-500">Nenhum assunto cadastrado para esta matéria.</p>';
+                assuntoSelect.innerHTML = '<option value="">Nenhum assunto cadastrado</option>';
             } else {
                 for (const id in assuntos) {
-                    const nomeAssunto = assuntos[id].nome;
-                    assuntoCheckboxes.innerHTML += `
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" value="${nomeAssunto}" class="rounded">
-                            <span>${nomeAssunto}</span>
-                        </label>
-                    `;
+                    assuntoSelect.innerHTML += `<option value="${assuntos[id].nome}">${assuntos[id].nome}</option>`;
                 }
             }
             assuntoContainer.classList.remove('hidden');
