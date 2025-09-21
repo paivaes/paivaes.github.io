@@ -446,10 +446,8 @@
         
         const sortOrder = { "segunda": 1, "terca": 2, "quarta": 3, "quinta": 4, "sexta": 5, "sabado": 6, "domingo": 7 };
         tarefas.sort((a, b) => {
-            const diaAId = a.dia.split('-')[1] || a.dia;
-            const diaBId = b.dia.split('-')[1] || b.dia;
-            const dayA = sortOrder[diaAId] || 99;
-            const dayB = sortOrder[diaBId] || 99;
+            const dayA = sortOrder[a.dia] || 99;
+            const dayB = sortOrder[b.dia] || 99;
             if (dayA !== dayB) {
                 return dayA - dayB;
             }
@@ -457,7 +455,7 @@
         });
 
         tarefas.forEach(tarefa => {
-            const diaId = tarefa.dia.split('-')[1] || tarefa.dia;
+            const diaId = tarefa.dia;
             const containerTarefas = document.getElementById(`lista-tarefas-${diaId}`);
             if (containerTarefas) {
                  if (containerTarefas.querySelector('p')) containerTarefas.innerHTML = '';
