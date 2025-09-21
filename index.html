@@ -122,7 +122,7 @@
             </div>
         </div>
         <!-- Outras Abas -->
-        <div id="tab-content-cronograma" class="tab-content hidden"><div class="card"><h2 class="m-0">Meu Cronograma Semanal</h2><form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 items-end"><div class="flex-grow"><label for="materia-cronograma" class="block text-sm font-medium text-gray-700">Matéria</label><select id="materia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select></div><div id="assunto-cronograma-container" class="flex-grow hidden"><label for="assunto-cronograma" class="block text-sm font-medium text-gray-700">Assunto</label><select id="assunto-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select></div><div class="flex-grow"><label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label><select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"><option value="segunda">Segunda-feira</option><option value="terca">Terça-feira</option><option value="quarta">Quarta-feira</option><option value="quinta">Quinta-feira</option><option value="sexta">Sexta-feira</option><option value="sabado">Sábado</option><option value="domingo">Domingo</option></select></div><div class="flex-grow"><label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label><input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button></form><div id="container-dias-cronograma" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"></div></div></div>
+        <div id="tab-content-cronograma" class="tab-content hidden"><div class="card"><h2 class="m-0">Meu Cronograma Semanal</h2><form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 items-end"><div class="flex-grow"><label for="materia-cronograma" class="block text-sm font-medium text-gray-700">Matéria</label><select id="materia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select></div><div id="assunto-cronograma-container" class="flex-grow hidden"><label class="block text-sm font-medium text-gray-700">Assuntos</label><div id="assunto-cronograma-checkboxes" class="mt-1 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white"></div></div><div class="flex-grow"><label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label><select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"><option value="segunda">Segunda-feira</option><option value="terca">Terça-feira</option><option value="quarta">Quarta-feira</option><option value="quinta">Quinta-feira</option><option value="sexta">Sexta-feira</option><option value="sabado">Sábado</option><option value="domingo">Domingo</option></select></div><div class="flex-grow"><label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label><input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button></form><div id="container-dias-cronograma" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"></div></div></div>
         <div id="tab-content-simulados" class="tab-content hidden"><div class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
         <div id="tab-content-redacao" class="tab-content hidden"><div class="card"><main id="modulo-redacao-container"><section id="secao-redacao"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Temas Disponíveis</h2><div id="temas-redacao" class="grid grid-cols-1 md:grid-cols-2 gap-6"><p>Carregando temas...</p></div></section><section id="secao-redacoes-salvas" class="mt-12"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Minhas Redações Salvas</h2><div id="lista-redacoes-salvas-v2" class="space-y-4"><p class="text-gray-500">Carregando redações salvas...</p></div></section></main></div></div>
         <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
@@ -417,23 +417,38 @@
         e.preventDefault();
         const materiaSelect = document.getElementById('materia-cronograma');
         const materia = materiaSelect.options[materiaSelect.selectedIndex].text;
-        const assuntoSelect = document.getElementById('assunto-cronograma');
-        const assunto = assuntoSelect.value;
+        const assuntoCheckboxes = document.querySelectorAll('#assunto-cronograma-checkboxes input[type="checkbox"]:checked');
         const dia = document.getElementById('dia-cronograma').value;
         const horario = document.getElementById('horario-cronograma').value;
 
-        if (!materia || materiaSelect.value === "" || !dia || !horario || !assunto) { 
-            showNotification("Preencha todos os campos, incluindo matéria e assunto.", "error"); 
+        if (!materia || materiaSelect.value === "" || !dia || !horario || assuntoCheckboxes.length === 0) { 
+            showNotification("Preencha todos os campos, incluindo pelo menos um assunto.", "error"); 
             return; 
         }
+
+        const tarefasParaAdicionar = [];
+        assuntoCheckboxes.forEach(checkbox => {
+            tarefasParaAdicionar.push({ 
+                materia, 
+                assunto: checkbox.value, 
+                dia, 
+                horario, 
+                usuarioId: config.userId 
+            });
+        });
+
         try {
             const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
-            await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId });
-            showNotification("Tarefa adicionada!");
+            for (const tarefa of tarefasParaAdicionar) {
+                await addDoc(collection(config.db, collectionPath), tarefa);
+            }
+            showNotification("Tarefa(s) adicionada(s) com sucesso!", "success");
             document.getElementById('form-cronograma').reset();
             document.getElementById('assunto-cronograma-container').classList.add('hidden');
             carregarCronograma(config);
-        } catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
+        } catch (error) { 
+            handleFirestoreError(error, "Adicionar Tarefa(s) ao Cronograma"); 
+        }
     }
 
     async function carregarCronograma(config) {
@@ -689,7 +704,6 @@
     }
 
     async function handleExcluirDisciplina(config, disciplinaId) {
-        // REMOVED confirm() call and replaced with immediate deletion for compatibility.
         try {
             const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
             await deleteDoc(docRef);
@@ -729,7 +743,7 @@
         container.innerHTML = disciplinas.map(d => `
             <div class="priority-item p-2 border rounded bg-gray-50 flex justify-between items-center" draggable="true" data-id="${d.id}">
                 <span>${d.nome}</span>
-                <button data-id="${d.id}" class="excluir-disciplina-btn text-red-500 hover:text-red-700 font-bold px-2">Excluir</button>
+                <button data-id="${d.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
             </div>
         `).join('');
 
@@ -914,7 +928,7 @@
             disciplinaCard.innerHTML = `
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-lg text-blue-700">${disciplina.nome}</h3>
-                    <button data-id="${disciplina.id}" class="excluir-disciplina-btn text-red-500 hover:text-red-700 font-bold px-2">Excluir Disciplina</button>
+                    <button data-id="${disciplina.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
                 </div>
                 ${assuntosHTML}
                 <div class="flex gap-2 mt-4 pt-4 border-t">
@@ -976,20 +990,30 @@
     async function handleMateriaChangeCronograma(event, config) {
         const disciplinaId = event.target.value;
         const assuntoContainer = document.getElementById('assunto-cronograma-container');
-        const assuntoSelect = document.getElementById('assunto-cronograma');
+        const assuntoCheckboxes = document.getElementById('assunto-cronograma-checkboxes');
 
         if (!disciplinaId) {
             assuntoContainer.classList.add('hidden');
-            assuntoSelect.innerHTML = '';
+            assuntoCheckboxes.innerHTML = '';
             return;
         }
 
         const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId));
         if (disciplinaDoc.exists()) {
             const assuntos = disciplinaDoc.data().assuntos || {};
-            assuntoSelect.innerHTML = '<option value="">-- Escolha um assunto --</option>';
-            for (const id in assuntos) {
-                assuntoSelect.innerHTML += `<option value="${assuntos[id].nome}">${assuntos[id].nome}</option>`;
+            assuntoCheckboxes.innerHTML = '';
+            if(Object.keys(assuntos).length === 0){
+                assuntoCheckboxes.innerHTML = '<p class="text-xs text-gray-500">Nenhum assunto cadastrado para esta matéria.</p>';
+            } else {
+                for (const id in assuntos) {
+                    const nomeAssunto = assuntos[id].nome;
+                    assuntoCheckboxes.innerHTML += `
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" value="${nomeAssunto}" class="rounded">
+                            <span>${nomeAssunto}</span>
+                        </label>
+                    `;
+                }
             }
             assuntoContainer.classList.remove('hidden');
         }
