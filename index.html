@@ -441,39 +441,41 @@
         const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
         const q = query(collection(config.db, collectionPath), where("usuarioId", "==", config.userId));
         const querySnapshot = await getDocs(q);
-        let tarefas = [];
-        querySnapshot.forEach(doc => tarefas.push({ id: doc.id, ...doc.data() }));
         
-        const sortOrder = { "segunda": 1, "terca": 2, "quarta": 3, "quinta": 4, "sexta": 5, "sabado": 6, "domingo": 7 };
-        tarefas.sort((a, b) => {
-            const dayA = sortOrder[a.dia] || 99;
-            const dayB = sortOrder[b.dia] || 99;
-            if (dayA !== dayB) {
-                return dayA - dayB;
+        const tarefasPorDia = {};
+        querySnapshot.forEach(doc => {
+            const tarefa = { id: doc.id, ...doc.data() };
+            if (!tarefasPorDia[tarefa.dia]) {
+                tarefasPorDia[tarefa.dia] = [];
             }
-            return a.horario.localeCompare(b.horario);
+            tarefasPorDia[tarefa.dia].push(tarefa);
         });
 
-        tarefas.forEach(tarefa => {
-            const diaId = tarefa.dia;
+        for (const diaId in tarefasPorDia) {
             const containerTarefas = document.getElementById(`lista-tarefas-${diaId}`);
             if (containerTarefas) {
-                 if (containerTarefas.querySelector('p')) containerTarefas.innerHTML = '';
-                const div = document.createElement('div');
-                div.className = "bg-white p-2 rounded shadow-sm flex justify-between items-center text-sm";
-                div.innerHTML = `<div><p class="font-bold">${tarefa.horario} - ${tarefa.materia}</p><p class="text-xs text-gray-500 pl-1">${tarefa.assunto}</p></div>`;
-                const removeBtn = document.createElement('button');
-                removeBtn.innerHTML = '&times;';
-                removeBtn.className = "text-red-500 hover:text-red-700 font-bold text-lg px-2";
-                removeBtn.onclick = () => removerTarefaCronograma(tarefa.id, config);
-                div.appendChild(removeBtn);
-                containerTarefas.appendChild(div);
+                containerTarefas.innerHTML = ''; // Limpa o container do dia
+                
+                // Ordena as tarefas do dia por horário
+                tarefasPorDia[diaId].sort((a, b) => a.horario.localeCompare(b.horario));
+                
+                tarefasPorDia[diaId].forEach(tarefa => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-2 rounded shadow-sm flex justify-between items-center text-sm";
+                    div.innerHTML = `<div><p class="font-bold">${tarefa.horario} - ${tarefa.materia}</p><p class="text-xs text-gray-500 pl-1">${tarefa.assunto}</p></div>`;
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.className = "text-red-500 hover:text-red-700 font-bold text-lg px-2";
+                    removeBtn.onclick = () => removerTarefaCronograma(tarefa.id, config);
+                    div.appendChild(removeBtn);
+                    containerTarefas.appendChild(div);
+                });
             }
-        });
+        }
     }
+
     
     async function removerTarefaCronograma(tarefaId, config) {
-        // REMOVED confirm() call as it doesn't work in the iframe environment.
         try {
             const docPath = `artifacts/${config.appId}/users/${config.userId}/cronograma/${tarefaId}`;
             await deleteDoc(doc(config.db, docPath));
