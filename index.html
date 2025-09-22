@@ -678,32 +678,35 @@
     // ----- Funções de Dados Públicos -----
     async function carregarDisciplinas(config) {
       const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
- const snapshot = await getDocs(q);
+      const snapshot = await getDocs(q);
       const seletor = document.getElementById("seletorDisciplina");
       const cronometroSeletor = document.getElementById("cronometro-disciplina");
-      // Previne erro se o seletor não existir em uma aba
+      
       if (seletor) {
         seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
       }
       if (cronometroSeletor) {
         cronometroSeletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
       }
-      
- if (snapshot.empty) {
+
+      if (snapshot.empty) {
           const msg = '<option value="">Cadastre disciplinas no Edital</option>';
-          if(seletor) seletor.innerHTML = msg;
-          if(cronometroSeletor) cronometroSeletor.innerHTML = msg;
+          if (seletor) seletor.innerHTML = msg;
+          if (cronometroSeletor) cronometroSeletor.innerHTML = msg;
       } else {
           snapshot.forEach(doc => {
               const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
-              if(seletor) seletor.innerHTML += optionHTML;
-              if(cronometroSeletor) cronometroSeletor.innerHTML += optionHTML;
+              if (seletor) seletor.innerHTML += optionHTML;
+              if (cronometroSeletor) cronometroSeletor.innerHTML += optionHTML;
           });
- }
+      }
       await carregarDisciplinasNoCronograma(config);
-      // Previne erro se o seletor não existir
-      document.getElementById('seletorDisciplina')?.addEventListener('change', () => carregarAssuntos(config));
- }
+      
+      const seletorDisciplinaEl = document.getElementById('seletorDisciplina');
+      if (seletorDisciplinaEl) {
+        seletorDisciplinaEl.addEventListener('change', () => carregarAssuntos(config));
+      }
+    }
     
     async function carregarDisciplinasNoCronograma(config) {
       const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
@@ -1213,39 +1216,6 @@
  const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
  html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
  }
-    
-    async function carregarDisciplinas(config) {
-      const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
-      const snapshot = await getDocs(q);
-      const seletor = document.getElementById("seletorDisciplina");
-      const cronometroSeletor = document.getElementById("cronometro-disciplina");
-      
-      // Verifica se os elementos existem antes de manipulá-los
-      if (seletor) {
-        seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
-      }
-      if (cronometroSeletor) {
-        cronometroSeletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
-      }
-
-      if (snapshot.empty) {
-          const msg = '<option value="">Cadastre disciplinas no Edital</option>';
-          if (seletor) seletor.innerHTML = msg;
-          if (cronometroSeletor) cronometroSeletor.innerHTML = msg;
-      } else {
-          snapshot.forEach(doc => {
-              const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
-              if (seletor) seletor.innerHTML += optionHTML;
-              if (cronometroSeletor) cronometroSeletor.innerHTML += optionHTML;
-          });
-      }
-      await carregarDisciplinasNoCronograma(config);
-      
-      const seletorDisciplinaEl = document.getElementById('seletorDisciplina');
-      if (seletorDisciplinaEl) {
-        seletorDisciplinaEl.addEventListener('change', () => carregarAssuntos(config));
-      }
-    }
     
     async function carregarMedalhas(config) { const container = document.getElementById('listaMedalhas');
  container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`; }
