@@ -123,6 +123,10 @@
         <div id="tab-content-estudo" class="tab-content">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
+                <div class="card">
+                    <label for="seletorDisciplina" class="block mb-1 font-semibold">Selecione a Disciplina para Praticar:</label>
+                    <select id="seletorDisciplina" class="w-full"></select>
+                </div>
                 <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
                 <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
               </div>
@@ -134,7 +138,7 @@
               </div>
             </div>
         </div>
-        <div id="tab-content- cronograma" class="tab-content hidden">
+        <div id="tab-content-cronograma" class="tab-content hidden">
             <div class="card">
                 <h2 class="m-0">Sessão de Estudo (Cronômetro)</h2>
                 <div class="mt-4 space-y-3">
@@ -677,21 +681,28 @@
  const snapshot = await getDocs(q);
       const seletor = document.getElementById("seletorDisciplina");
       const cronometroSeletor = document.getElementById("cronometro-disciplina");
- seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
-      cronometroSeletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+      // Previne erro se o seletor não existir em uma aba
+      if (seletor) {
+        seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+      }
+      if (cronometroSeletor) {
+        cronometroSeletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+      }
+      
  if (snapshot.empty) {
           const msg = '<option value="">Cadastre disciplinas no Edital</option>';
- seletor.innerHTML = msg;
-          cronometroSeletor.innerHTML = msg;
+          if(seletor) seletor.innerHTML = msg;
+          if(cronometroSeletor) cronometroSeletor.innerHTML = msg;
       } else {
           snapshot.forEach(doc => {
               const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
-              seletor.innerHTML += optionHTML;
-              cronometroSeletor.innerHTML += optionHTML;
+              if(seletor) seletor.innerHTML += optionHTML;
+              if(cronometroSeletor) cronometroSeletor.innerHTML += optionHTML;
           });
  }
       await carregarDisciplinasNoCronograma(config);
-      document.getElementById('seletorDisciplina').addEventListener('change', () => carregarAssuntos(config));
+      // Previne erro se o seletor não existir
+      document.getElementById('seletorDisciplina')?.addEventListener('change', () => carregarAssuntos(config));
  }
     
     async function carregarDisciplinasNoCronograma(config) {
@@ -1202,6 +1213,39 @@
  const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
  html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
  }
+    
+    async function carregarDisciplinas(config) {
+      const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
+      const snapshot = await getDocs(q);
+      const seletor = document.getElementById("seletorDisciplina");
+      const cronometroSeletor = document.getElementById("cronometro-disciplina");
+      
+      // Verifica se os elementos existem antes de manipulá-los
+      if (seletor) {
+        seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+      }
+      if (cronometroSeletor) {
+        cronometroSeletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+      }
+
+      if (snapshot.empty) {
+          const msg = '<option value="">Cadastre disciplinas no Edital</option>';
+          if (seletor) seletor.innerHTML = msg;
+          if (cronometroSeletor) cronometroSeletor.innerHTML = msg;
+      } else {
+          snapshot.forEach(doc => {
+              const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
+              if (seletor) seletor.innerHTML += optionHTML;
+              if (cronometroSeletor) cronometroSeletor.innerHTML += optionHTML;
+          });
+      }
+      await carregarDisciplinasNoCronograma(config);
+      
+      const seletorDisciplinaEl = document.getElementById('seletorDisciplina');
+      if (seletorDisciplinaEl) {
+        seletorDisciplinaEl.addEventListener('change', () => carregarAssuntos(config));
+      }
+    }
     
     async function carregarMedalhas(config) { const container = document.getElementById('listaMedalhas');
  container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`; }
