@@ -743,7 +743,7 @@
             await carregarEdital(config);
             await carregarDisciplinas(config);
             
-            const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
+            const userDocRef = doc(db, `artifacts/${appId}/users/${config.userId}/perfil`, 'userData');
             const userDoc = await getDoc(userDocRef);
             const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
             await carregarPrioridades(config, prioridadesSalvas);
