@@ -161,7 +161,6 @@
                     <div class="flex-grow">
                         <label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label>
                         <select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-        
                              <option value="segunda">Segunda-feira</option>
                             <option value="terca">Terça-feira</option>
                             <option value="quarta">Quarta-feira</option>
@@ -218,7 +217,7 @@
   <div id="modal-horas" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm fade-in">
           <div class="p-6 border-b">
-              <h2 class="text-xl font-bold m-0 border-0">Definir Tempo de Estudo</h2>
+             <h2 class="text-xl font-bold m-0 border-0">Definir Tempo de Estudo</h2>
           </div>
           <div class="p-6 space-y-4">
               <div>
@@ -326,7 +325,6 @@
             });
       
         });
-     // Listeners para alternar entre Login e Cadastro
         document.getElementById('show-signup').addEventListener('click', (e) => {
           e.preventDefault();
           document.getElementById('login-view').classList.add('hidden');
@@ -744,7 +742,118 @@
     }
 
     // =========================
-    // RESTANTE DO CÓDIGO...
+    // MÓDULO DE REDAÇÃO
+    // =========================
+    let _db_r, _userId_r, _appId_r, _temaRedacaoAtual;
+    function inicializarModuloRedacao(config) {
+        _db_r = config.db; _userId_r = config.userId; _appId_r = config.appId;
+        carregarTemasRedacao_v2();
+        carregarRedacoesSalvas_v2();
+        document.getElementById("btn-fechar-escrever")?.addEventListener("click", () => fecharModal('modal-redacao'));
+        document.getElementById("btn-fechar-ver")?.addEventListener("click", () => fecharModal('modal-ver-redacao'));
+        document.getElementById("btn-salvar")?.addEventListener("click", salvarRedacao_v2);
+        document.getElementById("btn-corrigir")?.addEventListener("click", corrigirRedacao_v2);
+        document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
+    }
+    async function carregarTemasRedacao_v2() {
+        const temas = [{ titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" }, { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" }, { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }];
+        const container = document.getElementById("temas-redacao");
+        if (!container) return;
+        container.innerHTML = "";
+        temas.forEach((tema) => {
+            const div = document.createElement("div");
+            div.className = "p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col";
+            div.innerHTML = `<div class="flex-grow"><h3 class="text-lg font-semibold text-gray-900">${tema.titulo}</h3><p class="text-sm text-gray-500 mt-2">Ano: ${tema.ano} | Banca: ${tema.banca}</p></div><button class="escrever-redacao-btn mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 self-start transition-colors">Escrever Redação</button>`;
+            div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
+         
+               _temaRedacaoAtual = tema.titulo;
+                document.getElementById("titulo-redacao").textContent = tema.titulo;
+                document.getElementById("texto-redacao").value = "";
+                document.getElementById("resultado-correcao").innerHTML = "";
+                document.getElementById("btn-imprimir").style.display = "none";
+                abrirModal('modal-redacao');
+            });
+            container.appendChild(div);
+        });
+    }
+    async function salvarRedacao_v2() {
+        const texto = document.getElementById("texto-redacao").value.trim();
+        if (!texto) { showNotification("Digite sua redação antes de salvar.", "error"); return; }
+        try {
+            const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
+            await addDoc(collection(_db_r, collectionPath), { tema: _temaRedacaoAtual, texto: texto, data: serverTimestamp(), usuarioId: _userId_r });
+            showNotification("Redação salva com sucesso!");
+            fecharModal('modal-redacao');
+            carregarRedacoesSalvas_v2();
+        } catch (erro) { handleFirestoreError(erro, "Salvar Redação"); }
+    }
+    async function carregarRedacoesSalvas_v2() {
+        const container = document.getElementById("lista-redacoes-salvas-v2");
+        if(!container) return;
+        const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
+        const q = query(collection(_db_r, collectionPath), where("usuarioId", "==", _userId_r));
+        try {
+            const querySnapshot = await getDocs(q);
+            container.innerHTML = "";
+            if(querySnapshot.empty) { container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`; return; }
+            querySnapshot.forEach((doc) => {
+                const redacao = doc.data();
+                const div = document.createElement("div");
+                div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center";
+                div.innerHTML = `<div><h4 class="font-semibold text-gray-800">${redacao.tema}</h4><p class="text-sm text-gray-500">Salva em: ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p></div><button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>`;
+                div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
+                    document.getElementById('ver-titulo-redacao').textContent = redacao.tema;
+                    document.getElementById('ver-texto-redacao').textContent = redacao.texto;
+                    abrirModal('modal-ver-redacao');
+                });
+                container.appendChild(div);
+            });
+        } catch(error) { handleFirestoreError(error, "Carregar Redações Salvas"); }
+    }
+    function corrigirRedacao_v2() {
+        const texto = document.getElementById("texto-redacao").value.trim();
+        if (!texto) { showNotification("Digite o texto antes de corrigir.", "error"); return; }
+        let nota = 100; let observacoes = [];
+        if (texto.length < 500) { nota -= 20; observacoes.push("O texto está um pouco curto."); }
+        if (!/portanto|conclui-se|logo|enfim/i.test(texto)) { nota -= 15; observacoes.push("Reforce a conclusão com conectivos."); }
+        if (texto.split(' ').length < 150) { nota -= 20; observacoes.push("Texto com menos de 150 palavras."); }
+        if (nota > 90) { observacoes.push("Excelente estrutura!"); }
+        if (nota < 0) nota = 0;
+        document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
+        document.getElementById("btn-imprimir").style.display = "inline-block";
+    }
+    function imprimirRedacao_v2() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.setFontSize(16); pdf.text(`Tema: ${_temaRedacaoAtual}`, 10, 10);
+        pdf.setFontSize(12);
+        pdf.text(pdf.splitTextToSize(document.getElementById("texto-redacao").value, 180), 10, 20);
+        pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s/g, '_')}.pdf`);
+        showNotification("Gerando PDF...");
+    }
+    function showNotification(message, type = 'success') {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+        const notif = document.createElement('div');
+        notif.className = `p-4 text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
+        notif.textContent = message;
+        container.appendChild(notif);
+        setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
+    }
+    function abrirModal(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); }
+    function fecharModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        const content = modal.querySelector('.fade-in');
+        if (content) {
+            content.classList.add('fade-out');
+            content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
+        } else { modal.classList.add("hidden");
+        }
+    }
+
+    // =========================
+    // LÓGICA PRINCIPAL (RESTANTE)
     // =========================
     
     async function carregarDisciplinas(config) {
