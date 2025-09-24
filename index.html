@@ -340,6 +340,22 @@
         return Timestamp.fromDate(dataInicio);
     }
 
+    function formatarTempo(totalSegundos) {
+        const s = Math.max(0, totalSegundos);
+        const horas = Math.floor(s / 3600);
+        const minutos = Math.floor((s % 3600) / 60);
+        const segundos = s % 60;
+        return [horas, minutos, segundos]
+            .map(v => v.toString().padStart(2, '0'))
+            .join(':');
+    }
+
+    function updateTimerDisplayFromHours(horas) {
+        const timerDisplay = document.getElementById('timer-display');
+        segundosCorridos = (horas || 0) * 3600;
+        timerDisplay.textContent = formatarTempo(segundosCorridos);
+    }
+
     // =========================
     // FUNÇÃO PRINCIPAL
     // =========================
@@ -554,22 +570,6 @@
     // =========================
     // MÓDULO DE CRONOGRAMA
     // =========================
-
-    function formatarTempo(totalSegundos) {
-        const s = Math.max(0, totalSegundos);
-        const horas = Math.floor(s / 3600);
-        const minutos = Math.floor((s % 3600) / 60);
-        const segundos = s % 60;
-        return [horas, minutos, segundos]
-            .map(v => v.toString().padStart(2, '0'))
-            .join(':');
-    }
-
-    function updateTimerDisplayFromHours(horas) {
-        const timerDisplay = document.getElementById('timer-display');
-        segundosCorridos = (horas || 0) * 3600;
-        timerDisplay.textContent = formatarTempo(segundosCorridos);
-    }
 
     async function toggleSessaoDeEstudo(config) {
         const btn = document.getElementById('btn-toggle-sessao');
@@ -913,7 +913,7 @@
     }
 
     // =========================
-    // RESTANTE DO CÓDIGO...
+    // RESTANTE DOS MÓDULOS
     // =========================
     
     async function carregarDisciplinas(config) {
@@ -1211,7 +1211,58 @@
         document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
     }
     
+    async function handleExcluirDisciplina(config, disciplinaId) {
+        try {
+            const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
+            await deleteDoc(docRef);
+            
+            showNotification("Disciplina excluída com sucesso!", "success");
+
+            await carregarEdital(config);
+            await carregarDisciplinas(config);
+            
+            const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
+            const userDoc = await getDoc(userDocRef);
+            const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
+            await carregarPrioridades(config, prioridadesSalvas);
+            await carregarProgressoDisciplinas(config);
+        } catch (error) {
+            handleFirestoreError(error, "Excluir Disciplina");
+        }
+    }
+    
+    async function carregarPrioridades(config, prioridadesSalvas = []) {
+        const { db, appId, userId } = config;
+        const container = document.getElementById('lista-prioridades');
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
+        const snapshot = await getDocs(q);
+        let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
+        if (snapshot.empty) {
+            container.innerHTML = '<p class="text-slate-500 text-center">Nenhuma disciplina cadastrada.</p>';
+            return;
+        }
+
+        disciplinas.sort((a, b) => { const indexA = prioridadesSalvas.indexOf(a.id); const indexB = prioridadesSalvas.indexOf(b.id); if (indexA > -1 && indexB > -1) return indexA - indexB; if (indexA > -1) return -1; if (indexB > -1) return 1; return 0; });
+        container.innerHTML = disciplinas.map(d => `
+            <div class="priority-item p-2 border rounded bg-gray-50 flex justify-between items-center" draggable="true" data-id="${d.id}">
+                <span>${d.nome}</span>
+                <button data-id="${d.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
+            </div>
+        `).join('');
+        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const disciplinaId = e.currentTarget.dataset.id;
+                handleExcluirDisciplina(config, disciplinaId);
+            });
+        });
+        const draggables = container.querySelectorAll('.priority-item');
+        draggables.forEach(draggable => { draggable.addEventListener('dragstart', () => draggable.classList.add('dragging')); draggable.addEventListener('dragend', () => draggable.classList.remove('dragging')); });
+        container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
+    }
+
     document.addEventListener('DOMContentLoaded', iniciarAplicacao);
   </script>
 </body>
 </html>
+
