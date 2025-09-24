@@ -165,17 +165,14 @@
                              <option value="segunda">Segunda-feira</option>
                             <option value="terca">Terça-feira</option>
                             <option value="quarta">Quarta-feira</option>
-                     
                            <option value="quinta">Quinta-feira</option>
                             <option value="sexta">Sexta-feira</option>
                             <option value="sabado">Sábado</option>
                             <option value="domingo">Domingo</option>
-     
                         </select>
                     </div>
                     <div class="flex-grow">
                         <label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label>
-           
                           <input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button>
@@ -747,118 +744,7 @@
     }
 
     // =========================
-    // MÓDULO DE REDAÇÃO
-    // =========================
-    let _db_r, _userId_r, _appId_r, _temaRedacaoAtual;
-    function inicializarModuloRedacao(config) {
-        _db_r = config.db; _userId_r = config.userId; _appId_r = config.appId;
-        carregarTemasRedacao_v2();
-        carregarRedacoesSalvas_v2();
-        document.getElementById("btn-fechar-escrever")?.addEventListener("click", () => fecharModal('modal-redacao'));
-        document.getElementById("btn-fechar-ver")?.addEventListener("click", () => fecharModal('modal-ver-redacao'));
-        document.getElementById("btn-salvar")?.addEventListener("click", salvarRedacao_v2);
-        document.getElementById("btn-corrigir")?.addEventListener("click", corrigirRedacao_v2);
-        document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
-    }
-    async function carregarTemasRedacao_v2() {
-        const temas = [{ titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" }, { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" }, { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }];
-        const container = document.getElementById("temas-redacao");
-        if (!container) return;
-        container.innerHTML = "";
-        temas.forEach((tema) => {
-            const div = document.createElement("div");
-            div.className = "p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col";
-            div.innerHTML = `<div class="flex-grow"><h3 class="text-lg font-semibold text-gray-900">${tema.titulo}</h3><p class="text-sm text-gray-500 mt-2">Ano: ${tema.ano} | Banca: ${tema.banca}</p></div><button class="escrever-redacao-btn mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 self-start transition-colors">Escrever Redação</button>`;
-            div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
-         
-               _temaRedacaoAtual = tema.titulo;
-                document.getElementById("titulo-redacao").textContent = tema.titulo;
-                document.getElementById("texto-redacao").value = "";
-                document.getElementById("resultado-correcao").innerHTML = "";
-                document.getElementById("btn-imprimir").style.display = "none";
-                abrirModal('modal-redacao');
-            });
-            container.appendChild(div);
-        });
-    }
-    async function salvarRedacao_v2() {
-        const texto = document.getElementById("texto-redacao").value.trim();
-        if (!texto) { showNotification("Digite sua redação antes de salvar.", "error"); return; }
-        try {
-            const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
-            await addDoc(collection(_db_r, collectionPath), { tema: _temaRedacaoAtual, texto: texto, data: serverTimestamp(), usuarioId: _userId_r });
-            showNotification("Redação salva com sucesso!");
-            fecharModal('modal-redacao');
-            carregarRedacoesSalvas_v2();
-        } catch (erro) { handleFirestoreError(erro, "Salvar Redação"); }
-    }
-    async function carregarRedacoesSalvas_v2() {
-        const container = document.getElementById("lista-redacoes-salvas-v2");
-        if(!container) return;
-        const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
-        const q = query(collection(_db_r, collectionPath), where("usuarioId", "==", _userId_r));
-        try {
-            const querySnapshot = await getDocs(q);
-            container.innerHTML = "";
-            if(querySnapshot.empty) { container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`; return; }
-            querySnapshot.forEach((doc) => {
-                const redacao = doc.data();
-                const div = document.createElement("div");
-                div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center";
-                div.innerHTML = `<div><h4 class="font-semibold text-gray-800">${redacao.tema}</h4><p class="text-sm text-gray-500">Salva em: ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p></div><button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>`;
-                div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
-                    document.getElementById('ver-titulo-redacao').textContent = redacao.tema;
-                    document.getElementById('ver-texto-redacao').textContent = redacao.texto;
-                    abrirModal('modal-ver-redacao');
-                });
-                container.appendChild(div);
-            });
-        } catch(error) { handleFirestoreError(error, "Carregar Redações Salvas"); }
-    }
-    function corrigirRedacao_v2() {
-        const texto = document.getElementById("texto-redacao").value.trim();
-        if (!texto) { showNotification("Digite o texto antes de corrigir.", "error"); return; }
-        let nota = 100; let observacoes = [];
-        if (texto.length < 500) { nota -= 20; observacoes.push("O texto está um pouco curto."); }
-        if (!/portanto|conclui-se|logo|enfim/i.test(texto)) { nota -= 15; observacoes.push("Reforce a conclusão com conectivos."); }
-        if (texto.split(' ').length < 150) { nota -= 20; observacoes.push("Texto com menos de 150 palavras."); }
-        if (nota > 90) { observacoes.push("Excelente estrutura!"); }
-        if (nota < 0) nota = 0;
-        document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
-        document.getElementById("btn-imprimir").style.display = "inline-block";
-    }
-    function imprimirRedacao_v2() {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
-        pdf.setFontSize(16); pdf.text(`Tema: ${_temaRedacaoAtual}`, 10, 10);
-        pdf.setFontSize(12);
-        pdf.text(pdf.splitTextToSize(document.getElementById("texto-redacao").value, 180), 10, 20);
-        pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s/g, '_')}.pdf`);
-        showNotification("Gerando PDF...");
-    }
-    function showNotification(message, type = 'success') {
-        const container = document.getElementById('notification-container');
-        if (!container) return;
-        const notif = document.createElement('div');
-        notif.className = `p-4 text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
-        notif.textContent = message;
-        container.appendChild(notif);
-        setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
-    }
-    function abrirModal(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); }
-    function fecharModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        const content = modal.querySelector('.fade-in');
-        if (content) {
-            content.classList.add('fade-out');
-            content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
-        } else { modal.classList.add("hidden");
-        }
-    }
-
-    // =========================
-    // LÓGICA PRINCIPAL (RESTANTE)
+    // RESTANTE DO CÓDIGO...
     // =========================
     
     async function carregarDisciplinas(config) {
@@ -903,7 +789,7 @@
     async function carregarAssuntos(config) {
       const idDisciplina = document.getElementById("seletorDisciplina").value;
       const container = document.getElementById("listaAssuntos");
-      if(!container) return; // Adicionado para segurança
+      if(!container) return;
       container.innerHTML = "";
       if (!idDisciplina) return;
       
@@ -923,237 +809,66 @@
       document.querySelectorAll('.btn-praticar-assunto').forEach(btn => btn.addEventListener('click', (e) => iniciarSimulado(config, e.currentTarget.dataset.disciplinaId, e.currentTarget.dataset.assuntoNome, null, 'pratica')));
     }
 
-    async function buscarQuestoes(config, idDisciplina, nomeAssunto, quantidade) {
-        const dificuldade = document.getElementById("nivelDificuldade").value;
-        let q = query(collection(db, `artifacts/${config.appId}/public/data/questoes`));
-        if (idDisciplina) { q = query(q, where("disciplinaId", "==", idDisciplina));
-        if (nomeAssunto) q = query(q, where("nomeAssunto", "==", nomeAssunto)); }
-        if (dificuldade) q = query(q, where("dificuldade", "==", dificuldade));
+    async function carregarEdital(config) {
+        const { db, appId, userId } = config;
+        const container = document.getElementById('edital-disciplinas-container');
+        container.innerHTML = "<p class='text-slate-500 text-center'>Carregando edital...</p>";
+
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
-        let questoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        questoes.sort(() => Math.random() - 0.5);
-        return questoes.slice(0, quantidade);
-    }
-    
-    async function carregarSimulados(config) {
-        const container = document.getElementById('lista-simulados');
-        container.innerHTML = "<p>Carregando...</p>";
-        const q = query(collection(db, `artifacts/${config.appId}/public/data/simulados`)); const snapshot = await getDocs(q);
-        if (snapshot.empty) { container.innerHTML = "<p>Nenhum simulado encontrado.</p>"; return; }
-        container.innerHTML = snapshot.docs.map(doc => { const s = doc.data(); return `<div class="border p-3 rounded flex justify-between items-center"><p><strong>${s.banca} - ${s.ano}</strong><br>${s.cargo}</p><button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white px-4 py-2">Iniciar</button></div>`; }).join('');
-        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${config.appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
-        } }); });
-    }
 
-    async function handleCadastrarDisciplina(config) {
-        const nomeInput = document.getElementById('nova-disciplina-nome-edital');
-        const nomeDisciplina = nomeInput.value.trim();
-
-        if (!nomeDisciplina) {
-            showNotification("Por favor, digite o nome da disciplina.", "error");
-            return;
-        }
-
-        try {
-            const disciplinasRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`);
-            const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                showNotification(`A disciplina "${nomeDisciplina}" já existe.`, "error");
-                return;
-            }
-
-            await addDoc(disciplinasRef, {
-                nome: nomeDisciplina,
-                assuntos: {} 
-            });
-            showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
-            nomeInput.value = '';
-
-            await carregarEdital(config);
-            await carregarDisciplinas(config);
-            await carregarPrioridades(config, []);
-        } catch (error) {
-            handleFirestoreError(error, "Cadastrar Nova Disciplina");
-        }
-    }
-
-    async function handleExcluirDisciplina(config, disciplinaId) {
-        try {
-            const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
-            await deleteDoc(docRef);
-            
-            showNotification("Disciplina excluída com sucesso!", "success");
-
-            await carregarEdital(config);
-            await carregarDisciplinas(config);
-            
-            const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
-            const userDoc = await getDoc(userDocRef);
-            const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
-            await carregarPrioridades(config, prioridadesSalvas);
-            await carregarProgressoDisciplinas(config);
-        } catch (error) {
-            handleFirestoreError(error, "Excluir Disciplina");
-        }
-    }
-
-    async function handleMateriaChangeCronograma(event, config) {
-        const disciplinaId = event.target.value;
-        const assuntoContainer = document.getElementById('assunto-cronograma-container');
-        const assuntoSelect = document.getElementById('assunto-cronograma');
-
-        if (!disciplinaId) {
-            assuntoContainer.classList.add('hidden');
-            assuntoSelect.innerHTML = '';
-            return;
-        }
-
-        const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId));
-        if (disciplinaDoc.exists()) {
-            const assuntos = disciplinaDoc.data().assuntos || {};
-            assuntoSelect.innerHTML = '<option value="">-- Escolha um assunto --</option>';
-            if(Object.keys(assuntos).length === 0){
-                assuntoSelect.innerHTML = '<option value="">Nenhum assunto cadastrado</option>';
-            } else {
-                for (const id in assuntos) {
-                    assuntoSelect.innerHTML += `<option value="${assuntos[id].nome}">${assuntos[id].nome}</option>`;
-                }
-            }
-            assuntoContainer.classList.remove('hidden');
-        }
-    }
-
-    async function baixarEditalPDF() { alert("Funcionalidade de PDF do edital dinâmico em desenvolvimento."); }
-    
-    async function carregarPerfil(config) {
-        const { db, appId, userId } = config;
-        const container = document.getElementById('perfil-usuario');
-        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); if(userDoc.exists()) { const data = userDoc.data();
-        container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
-        carregarHistoricoCiclos(config);
-    }
-    
-    async function handleEncerrarCiclo(config) {
-        const { db, appId, userId } = config;
-        const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim() || 'Ciclo sem nome';
-        
-        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`));
-        const registrosSnapshot = await getDocs(qTempo);
-        let totalMinutosCiclo = 0;
-        registrosSnapshot.forEach(r => totalMinutosCiclo += r.data().minutos);
-
-        const historicoRef = collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`);
-        await addDoc(historicoRef, {
-            nome: nomeCiclo,
-            dataConclusao: serverTimestamp(),
-            totalHoras: (totalMinutosCiclo / 60).toFixed(1)
-        });
-        
-        const batch = writeBatch(db);
-        registrosSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
-
-        document.getElementById('ciclo-nome-input').value = `Novo Ciclo`;
-        document.getElementById('meta-geral-horas').value = '';
-        showNotification("Ciclo encerrado e arquivado com sucesso!", "success");
-        
-        await carregarProgressoDisciplinas(config);
-        await carregarPerfil(config);
-    }
-
-    async function carregarHistoricoCiclos(config) {
-        const { db, appId, userId } = config;
-        const container = document.getElementById('historico-ciclos-container');
-        container.innerHTML = "<p>Carregando histórico...</p>";
-        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`), orderBy("dataConclusao", "desc"));
-        const snapshot = await getDocs(q);
         if (snapshot.empty) {
-            container.innerHTML = "<p class='text-slate-500'>Nenhum ciclo concluído ainda.</p>";
+            container.innerHTML = "<p class='text-slate-500 text-center'>Nenhuma disciplina cadastrada ainda. Adicione uma acima para começar.</p>";
             return;
         }
-        
-        container.innerHTML = snapshot.docs.map(doc => {
-            const ciclo = doc.data();
-            const data = ciclo.dataConclusao ? new Date(ciclo.dataConclusao.seconds * 1000).toLocaleDateString() : 'Data indisponível';
-            return `
-                <div class="border-b pb-2">
-                          <p class="font-semibold">${ciclo.nome}</p>
-                    <p class="text-sm text-gray-600">Concluído em: ${data} - Total de ${ciclo.totalHoras} horas</p>
+
+        container.innerHTML = '';
+        snapshot.forEach(doc => {
+            const disciplina = { id: doc.id, ...doc.data() };
+            
+            const disciplinaCard = document.createElement('div');
+            disciplinaCard.className = 'border p-4 rounded-lg bg-white';
+            
+            let assuntosHTML = '<ul class="list-disc ml-5 mt-2 space-y-1 text-gray-700">';
+            if (disciplina.assuntos && Object.keys(disciplina.assuntos).length > 0) {
+                for (const assuntoId in disciplina.assuntos) {
+                    assuntosHTML += `
+                        <li class="flex justify-between items-center">
+                            <span>${disciplina.assuntos[assuntoId].nome}</span>
+                            <button data-disciplina-id="${disciplina.id}" data-assunto-id="${assuntoId}" class="excluir-assunto-btn text-red-400 hover:text-red-600 font-bold text-lg leading-none">&times;</button>
+                        </li>`;
+                }
+            } else {
+                assuntosHTML += '<li class="text-gray-400 list-none">Nenhum assunto cadastrado.</li>';
+            }
+            assuntosHTML += '</ul>';
+
+            disciplinaCard.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-blue-700">${disciplina.nome}</h3>
+                    <button data-id="${disciplina.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
+                </div>
+                ${assuntosHTML}
+                <div class="flex gap-2 mt-4 pt-4 border-t">
+                    <input type="text" placeholder="Novo assunto" class="w-full novo-assunto-input">
+                    <button data-id="${disciplina.id}" class="btn-cadastrar-assunto bg-green-500 text-white font-semibold px-4 py-1 rounded hover:bg-green-600 whitespace-nowrap">Adicionar Assunto</button>
                 </div>
             `;
-        }).join('');
-    }
+            container.appendChild(disciplinaCard);
+        });
 
-
-    async function baixarRelatorioPDF(config) {
-        alert("Gerando Relatório PDF...");
-        const { db, appId, userId } = config;
-        const { jsPDF } = window.jspdf;
-        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); 
-        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`)); 
-        const qTreinos = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`));
-        const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
-        let totalMinutos = 0; tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
-        let totalAcertos = 0, totalQuestoes = 0; treinosSnap.forEach(doc => { totalAcertos += doc.data().acertos || 0; totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0); });
-        const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
-        const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
-        const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
-        html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
+        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => btn.addEventListener('click', (e) => handleExcluirDisciplina(config, e.currentTarget.dataset.id)));
+        container.querySelectorAll('.btn-cadastrar-assunto').forEach(btn => btn.addEventListener('click', (e) => {
+            const disciplinaId = e.currentTarget.dataset.id;
+            const input = e.currentTarget.previousElementSibling;
+            handleCadastrarAssunto(config, disciplinaId, input);
+        }));
+        container.querySelectorAll('.excluir-assunto-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            const { disciplinaId, assuntoId } = e.currentTarget.dataset;
+            handleExcluirAssunto(config, disciplinaId, assuntoId);
+        }));
     }
     
-    async function carregarMedalhas(config) { const container = document.getElementById('listaMedalhas');
-        container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`; }
-    
-    async function atualizarPerfilPublico(config) {
-        const { db, appId, userId } = config;
-        const user = auth.currentUser;
-        if (!user) return;
-        
-        const publicProfileRef = doc(db, `artifacts/${appId}/public/data/usuarios`, userId);
-        try {
-            await setDoc(publicProfileRef, {
-                nome: user.email, 
-                uid: userId,
-                lastSeen: serverTimestamp()
-            }, { merge: true });
-        } catch (e) {
-            handleFirestoreError(e, "Atualizar Perfil Público");
-        }
-    }
-
-    async function carregarRanking(config) {
-        const { db, appId, userId } = config;
-        const container = document.getElementById('ranking-geral-container'); container.innerHTML = "<p>Carregando...</p>";
-        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); 
-        const ranking = [];
-        for(const userDoc of usersSnapshot.docs) {
-            const publicData = userDoc.data();
-            const uid = userDoc.id;
-            
-            let pontuacao = Math.floor(Math.random() * 5000);
-            ranking.push({
-                uid: uid,
-                nome: publicData.nome || `Aluno-${uid.substring(0, 6)}`,
-                pontuacao: pontuacao
-            });
-        }
-        
-        ranking.sort((a, b) => b.pontuacao - a.pontuacao);
-        container.innerHTML = ranking.map((user, index) => `<div class="flex justify-between p-2 rounded ${user.uid === userId ? 'bg-blue-100' : ''}"><p>${index + 1}. ${user.nome}</p><p>${user.pontuacao.toLocaleString()} pts</p></div>`).join('');
-    }
-
-    async function carregarDesafios(config) {
-        const { db, appId, userId } = config;
-        const container = document.getElementById('desafios-container'); container.innerHTML = "<p>Carregando...</p>";
-        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); let usersHTML = "";
-        usersSnapshot.forEach(doc => { if (doc.id !== userId) { const user = doc.data(); usersHTML += `<div class="flex justify-between p-3 border rounded"><p>${user.nome || doc.id}</p><button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white px-3 py-1">Desafiar</button></div>`; } });
-        container.innerHTML = usersHTML;
-        document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
-    }
-
     function handleFirestoreError(error, context) {
         console.error(`Erro de Firestore em '${context}':`, error);
         if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
