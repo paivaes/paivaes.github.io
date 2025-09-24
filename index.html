@@ -360,7 +360,6 @@
     // FUNÇÃO PRINCIPAL
     // =========================
     function iniciarAplicacao() {
-        // CÓDIGO CORRIGIDO
         const firebaseConfig = {
           apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
           authDomain: "gfconcursos-app.firebaseapp.com",
@@ -981,7 +980,7 @@
     async function carregarEdital(config) {
         const { db, appId, userId } = config;
         const container = document.getElementById('edital-disciplinas-container');
-        container.innerHTML = "<p class='text-slate-500 text-center'>Carregando edital...</p>";
+        container.innerHTML = "<p class='text-slate-500 text-center'>A carregar edital...</p>";
 
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
@@ -1036,6 +1035,39 @@
             const { disciplinaId, assuntoId } = e.currentTarget.dataset;
             handleExcluirAssunto(config, disciplinaId, assuntoId);
         }));
+    }
+    
+    async function handleCadastrarDisciplina(config) {
+        const nomeInput = document.getElementById('nova-disciplina-nome-edital');
+        const nomeDisciplina = nomeInput.value.trim();
+
+        if (!nomeDisciplina) {
+            showNotification("Por favor, digite o nome da disciplina.", "error");
+            return;
+        }
+
+        try {
+            const disciplinasRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`);
+            const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                showNotification(`A disciplina "${nomeDisciplina}" já existe.`, "error");
+                return;
+            }
+
+            await addDoc(disciplinasRef, {
+                nome: nomeDisciplina,
+                assuntos: {} 
+            });
+            showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
+            nomeInput.value = '';
+
+            await carregarEdital(config);
+            await carregarDisciplinas(config);
+            await carregarPrioridades(config, []);
+        } catch (error) {
+            handleFirestoreError(error, "Cadastrar Nova Disciplina");
+        }
     }
     
     async function handleCadastrarAssunto(config, disciplinaId, inputElement) {
@@ -1261,6 +1293,88 @@
         container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
     }
 
+    async function carregarProgressoDisciplinas(config) {
+        const { db, appId, userId } = config;
+        const container = document.getElementById("progressoDisciplinas");
+        container.innerHTML = "<p class='text-slate-500'>A carregar...</p>";
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData'));
+        const metasPorDisciplina = userDoc.exists() ?
+ userDoc.data().metasPorDisciplina || {} : {};
+        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`), where("usuarioId", "==", userId));
+        const registrosSnapshot = await getDocs(qTempo);
+        const tempoPorDisciplina = {};
+        registrosSnapshot.forEach(r => { const data = r.data(); tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos; });
+        const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome")));
+        container.innerHTML = "";
+        if (disciplinasSnapshot.empty) { container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>"; return;
+        }
+        disciplinasSnapshot.forEach(docSnap => { const d = docSnap.data(); const idDisciplina = docSnap.id; const metaHoras = metasPorDisciplina[idDisciplina] || 0; const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0; const horasEstudadas = minutosEstudados / 60; const percentual = metaHoras > 0 ? Math.min((horasEstudadas / metaHoras) * 100, 100) : 0; container.innerHTML += `<div class="mb-4"><p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p><div class="w-full bg-gray-200 rounded-full h-4 mt-1"><div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div></div></div>`; });
+    }
+    
+    async function carregarEvolucaoQuestoes(config) {
+        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/historico_questoes`), where("usuarioId", "==", config.userId));
+        const snapshot = await getDocs(q);
+        let hoje = 0, semana = 0, mes = 0, total = 0;
+        const agora = new Date();
+        const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+        const inicioSemana = new Date(agora); inicioSemana.setDate(agora.getDate() - agora.getDay());
+        const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+        snapshot.forEach(doc => { const dataResp = doc.data().dataResposta; if (dataResp && dataResp.seconds) { const data = new Date(dataResp.seconds * 1000); if(!isNaN(data.getTime())) { total++; if (data >= inicioHoje) hoje++; if (data >= inicioSemana) semana++; if (data >= inicioMes) mes++; } } });
+        document.getElementById("evolucaoDiaria").textContent = hoje; document.getElementById("evolucaoSemanal").textContent = semana; document.getElementById("evolucaoMensal").textContent = mes; document.getElementById("evolucaoTotal").textContent = total;
+        const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d"); if (graficoPizza) graficoPizza.destroy();
+        graficoPizza = new Chart(ctx, { type: 'pie', data: { labels: ['Hoje', 'Esta Semana', 'Este Mês'], datasets: [{ data: [hoje, semana-hoje, mes-semana], backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB'] }] } });
+    }
+
+    async function carregarRevisoes(config) {
+        const container = document.getElementById("listaRevisoes");
+        container.innerHTML = "<p>A carregar...</p>";
+        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/revisoes`), where("usuarioId", "==", config.userId));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) { container.innerHTML = "<p>Nenhuma revisão encontrada.</p>"; return; }
+        const agora = new Date();
+        let revisoesPendentesHTML = ""; let revisoesPendentesCount = 0;
+        snapshot.forEach(doc => { const r = doc.data(); if (r.status !== 'pendente') return; const revisoesAgendadas = r.revisoesAgendadas || []; revisoesAgendadas.forEach(dataStr => { const dataRevisao = new Date(dataStr); if (dataRevisao <= agora) { revisoesPendentesCount++; revisoesPendentesHTML += `<div class="border p-2 rounded mb-2 bg-yellow-100"><p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p><p class="text-sm">Revisão: ${dataRevisao.toLocaleDateString()}</p></div>`; } }); });
+        if (revisoesPendentesCount === 0) { container.innerHTML = "<p>Nenhuma revisão pendente.</p>"; } else { container.innerHTML = revisoesPendentesHTML;
+        }
+    }
+    
+    async function carregarDesempenhoPorModo(config) {
+        const { db, appId, userId } = config;
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId));
+        const snapshot = await getDocs(q);
+        const dados = { simulado: { acertos: 0, erros: 0 }, pratica: { acertos: 0, erros: 0 } };
+        snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio && dados[treino.modo]) { dados[treino.modo].acertos += treino.acertos || 0; dados[treino.modo].erros += treino.erros || 0; } });
+        const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d'); if(graficoDesempenhoModos) graficoDesempenhoModos.destroy();
+        graficoDesempenhoModos = new Chart(ctx, { type: 'bar', data: { labels: ['Simulado', 'Prática'], datasets: [{ label: 'Acertos', data: [dados.simulado.acertos, dados.pratica.acertos], backgroundColor: 'rgba(75, 192, 192, 0.6)' }, { label: 'Erros', data: [dados.simulado.erros, dados.pratica.erros], backgroundColor: 'rgba(255, 99, 132, 0.6)' }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Desempenho por Modo' } } } });
+    }
+    
+    async function carregarEvolucaoCronologicaPorModo(config) {
+        const { db, appId, userId } = config;
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId));
+        const snapshot = await getDocs(q);
+        const dadosPorData = {}; snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio) { const data = dataTreino.toISOString().split('T')[0]; if (!dadosPorData[data]) dadosPorData[data] = { acertos: 0, total: 0 }; dadosPorData[data].acertos += treino.acertos; dadosPorData[data].total += (treino.acertos + treino.erros); } });
+        const labels = Object.keys(dadosPorData).sort(); const dataPoints = labels.map(label => { const dia = dadosPorData[label]; return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0; });
+        const ctx = document.getElementById('graficoLinhaModos').getContext('2d'); if(graficoLinhaModos) graficoLinhaModos.destroy();
+        graficoLinhaModos = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: '% de Acertos', data: dataPoints, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.1 }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Evolução de Acertos' } } } });
+    }
+
+    function toggleLinhaMeta() { if (!graficoLinhaModos) return;
+        const metaDataset = { label: `Meta (${metaAcertosGlobal}%)`, data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal), borderColor: 'rgba(255, 99, 132, 1)', borderDash: [5, 5], fill: false, pointRadius: 0 };
+        const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta')); if (metaIndex > -1) { graficoLinhaModos.data.datasets.splice(metaIndex, 1); } else { graficoLinhaModos.data.datasets.push(metaDataset); } graficoLinhaModos.update();
+    }
+    
+    async function carregarSimulados(config) {
+        const container = document.getElementById('lista-simulados');
+        container.innerHTML = "<p>A carregar...</p>";
+        const q = query(collection(db, `artifacts/${config.appId}/public/data/simulados`)); const snapshot = await getDocs(q);
+        if (snapshot.empty) { container.innerHTML = "<p>Nenhum simulado encontrado.</p>"; return; }
+        container.innerHTML = snapshot.docs.map(doc => { const s = doc.data(); return `<div class="border p-3 rounded flex justify-between items-center"><p><strong>${s.banca} - ${s.ano}</strong><br>${s.cargo}</p><button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white px-4 py-2">Iniciar</button></div>`; }).join('');
+        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${config.appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
+        } }); });
+    }
+    
     document.addEventListener('DOMContentLoaded', iniciarAplicacao);
   </script>
 </body>
