@@ -1,240 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Plataforma de Estudos GFConcursos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
-    .container { max-width: 1200px; margin: auto; padding: 20px; }
-    .card { background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
-    h2 { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; margin-bottom: 1rem; border-bottom: 2px solid #93c5fd; padding-bottom: 0.5rem;}
-    select, input, button, textarea {
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        border: 1px solid #d1d5db;
-        transition: all 0.2s;
-        font-size: 1rem;
-    }
-    textarea { width: 100%; min-height: 250px; }
-    button { cursor: pointer; }
-    button:hover { opacity: 0.9; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .tab-button { background-color: #e5e7eb; }
-    .tab-button.active { background-color: #3b82f6; color: white; }
-    .option-button { display: block; width: 100%; text-align: left; background-color: #f3f4f6; margin-bottom: 0.5rem; }
-    .option-button:hover { background-color: #e5e7eb; }
-    .option-button.correct { background-color: #d1fae5; border-color: #10b981; }
-    .option-button.incorrect { background-color: #fee2e2; border-color: #ef4444; }
-    .priority-item { cursor: grab; user-select: none; }
-    .priority-item:active { cursor: grabbing; background-color: #f0f4ff; }
-    .dragging { opacity: 0.5; }
-    .fade-in { animation: fadeIn 0.3s ease-out; }
-    .fade-out { animation: fadeOut 0.3s ease-in forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
-    
-    .tarefa-cronograma-item {
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .tarefa-cronograma-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 10px rgba(0,0,0,0.1);
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <header class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-blue-800">Plataforma de Estudos GFConcursos</h1>
-    </header>
-
-    <div id="global-error-container" class="hidden my-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-      <h3 class="font-bold">Erro de Permissão do Banco de Dados</h3>
-      <p id="global-error-message" class="text-sm">Ocorreu um erro ao tentar salvar os dados. Verifique se as Regras de Segurança do seu Firestore estão configuradas corretamente.</p>
-    </div>
-
-    <div id="auth-container" class="card max-w-md mx-auto">
-        <div id="login-view">
-            <h2 class="text-2xl font-bold text-center mb-4 border-0">Acessar Plataforma</h2>
-            <input type="email" id="login-email" placeholder="Seu e-mail" class="w-full mb-3 p-2 border rounded">
-           <input type="password" id="login-password" placeholder="Sua senha" class="w-full mb-4 p-2 border rounded">
-           <button id="btn-login" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">Entrar</button>
-            <p class="text-center text-sm mt-4">
-                Não tem uma conta? <a href="#" id="show-signup" class="text-blue-600 hover:underline">Cadastre-se</a>
-            </p>
-        </div>
-
-        <div id="signup-view" class="hidden">
-            <h2 class="text-2xl font-bold text-center mb-4 border-0">Criar Nova Conta</h2>
-            <input type="email" id="signup-email" placeholder="Seu e-mail" class="w-full mb-3 p-2 border rounded">
-            <input type="password" id="signup-password" placeholder="Crie uma senha (mínimo 6 caracteres)" class="w-full mb-4 p-2 border rounded">
-            <button id="btn-signup" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Cadastrar</button>
-            <p class="text-center text-sm mt-4">
-                Já tem uma conta? <a href="#" id="show-login" class="text-blue-600 hover:underline">Faça o login</a>
-            </p>
-        </div>
-    </div>
-    
-    <div id="app-wrapper" class="hidden">
-      <div class="flex justify-between items-center mb-4">
-        <p id="user-info" class="text-slate-600"></p>
-        <button id="btn-logout" class="bg-red-500 text-white font-semibold py-2 px-4 rounded hover:bg-red-600">Sair</button>
-      </div>
-
-   
-       <div id="tabs-container" class="mb-6">
-          <div class="md:hidden text-right mb-4">
-              <button id="menu-toggle" class="p-2 rounded bg-gray-200">Menu</button>
-          </div>
-          <nav id="nav-menu" class="hidden md:flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
-              <button class="tab-button px-4 py-2 rounded" data-tab="estudo">Estudo</button>
-               <button class="tab-button px-4 py-2 rounded" data-tab="cronograma">Cronograma</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="simulados">Simulados</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="redacao">Redação</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="progresso">Progresso</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="edital">Edital</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="perfil">Meu Perfil</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="ranking">Ranking</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="desafios">Desafios</button>
-          </nav>
-      </div>
-
-      <div id="main-content">
-        <div id="tab-content-estudo" class="tab-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div class="card">
-                    <label for="seletorDisciplina" class="block mb-1 font-semibold">Selecione a Disciplina para Praticar:</label>
-                    <select id="seletorDisciplina" class="w-full"></select>
-                </div>
-                <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
-                <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
-              </div>
-   
-               <div>
-                <div class="card"><h2 class="m-0">Metas e Prioridades do Ciclo</h2><div class="mb-4"><label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label><input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full"></div><div class="mb-4 border-t pt-4 mt-4"><label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label><input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full"></div><div><label class="block font-semibold mb-1">Prioridade das Disciplinas:</label><p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p><div id="lista-prioridades" class="border rounded p-2 space-y-2"><p class="text-slate-400">Carregando disciplinas...</p></div></div><button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button><button id="btn-encerrar-ciclo" class="w-full bg-red-500 text-white font-semibold mt-2 py-2">Encerrar Ciclo Atual</button></div>
-                <div class="card"><h2 class="m-0">Progresso por Disciplina</h2><div id="progressoDisciplinas"></div></div>
-                <div class="card"><h2 class="m-0">Revisões Agendadas</h2><div id="listaRevisoes"></div></div>
-              </div>
-            </div>
-        </div>
-        <div id="tab-content-cronograma" class="tab-content hidden">
-            <div class="card">
-                <h2 class="m-0">Sessão de Estudo (Cronômetro)</h2>
-                <div id="cronometro-wrapper" class="mt-4 space-y-3 transition-all duration-300 rounded-lg">
-                    <div id="cronometro-display-info" class="p-4 bg-blue-50 rounded-lg text-center">
-                        <p id="cronometro-texto-info" class="text-sm text-slate-600">Clique em uma tarefa no seu cronograma semanal para começar.</p>
-                        <div id="cronometro-info-selecionada" class="hidden mt-2 font-semibold text-blue-800">
-                            <p><strong>Disciplina:</strong> <span id="cronometro-disciplina-display"></span></p>
-                            <p><strong>Assunto:</strong> <span id="cronometro-assunto-display"></span></p>
-                        </div>
-                    </div>
-                    
-                    <div id="timer-display" class="text-center text-4xl font-bold my-4 text-slate-700">00:00:00</div>
-                    <button id="btn-toggle-sessao" class="w-full bg-green-600 text-white font-semibold py-2" disabled>Iniciar Estudo</button>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2 class="m-0">Meu Cronograma Semanal</h2>
-                <form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 items-end">
-                  <div class="flex-grow">
-                        <label for="materia-cronograma" class="block text-sm font-medium text-gray-700">Matéria</label>
-                        <select id="materia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select>
-                    </div>
-          
-                   <div id="assunto-cronograma-container" class="flex-grow hidden">
-                        <label for="assunto-cronograma" class="block text-sm font-medium text-gray-700">Assunto</label>
-                        <select id="assunto-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select>
-                   
-                  </div>
-                    <div class="flex-grow">
-                        <label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label>
-                        <select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                             <option value="segunda">Segunda-feira</option>
-                            <option value="terca">Terça-feira</option>
-                            <option value="quarta">Quarta-feira</option>
-                           <option value="quinta">Quinta-feira</option>
-                            <option value="sexta">Sexta-feira</option>
-                            <option value="sabado">Sábado</option>
-                            <option value="domingo">Domingo</option>
-                        </select>
-                    </div>
-                    <div class="flex-grow">
-                        <label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label>
-                          <input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button>
-                </form>
-       
-                 <div id="container-dias-cronograma" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"></div>
-            </div>
-        </div>
-        <div id="tab-content-simulados" class="tab-content hidden"><div class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
-        <div id="tab-content-redacao" class="tab-content hidden"><div class="card"><main id="modulo-redacao-container"><section id="secao-redacao"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Temas Disponíveis</h2><div id="temas-redacao" class="grid grid-cols-1 md:grid-cols-2 gap-6"><p>Carregando temas...</p></div></section><section id="secao-redacoes-salvas" class="mt-12"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Minhas Redações Salvas</h2><div id="lista-redacoes-salvas-v2" class="space-y-4"><p class="text-gray-500">Carregando redações salvas...</p></div></section></main></div></div>
-        <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
-        <div id="tab-content-edital" class="tab-content hidden">
-          <div class="card">
-            <h2 class="m-0">Gerenciar Edital</h2>
-            <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">1. Cadastrar Nova Disciplina</h3>
-              <div class="flex flex-col sm:flex-row gap-2 mt-4">
-                <input type="text" id="nova-disciplina-nome-edital" placeholder="Ex: Direito Constitucional" class="w-full">
-                <button id="btn-cadastrar-disciplina-edital" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap">Adicionar Disciplina</button>
-              </div>
-            </div>
-     
-                 <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">2. Gerenciar Disciplinas e Assuntos</h3>
-              <div id="edital-disciplinas-container" class="mt-4 space-y-4">
-                  <p class="text-slate-500 text-center">Nenhuma disciplina cadastrada ainda.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="tab-content-perfil" class="tab-content hidden"><div class="card"><div class="flex justify-between items-center"><h2 class="m-0">Meu Perfil</h2><button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button></div><div id="perfil-usuario" class="space-y-2 mt-4"></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3><div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📚 Histórico de Ciclos</h3><div id="historico-ciclos-container" class="space-y-3"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3><div id="lista-redacoes-salvas-perfil" class="space-y-2"></div></div></div></div>
-        <div id="tab-content-ranking" class="tab-content hidden"><div class="card"><h2 class="m-0">Ranking Geral</h2><div id="ranking-geral-container" class="space-y-2"></div></div></div>
-        <div id="tab-content-desafios" class="tab-content hidden"><div class="card"><h2 class="m-0">Desafios 1x1</h2><div id="desafios-container" class="space-y-3"></div></div></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="modal-questoes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40"><div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"><div class="flex justify-between items-center mb-4"><h2 id="modal-titulo" class="m-0 p-0 border-0">Simulado</h2><button id="btn-fechar-modal-questoes" class="text-2xl font-bold">&times;</button></div><div id="modal-corpo"></div></div></div>
-  
-  <div id="modal-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Escreva sua Redação</h2><p id="titulo-redacao" class="text-gray-700 mt-1"></p></div><div class="p-6 flex-grow overflow-y-auto"><textarea id="texto-redacao" class="w-full h-64 p-3 border rounded-md focus:ring-2 focus:ring-blue-500 transition" placeholder="Comece a escrever seu texto aqui..."></textarea><div id="resultado-correcao" class="mt-4"></div></div><div class="p-6 bg-gray-50 border-t flex flex-wrap gap-2 justify-end"><button id="btn-fechar-escrever" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button><button id="btn-corrigir" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id="btn-salvar" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Salvar Redação</button><button id="btn-imprimir" style="display: none;" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">Imprimir/PDF</button></div></div></div>
-  <div id="modal-ver-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Visualizar Redação</h2><p id="ver-titulo-redacao" class="text-gray-700 mt-1"></p></div><div id="ver-texto-redacao" class="p-6 flex-grow overflow-y-auto whitespace-pre-wrap"></div><div class="p-6 bg-gray-50 border-t flex justify-end"><button id="btn-fechar-ver" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button></div></div></div>
-  
-  <div id="modal-horas" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm fade-in">
-          <div class="p-6 border-b">
-             <h2 class="text-xl font-bold m-0 border-0">Definir Tempo de Estudo</h2>
-          </div>
-          <div class="p-6 space-y-4">
-              <div>
-                  <label for="modal-horas-input" class="block mb-1 font-semibold">Quantidade de Horas:</label>
-                  <input type="number" id="modal-horas-input" value="1" min="0.1" step="0.1" class="w-full">
-              </div>
-          </div>
-          <div class="p-6 bg-gray-50 border-t flex justify-end gap-2">
-              <button id="btn-cancelar-horas" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Cancelar</button>
-              <button id="btn-confirmar-horas" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Confirmar</button>
-          </div>
-      </div>
-  </div>
-
-  <div id="notification-container" class="fixed top-5 right-5 z-50 space-y-2"></div>
-
-  <script type="module">
+<script type="module">
     // =========================
     // CONFIGURAÇÃO DO FIREBASE
     // =========================
@@ -242,13 +6,107 @@
     import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    // Variáveis globais de inicialização
+    // =========================
+    // VARIÁVEIS GLOBAIS
+    // =========================
     let app, db, auth;
     let timerInterval;
     let segundosCorridos = 0;
     let tarefaAtualId = null; 
-    
-    // Função principal que inicia tudo
+    let graficoPizza = null;
+    let graficoDesempenhoModos = null;
+    let graficoLinhaModos = null;
+    let metaAcertosGlobal = 0;
+    const modalCorpo = document.getElementById('modal-corpo');
+    let questoesDoSimulado = [];
+    let questaoAtualIndex = 0;
+    let pontuacao = 0;
+    let _db_r, _userId_r, _appId_r, _temaRedacaoAtual;
+
+    // ===============================================
+    // FUNÇÕES UTILITÁRIAS E AUXILIARES (MOVidas PARA CIMA)
+    // ===============================================
+    function showNotification(message, type = 'success') {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+        const notif = document.createElement('div');
+        notif.className = `p-4 text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
+        notif.textContent = message;
+        container.appendChild(notif);
+        setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
+    }
+
+    function abrirModal(modalId) { 
+        const modal = document.getElementById(modalId);
+        if(modal) modal.classList.remove('hidden'); 
+    }
+
+    function fecharModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        const content = modal.querySelector('.fade-in');
+        if (content) {
+            content.classList.add('fade-out');
+            content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
+        } else { 
+            modal.classList.add("hidden");
+        }
+    }
+
+    async function atualizarPerfilPublico(config) {
+        const { db, appId, userId } = config;
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        const publicProfileRef = doc(db, `artifacts/${appId}/public/data/usuarios`, userId);
+        try {
+            await setDoc(publicProfileRef, {
+                nome: user.email, 
+                uid: userId,
+                lastSeen: serverTimestamp()
+            }, { merge: true });
+        } catch (e) {
+            handleFirestoreError(e, "Atualizar Perfil Público");
+        }
+    }
+
+    function handleFirestoreError(error, context) {
+        console.error(`Erro de Firestore em '${context}':`, error);
+        if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
+            const errorContainer = document.getElementById('global-error-container');
+            const errorMessage = document.getElementById('global-error-message');
+            errorMessage.textContent = `Falha na operação '${context}'. Parece que as Regras de Segurança do seu Firestore estão bloqueando a ação. Por favor, verifique se as regras corretas foram aplicadas ao seu projeto no Console do Firebase.`;
+            errorContainer.classList.remove('hidden');
+        } else {
+            showNotification(`Erro em '${context}': ${error.message}`, 'error');
+        }
+    }
+
+    function getDragAfterElement(container, y) { 
+        const draggableElements = [...container.querySelectorAll('.priority-item:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => { 
+            const box = child.getBoundingClientRect(); 
+            const offset = y - box.top - box.height / 2; 
+            if (offset < 0 && offset > closest.offset) { 
+                return { offset: offset, element: child }; 
+            } else { 
+                return closest; 
+            } 
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function getDateRange(periodo) { 
+        const agora = new Date(); 
+        let dataInicio;
+        if (periodo === 'semana') dataInicio = new Date(agora.setDate(agora.getDate() - 7));
+        else if (periodo === 'mes') dataInicio = new Date(agora.setMonth(agora.getMonth() - 1)); 
+        else dataInicio = new Date(0); 
+        return Timestamp.fromDate(dataInicio);
+    }
+
+    // =========================
+    // FUNÇÃO PRINCIPAL
+    // =========================
     function iniciarAplicacao() {
         const hardcodedFirebaseConfig = {
           apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
@@ -289,16 +147,6 @@
         iniciarAutenticacao();
     }
     
-    // Variáveis globais de estado
-    let graficoPizza = null;
-    let graficoDesempenhoModos = null;
-    let graficoLinhaModos = null;
-    let metaAcertosGlobal = 0;
-    const modalCorpo = document.getElementById('modal-corpo');
-    let questoesDoSimulado = [];
-    let questaoAtualIndex = 0;
-    let pontuacao = 0;
-    
     // =========================
     // NAVEGAÇÃO POR ABAS E UI
     // =========================
@@ -317,13 +165,11 @@
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 tabContents.forEach(content => {
-            
                      if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
                     else content.classList.add('hidden');
                 });
                 if (window.innerWidth < 768) document.getElementById('nav-menu').classList.add('hidden');
             });
-      
         });
         document.getElementById('show-signup').addEventListener('click', (e) => {
           e.preventDefault();
@@ -380,7 +226,7 @@
             await signInWithEmailAndPassword(auth, email, password);
             showNotification("Login bem-sucedido!", "success");
         } catch (error) {
-            console.error("Erro de login:", error.code);
+            console.error("Erro de login:", error);
             showNotification(`Erro ao entrar: ${error.message}`, "error");
         }
     }
@@ -451,7 +297,7 @@
         document.getElementById('btn-iniciar-pratica').addEventListener('click', () => { const idDisciplina = document.getElementById("seletorDisciplina").value; if (!idDisciplina) { alert("Por favor, escolha uma disciplina."); return; } iniciarSimulado(config, idDisciplina, null, null, 'pratica'); });
         document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(config));
         document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(config));
-        document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => document.getElementById('modal-questoes').classList.add('hidden'));
+        document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => fecharModal('modal-questoes'));
         document.getElementById('btn-encerrar-ciclo').addEventListener('click', () => handleEncerrarCiclo(config));
         
         document.getElementById('btn-toggle-sessao').addEventListener('click', () => toggleSessaoDeEstudo(config));
@@ -470,7 +316,7 @@
     }
     
     // =========================
-    // MÓDULO DE CRONOGRAMA (LÓGICA MODIFICADA E COM PERSISTÊNCIA)
+    // MÓDULO DE CRONOGRAMA
     // =========================
 
     function formatarTempo(totalSegundos) {
@@ -744,7 +590,6 @@
     // =========================
     // MÓDULO DE REDAÇÃO
     // =========================
-    let _db_r, _userId_r, _appId_r, _temaRedacaoAtual;
     function inicializarModuloRedacao(config) {
         _db_r = config.db; _userId_r = config.userId; _appId_r = config.appId;
         carregarTemasRedacao_v2();
@@ -830,26 +675,6 @@
         pdf.text(pdf.splitTextToSize(document.getElementById("texto-redacao").value, 180), 10, 20);
         pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s/g, '_')}.pdf`);
         showNotification("Gerando PDF...");
-    }
-    function showNotification(message, type = 'success') {
-        const container = document.getElementById('notification-container');
-        if (!container) return;
-        const notif = document.createElement('div');
-        notif.className = `p-4 text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
-        notif.textContent = message;
-        container.appendChild(notif);
-        setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
-    }
-    function abrirModal(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); }
-    function fecharModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        const content = modal.querySelector('.fade-in');
-        if (content) {
-            content.classList.add('fade-out');
-            content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
-        } else { modal.classList.add("hidden");
-        }
     }
 
     // =========================
@@ -976,18 +801,6 @@
             const { disciplinaId, assuntoId } = e.currentTarget.dataset;
             handleExcluirAssunto(config, disciplinaId, assuntoId);
         }));
-    }
-    
-    function handleFirestoreError(error, context) {
-        console.error(`Erro de Firestore em '${context}':`, error);
-        if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
-            const errorContainer = document.getElementById('global-error-container');
-            const errorMessage = document.getElementById('global-error-message');
-            errorMessage.textContent = `Falha na operação '${context}'. Parece que as Regras de Segurança do seu Firestore estão bloqueando a ação. Por favor, verifique se as regras corretas foram aplicadas ao seu projeto no Console do Firebase.`;
-            errorContainer.classList.remove('hidden');
-        } else {
-            showNotification(`Erro em '${context}': ${error.message}`, 'error');
-        }
     }
     
     document.addEventListener('DOMContentLoaded', iniciarAplicacao);
