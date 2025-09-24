@@ -504,6 +504,9 @@
 
     async function handleLogout() {
         try {
+            if(timerInterval) {
+                await salvarSessaoPendente({db, auth, appId: 'default-app-id', userId: auth.currentUser.uid});
+            }
             await signOut(auth);
             showNotification("Você saiu com sucesso.", "success");
         } catch (error) {
@@ -517,8 +520,6 @@
     async function inicializarApp(config) {
         const { db, auth, appId, userId } = config;
         await atualizarPerfilPublico(config);
-
-        await carregarSessaoPendente(config);
 
         const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData');
         const userDoc = await getDoc(userDocRef);
@@ -608,7 +609,6 @@
                     btn.disabled = true;
                     showNotification("Sessão de estudo concluída!", "success");
                     await marcarTarefaComoConcluida(config);
-                    await limparSessaoPendente(config); 
                 }
             }, 1000);
         }
@@ -618,7 +618,7 @@
         if (!tarefaAtualId) return;
         try {
             const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
-            await updateDoc(tarefaRef, { status: "concluido" });
+            await updateDoc(tarefaRef, { status: "concluido", segundosRestantes: deleteField() });
             
             showNotification(`Tarefa marcada como concluída!`, "success");
             await carregarCronograma(config); 
@@ -627,99 +627,58 @@
             document.getElementById('cronometro-info-selecionada').classList.add('hidden');
             document.getElementById('cronometro-texto-info').textContent = 'Clique em uma tarefa no seu cronograma semanal para começar.';
             document.getElementById('cronometro-wrapper').classList.remove('p-2', 'border-2', 'border-yellow-400');
-
+            updateTimerDisplayFromHours(0);
         } catch(error) {
             handleFirestoreError(error, "Marcar Tarefa como Concluída");
         }
     }
     
     async function selecionarTarefaParaEstudo(tarefaElement, config) {
-        const clickedTaskId = tarefaElement.dataset.tarefaId;
+        const { tarefaId, materia, assunto, status, segundosRestantes } = tarefaElement.dataset;
 
-        // LÓGICA MODIFICADA PARA PERMITIR MUDANÇA
-        if (tarefaAtualId !== null && tarefaAtualId !== clickedTaskId && timerInterval) {
+        if (timerInterval !== null && tarefaAtualId !== tarefaId) {
             showNotification("Por favor, pause o estudo atual antes de selecionar uma nova tarefa.", "error");
             return;
         }
-
-        // Se uma nova tarefa for selecionada, limpa a sessão pendente anterior
-        if (tarefaAtualId !== clickedTaskId) {
-            await limparSessaoPendente(config);
-        }
         
-        tarefaAtualId = clickedTaskId;
-
-        const { materia, assunto } = tarefaElement.dataset;
+        tarefaAtualId = tarefaId;
+        
         document.getElementById('cronometro-disciplina-display').textContent = materia;
         document.getElementById('cronometro-assunto-display').textContent = assunto;
-        
-        document.getElementById('cronometro-texto-info').textContent = 'Defina o tempo e inicie o seu estudo.';
         document.getElementById('cronometro-info-selecionada').classList.remove('hidden');
         document.getElementById('cronometro-wrapper').classList.remove('p-2', 'border-2', 'border-yellow-400');
 
-        updateTimerDisplayFromHours(0);
-        document.getElementById('btn-toggle-sessao').disabled = true;
-        document.getElementById('btn-toggle-sessao').textContent = 'Iniciar Estudo';
-        
-        document.getElementById('modal-horas-input').value = 1;
-        abrirModal('modal-horas');
+        const btn = document.getElementById('btn-toggle-sessao');
+
+        if (status === 'pausado' && parseInt(segundosRestantes, 10) > 0) {
+            segundosCorridos = parseInt(segundosRestantes, 10);
+            document.getElementById('timer-display').textContent = formatarTempo(segundosCorridos);
+            btn.textContent = 'Retomar Estudo';
+            btn.disabled = false;
+            document.getElementById('cronometro-texto-info').textContent = 'Você tem uma sessão de estudo pendente.';
+            document.getElementById('cronometro-wrapper').classList.add('p-2', 'border-2', 'border-yellow-400');
+        } else {
+            updateTimerDisplayFromHours(0);
+            btn.disabled = true;
+            btn.textContent = 'Iniciar Estudo';
+            document.getElementById('cronometro-texto-info').textContent = 'Defina o tempo e inicie o seu estudo.';
+            document.getElementById('modal-horas-input').value = 1;
+            abrirModal('modal-horas');
+        }
     }
 
     async function salvarSessaoPendente(config) {
-        if (!tarefaAtualId || segundosCorridos < 0) return;
-
-        const materia = document.getElementById('cronometro-disciplina-display').textContent;
-        const assunto = document.getElementById('cronometro-assunto-display').textContent;
-
-        const sessaoRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/sessao_pendente`, 'current_session');
+        if (!tarefaAtualId) return;
+        const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
         try {
-            await setDoc(sessaoRef, {
-                tarefaId: tarefaAtualId,
-                materia: materia,
-                assunto: assunto,
-                segundosRestantes: segundosCorridos,
-                timestamp: serverTimestamp()
+            await updateDoc(tarefaRef, {
+                status: "pausado",
+                segundosRestantes: segundosCorridos
             });
-            console.log("Sessão pendente salva.");
+            console.log("Sessão pendente salva na tarefa.");
+            await carregarCronograma(config);
         } catch (e) {
             handleFirestoreError(e, "Salvar Sessão Pendente");
-        }
-    }
-
-    async function carregarSessaoPendente(config) {
-        const sessaoRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/sessao_pendente`, 'current_session');
-        const sessaoDoc = await getDoc(sessaoRef);
-
-        if (sessaoDoc.exists()) {
-            const data = sessaoDoc.data();
-            tarefaAtualId = data.tarefaId;
-            segundosCorridos = data.segundosRestantes;
-
-            document.getElementById('cronometro-disciplina-display').textContent = data.materia;
-            document.getElementById('cronometro-assunto-display').textContent = data.assunto;
-            document.getElementById('timer-display').textContent = formatarTempo(data.segundosRestantes);
-            
-            document.getElementById('cronometro-texto-info').textContent = 'Você tem uma sessão de estudo pendente.';
-            document.getElementById('cronometro-info-selecionada').classList.remove('hidden');
-            
-            const btn = document.getElementById('btn-toggle-sessao');
-            btn.textContent = 'Retomar Estudo';
-            btn.disabled = false;
-            
-            document.getElementById('cronometro-wrapper').classList.add('p-2', 'border-2', 'border-yellow-400');
-            showNotification("Sessão de estudo pendente carregada.", "success");
-        }
-    }
-
-    async function limparSessaoPendente(config) {
-        const sessaoRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/sessao_pendente`, 'current_session');
-        try {
-            await deleteDoc(sessaoRef);
-            console.log("Sessão pendente limpa.");
-        } catch (e) {
-            if (e.code !== 'not-found') {
-                handleFirestoreError(e, "Limpar Sessão Pendente");
-            }
         }
     }
 
@@ -797,17 +756,31 @@
                 tarefasPorDia[diaId].sort((a, b) => a.horario.localeCompare(b.horario));
                 tarefasPorDia[diaId].forEach(tarefa => {
                     const isConcluida = tarefa.status === 'concluido';
+                    const isPausada = tarefa.status === 'pausado';
+
                     const div = document.createElement('div');
                     
-                    const bgColorClass = isConcluida ? 'bg-green-100 border-l-4 border-green-500' : 'bg-white';
+                    let bgColorClass = 'bg-white';
+                    if (isConcluida) {
+                        bgColorClass = 'bg-green-100 border-l-4 border-green-500';
+                    } else if (isPausada) {
+                        bgColorClass = 'bg-red-100 border-l-4 border-red-500';
+                    }
                     div.className = `tarefa-cronograma-item p-2 rounded shadow-sm flex justify-between items-center text-sm ${bgColorClass}`;
                     
                     div.dataset.tarefaId = tarefa.id;
                     div.dataset.materia = tarefa.materia;
                     div.dataset.assunto = tarefa.assunto;
                     div.dataset.dia = tarefa.dia;
+                    div.dataset.status = tarefa.status;
+                    div.dataset.segundosRestantes = tarefa.segundosRestantes || 0;
 
-                    div.innerHTML = `<div><p class="font-bold">${tarefa.horario} - ${tarefa.materia}</p><p class="text-xs text-gray-500 pl-1">${tarefa.assunto}</p></div>`;
+                    let infoHTML = `<div><p class="font-bold">${tarefa.horario} - ${tarefa.materia}</p><p class="text-xs text-gray-500 pl-1">${tarefa.assunto}</p>`;
+                    if (isPausada && tarefa.segundosRestantes > 0) {
+                        infoHTML += `<p class="text-xs text-red-600 font-semibold pl-1">Pendente: ${formatarTempo(tarefa.segundosRestantes)}</p>`;
+                    }
+                    infoHTML += `</div>`;
+                    div.innerHTML = infoHTML;
                   
                   const removeBtn = document.createElement('button');
                     removeBtn.innerHTML = '&times;';
@@ -1304,7 +1277,7 @@
         draggables.forEach(draggable => { draggable.addEventListener('dragstart', () => draggable.classList.add('dragging')); draggable.addEventListener('dragend', () => draggable.classList.remove('dragging')); });
         container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
     }
-
+    
     async function carregarProgressoDisciplinas(config) {
         const { db, appId, userId } = config;
         const container = document.getElementById("progressoDisciplinas");
@@ -1383,7 +1356,7 @@
         const q = query(collection(db, `artifacts/${config.appId}/public/data/simulados`)); const snapshot = await getDocs(q);
         if (snapshot.empty) { container.innerHTML = "<p>Nenhum simulado encontrado.</p>"; return; }
         container.innerHTML = snapshot.docs.map(doc => { const s = doc.data(); return `<div class="border p-3 rounded flex justify-between items-center"><p><strong>${s.banca} - ${s.ano}</strong><br>${s.cargo}</p><button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white px-4 py-2">Iniciar</button></div>`; }).join('');
-        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${config.appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
+        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
         } }); });
     }
     
