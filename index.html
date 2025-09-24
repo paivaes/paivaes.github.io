@@ -182,6 +182,7 @@ font-semibold">Disciplina:</label>
                         <label for="cronometro-horas" class="block mb-1 font-semibold">Quantidade de Horas:</label>
                         <input type="number" id="cronometro-horas" value="1" min="0.5" step="0.5" class="w-full">
                     </div>
+
                     <div id="timer-display" class="text-center text-4xl font-bold my-4 text-slate-700">01:00:00</div>
                     <button id="btn-toggle-sessao" class="w-full bg-green-600 text-white font-semibold py-2">Iniciar Estudo</button>
      
@@ -279,7 +280,7 @@ class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transitio
     // =========================
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc, deleteField, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 // Variáveis globais de inicialização
     let app, db, auth;
     let timerInterval;
@@ -541,7 +542,6 @@ document.getElementById('cronometro-disciplina').addEventListener('change', (e) 
         timerDisplay.textContent = formatarTempo(segundosCorridos);
     }
 
-    // FUNÇÃO MODIFICADA PARA CONTAGEM REGRESSIVA
     /**
      * Controla o início e a pausa do cronômetro de estudo em modo de contagem regressiva.
      * @param {object} config - Objeto de configuração da aplicação.
@@ -581,7 +581,7 @@ document.getElementById('cronometro-disciplina').addEventListener('change', (e) 
             btn.classList.remove('bg-green-600');
             btn.classList.add('bg-red-600');
 
-            timerInterval = setInterval(() => {
+            timerInterval = setInterval(async () => {
                 segundosCorridos--;
                 timerDisplay.textContent = formatarTempo(segundosCorridos);
 
@@ -593,11 +593,62 @@ document.getElementById('cronometro-disciplina').addEventListener('change', (e) 
                     btn.classList.add('bg-green-600');
                     horasInput.disabled = false;
                     showNotification("Sessão de estudo concluída!", "success");
-                    // Opcional: pode-se adicionar o registro de tempo aqui se desejado
+                    
+                    // NOVO: Chama a função para marcar a tarefa como concluída
+                    await marcarTarefaComoConcluida(config);
                 }
             }, 1000);
         }
     }
+    
+    // NOVO: Função para marcar tarefa do cronograma como concluída
+    /**
+     * Procura por uma tarefa no cronograma que corresponda aos dados da sessão de estudo concluída
+     * e a marca como 'concluida' no Firestore.
+     * @param {object} config - O objeto de configuração da aplicação.
+     */
+    async function marcarTarefaComoConcluida(config) {
+        const disciplinaSelect = document.getElementById('cronometro-disciplina');
+        const assuntoSelect = document.getElementById('cronometro-assunto');
+        const diaSelect = document.getElementById('cronometro-dia-semana');
+
+        const materiaNome = disciplinaSelect.options[disciplinaSelect.selectedIndex].text;
+        const assuntoNome = assuntoSelect.value;
+        const dia = diaSelect.value;
+
+        if (!materiaNome || !assuntoNome || !dia) {
+            console.warn("Não foi possível marcar a tarefa: dados insuficientes (matéria, assunto ou dia).");
+            return;
+        }
+
+        try {
+            const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
+            // Procura uma tarefa que ainda não esteja concluída e que corresponda aos critérios
+            const q = query(
+                collection(config.db, collectionPath),
+                where("usuarioId", "==", config.userId),
+                where("dia", "==", dia),
+                where("materia", "==", materiaNome),
+                where("assunto", "==", assuntoNome),
+                where("status", "!=", "concluido"),
+                limit(1)
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const tarefaDoc = querySnapshot.docs[0];
+                await updateDoc(tarefaDoc.ref, { status: "concluido" });
+                showNotification(`Tarefa "${materiaNome} - ${assuntoNome}" marcada como concluída!`, "success");
+                await carregarCronograma(config); // Recarrega o cronograma para mostrar a mudança visual
+            } else {
+                console.log("Nenhuma tarefa correspondente encontrada no cronograma para marcar como concluída.");
+            }
+        } catch(error) {
+            handleFirestoreError(error, "Marcar Tarefa como Concluída");
+        }
+    }
+
 
     /**
      * Carrega os assuntos de uma disciplina quando ela é selecionada no cronômetro.
@@ -672,14 +723,15 @@ return;
         }
         try {
             const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
-await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId });
+await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId, status: "pendente" }); // Adiciona status pendente
             showNotification("Tarefa adicionada!");
             document.getElementById('form-cronograma').reset();
             document.getElementById('assunto-cronograma-container').classList.add('hidden');
             carregarCronograma(config);
 } catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
     }
-
+    
+    // MODIFICADO: para adicionar a classe de conclusão
     async function carregarCronograma(config) {
         renderizarEstruturaDias();
 const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
@@ -702,8 +754,13 @@ if (containerTarefas) {
                 // Ordena as tarefas do dia por horário
                 tarefasPorDia[diaId].sort((a, b) => a.horario.localeCompare(b.horario));
 tarefasPorDia[diaId].forEach(tarefa => {
+                    const isConcluida = tarefa.status === 'concluido';
                     const div = document.createElement('div');
-                    div.className = "bg-white p-2 rounded shadow-sm flex justify-between items-center text-sm";
+                    
+                    // Adiciona classe de fundo verde se a tarefa estiver concluída
+                    const bgColorClass = isConcluida ? 'bg-green-100 border-l-4 border-green-500' : 'bg-white';
+                    div.className = `p-2 rounded shadow-sm flex justify-between items-center text-sm ${bgColorClass}`;
+                    
                     div.innerHTML = `<div><p class="font-bold">${tarefa.horario} - ${tarefa.materia}</p><p class="text-xs text-gray-500 pl-1">${tarefa.assunto}</p></div>`;
                   
 
