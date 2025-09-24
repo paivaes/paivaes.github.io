@@ -636,26 +636,31 @@
     async function selecionarTarefaParaEstudo(tarefaElement, config) {
         const clickedTaskId = tarefaElement.dataset.tarefaId;
 
-        if (tarefaAtualId !== null && tarefaAtualId !== clickedTaskId) {
-            showNotification("Conclua ou retome a sua sessão de estudo pendente antes de iniciar uma nova.", "error");
+        // LÓGICA MODIFICADA PARA PERMITIR MUDANÇA
+        if (tarefaAtualId !== null && tarefaAtualId !== clickedTaskId && timerInterval) {
+            showNotification("Por favor, pause o estudo atual antes de selecionar uma nova tarefa.", "error");
             return;
         }
 
-        if (tarefaAtualId === null) {
-            await limparSessaoPendente(config); 
-            tarefaAtualId = clickedTaskId;
-            updateTimerDisplayFromHours(0);
+        // Se uma nova tarefa for selecionada, limpa a sessão pendente anterior
+        if (tarefaAtualId !== clickedTaskId) {
+            await limparSessaoPendente(config);
         }
+        
+        tarefaAtualId = clickedTaskId;
 
         const { materia, assunto } = tarefaElement.dataset;
         document.getElementById('cronometro-disciplina-display').textContent = materia;
         document.getElementById('cronometro-assunto-display').textContent = assunto;
         
-        document.getElementById('cronometro-texto-info').textContent = tarefaAtualId ? 'Sessão pronta para iniciar/retomar.' : 'Clique numa tarefa para começar.';
+        document.getElementById('cronometro-texto-info').textContent = 'Defina o tempo e inicie o seu estudo.';
         document.getElementById('cronometro-info-selecionada').classList.remove('hidden');
         document.getElementById('cronometro-wrapper').classList.remove('p-2', 'border-2', 'border-yellow-400');
 
+        updateTimerDisplayFromHours(0);
         document.getElementById('btn-toggle-sessao').disabled = true;
+        document.getElementById('btn-toggle-sessao').textContent = 'Iniciar Estudo';
+        
         document.getElementById('modal-horas-input').value = 1;
         abrirModal('modal-horas');
     }
