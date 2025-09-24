@@ -165,7 +165,24 @@ font-semibold">Disciplina:</label>
     
                     <select id="cronometro-assunto" class="w-full"></select>
                     </div>
-                    <div id="timer-display" class="text-center text-4xl font-bold my-4 text-slate-700">00:00:00</div>
+                    
+                    <div>
+                        <label for="cronometro-dia-semana" class="block mb-1 font-semibold">Dia da Semana:</label>
+                        <select id="cronometro-dia-semana" class="w-full">
+                            <option value="segunda">Segunda-feira</option>
+                            <option value="terca">Terça-feira</option>
+                            <option value="quarta">Quarta-feira</option>
+                            <option value="quinta">Quinta-feira</option>
+                            <option value="sexta">Sexta-feira</option>
+                            <option value="sabado">Sábado</option>
+                            <option value="domingo">Domingo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="cronometro-horas" class="block mb-1 font-semibold">Quantidade de Horas:</label>
+                        <input type="number" id="cronometro-horas" value="1" min="0.5" step="0.5" class="w-full">
+                    </div>
+                    <div id="timer-display" class="text-center text-4xl font-bold my-4 text-slate-700">01:00:00</div>
                     <button id="btn-toggle-sessao" class="w-full bg-green-600 text-white font-semibold py-2">Iniciar Estudo</button>
      
            </div>
@@ -266,7 +283,7 @@ import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, 
 // Variáveis globais de inicialização
     let app, db, auth;
     let timerInterval;
-    let segundosCorridos = 0;
+    let segundosCorridos = 0; // Usado para a contagem regressiva
 // Função principal que inicia tudo
     function iniciarAplicacao() {
         const hardcodedFirebaseConfig = {
@@ -488,15 +505,14 @@ document.getElementById('btn-download-relatorio').addEventListener('click', () =
         document.getElementById('btn-encerrar-ciclo').addEventListener('click', () => handleEncerrarCiclo(config));
 document.getElementById('cronometro-disciplina').addEventListener('change', (e) => handleMateriaChangeCronometroEstudo(e, config));
         document.getElementById('btn-toggle-sessao').addEventListener('click', () => toggleSessaoDeEstudo(config));
+        
+        // Listener para o novo campo de horas
+        document.getElementById('cronometro-horas').addEventListener('input', updateTimerDisplayFromHours);
     }
     
     // =========================
     // MÓDULO DE CRONOGRAMA (Integrado)
     // =========================
-
-    // =============================================================
-    // CÓDIGO FALTANTE PARA O FUNCIONAMENTO DO MÓDULO DE CRONOGRAMA
-    // =============================================================
 
     /**
      * Formata o tempo de segundos para o formato HH:MM:SS.
@@ -504,25 +520,37 @@ document.getElementById('cronometro-disciplina').addEventListener('change', (e) 
      * @returns {string} O tempo formatado.
      */
     function formatarTempo(totalSegundos) {
-        const horas = Math.floor(totalSegundos / 3600);
-        const minutos = Math.floor((totalSegundos % 3600) / 60);
-        const segundos = totalSegundos % 60;
+        // Garante que não teremos valores negativos
+        const s = Math.max(0, totalSegundos);
+        const horas = Math.floor(s / 3600);
+        const minutos = Math.floor((s % 3600) / 60);
+        const segundos = s % 60;
         return [horas, minutos, segundos]
             .map(v => v.toString().padStart(2, '0'))
             .join(':');
     }
 
     /**
-     * Controla o início e a pausa do cronômetro de estudo.
-     * Ao pausar, salva o tempo estudado no banco de dados.
+     * Atualiza o display do timer com base no valor do input de horas.
+     */
+    function updateTimerDisplayFromHours() {
+        const horasInput = document.getElementById('cronometro-horas');
+        const timerDisplay = document.getElementById('timer-display');
+        const horas = parseFloat(horasInput.value) || 0;
+        segundosCorridos = horas * 3600;
+        timerDisplay.textContent = formatarTempo(segundosCorridos);
+    }
+
+    // FUNÇÃO MODIFICADA PARA CONTAGEM REGRESSIVA
+    /**
+     * Controla o início e a pausa do cronômetro de estudo em modo de contagem regressiva.
      * @param {object} config - Objeto de configuração da aplicação.
      */
     async function toggleSessaoDeEstudo(config) {
-        const { db, appId, userId } = config;
         const btn = document.getElementById('btn-toggle-sessao');
         const timerDisplay = document.getElementById('timer-display');
         const disciplinaSelect = document.getElementById('cronometro-disciplina');
-        const assuntoSelect = document.getElementById('cronometro-assunto');
+        const horasInput = document.getElementById('cronometro-horas');
 
         const isRunning = timerInterval != null;
 
@@ -530,53 +558,43 @@ document.getElementById('cronometro-disciplina').addEventListener('change', (e) 
             // Pausando o cronômetro
             clearInterval(timerInterval);
             timerInterval = null;
-            btn.textContent = 'Iniciar Estudo';
+            btn.textContent = 'Retomar Estudo';
             btn.classList.remove('bg-red-600');
             btn.classList.add('bg-green-600');
-
-            // Arredonda para o minuto mais próximo para salvar
-            const minutosEstudados = Math.round(segundosCorridos / 60);
-            
-            if (minutosEstudados > 0) {
-                const disciplinaId = disciplinaSelect.value;
-                const disciplinaNome = disciplinaSelect.options[disciplinaSelect.selectedIndex].text;
-                const assunto = assuntoSelect.value;
-
-                try {
-                    const collectionPath = `artifacts/${appId}/users/${userId}/registro_tempo`;
-                    await addDoc(collection(db, collectionPath), {
-                        disciplinaId: disciplinaId,
-                        disciplinaNome: disciplinaNome,
-                        assunto: assunto || "Geral",
-                        minutos: minutosEstudados,
-                        data: serverTimestamp(),
-                        usuarioId: userId
-                    });
-                    showNotification(`${minutosEstudados} minuto(s) de "${disciplinaNome}" registrados com sucesso!`, 'success');
-                    await carregarProgressoDisciplinas(config); // Atualiza as barras de progresso
-                } catch (e) {
-                    handleFirestoreError(e, "Registrar Tempo de Estudo");
-                }
-            }
-            // Zera o contador e o display após salvar
-            segundosCorridos = 0;
-            timerDisplay.textContent = '00:00:00';
-
+            horasInput.disabled = false; // Libera o campo de horas
         } else {
-            // Iniciando o cronômetro
-            const disciplinaId = disciplinaSelect.value;
-            if (!disciplinaId) {
+            // Iniciando ou retomando o cronômetro
+            if (!disciplinaSelect.value) {
                 showNotification("Por favor, selecione uma disciplina para iniciar.", "error");
                 return;
             }
+            if (segundosCorridos <= 0) {
+                 updateTimerDisplayFromHours(); // Garante que o tempo a ser usado é o do input
+                 if(segundosCorridos <= 0) {
+                    showNotification("Por favor, defina um tempo de estudo válido.", "error");
+                    return;
+                 }
+            }
 
-            btn.textContent = 'Pausar e Salvar Sessão';
+            horasInput.disabled = true; // Bloqueia o campo de horas durante o estudo
+            btn.textContent = 'Pausar Estudo';
             btn.classList.remove('bg-green-600');
             btn.classList.add('bg-red-600');
 
             timerInterval = setInterval(() => {
-                segundosCorridos++;
+                segundosCorridos--;
                 timerDisplay.textContent = formatarTempo(segundosCorridos);
+
+                if (segundosCorridos <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    btn.textContent = 'Iniciar Estudo';
+                    btn.classList.remove('bg-red-600');
+                    btn.classList.add('bg-green-600');
+                    horasInput.disabled = false;
+                    showNotification("Sessão de estudo concluída!", "success");
+                    // Opcional: pode-se adicionar o registro de tempo aqui se desejado
+                }
             }, 1000);
         }
     }
