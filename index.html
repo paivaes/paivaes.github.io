@@ -344,7 +344,7 @@
         const s = Math.max(0, totalSegundos);
         const horas = Math.floor(s / 3600);
         const minutos = Math.floor((s % 3600) / 60);
-        const segundos = s % 60;
+        const segundos = Math.floor(s % 60);
         return [horas, minutos, segundos]
             .map(v => v.toString().padStart(2, '0'))
             .join(':');
