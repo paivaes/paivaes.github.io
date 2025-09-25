@@ -1168,7 +1168,7 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
                         <button class="exportar-pdf-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16">
                                 <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 1.5v2a1 1 0 0 0 1 1h2l-3-3z"/>
-                                <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.877.37-.198.815-.145 1.132.059.281.19.487.453.605.772a.7.7 0 0 1-.42.835l-.143.07a.5.5 0 0 0-.29.002l-.126-.06a.236.236 0 0 0-.115-.166c-.138-.068-.29-.082-.451-.015a.25.25 0 0 0-.158.25c.006.1.03.19.054.282.023.09.05.17.08.242.043.103.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.016-.239.004-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166.3.3 0 0 0 .451.015c.14-.067.248-.192.283-.347a.817.817 0 0 0-.119-.668.97.97 0 0 0-.51-.378c-.244-.085-.516-.043-.728.116a.8.8 0 0 0-.3.465c-.053.162-.053.335.002.5.05.15.134.29.254.426.12.132.254.25.398.358.182.135.38.216.616.223a.4.4 0 0 1 .42.44l-.143.07a.5.5 0 0 0-.29.002l-.126-.06a.236.236 0 0 0-.115-.166c-.158-.076-.351-.076-.51-.045a.25.25 0 0 0-.158.25c.006.095.03.18.054.262.023.08.05.15.08.212.043.104.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.015-.239.003-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 0-.158.25z"/>
+                                <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.877.37-.198.815-.145 1.132.059.281.19.487.453.605.772a.7.7 0 0 1-.42.835l-.143.07a.5.5 0 0 0-.29.002l-.126-.06a.236.236 0 0 0-.115-.166c-.138-.068-.29-.082-.451-.015a.25.25 0 0 0-.158.25c.006.1.03.19.054.282.023.09.05.17.08.242.043.103.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.016-.239.004-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 0-.158.25c.006.095.03.18.054.262.023.08.05.15.08.212.043.104.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.015-.239.003-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 0-.158.25z"/>
                             </svg>
                         </button>
                         <button class="excluir-redacao-btn bg-red-100 text-red-700 px-3 py-1 rounded-md hover:bg-red-200 text-sm transition">
@@ -1190,7 +1190,7 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
                 });
 
                 div.querySelector('.exportar-pdf-btn').addEventListener('click', () => {
-                    exportarRedacaoSalvaPDF(redacao);
+                    gerarPDFPadraoFGV(redacao);
                 });
 
                 container.appendChild(div);
@@ -1206,48 +1206,79 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
             const docPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes/${redacaoId}`;
             await deleteDoc(doc(_db_r, docPath));
             showNotification("Redação excluída com sucesso.");
-            carregarRedacoesSalvas_v2(); // Atualiza a lista
+            carregarRedacoesSalvas_v2(); 
         } catch (error) {
             handleFirestoreError(error, "Excluir Redação");
         }
     }
 
-    // NOVA FUNÇÃO para exportar redação salva para PDF
-    function exportarRedacaoSalvaPDF(redacao) {
-        showNotification("Gerando PDF da redação...");
+    // FUNÇÃO DE EXPORTAÇÃO DE PDF TOTALMENTE REFEITA
+    function gerarPDFPadraoFGV(redacao) {
+        showNotification("Gerando PDF no padrão FGV...");
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
+        const pdf = new jsPDF('p', 'mm', 'a4'); // Padrão A4: 210 x 297 mm
 
         const tema = redacao.tema;
         const texto = redacao.texto;
         const nota = typeof redacao.nota === 'number' ? `${redacao.nota} / 100` : "Não corrigida";
         const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
         const nomeCiclo = document.getElementById('ciclo-nome-input').value || "Ciclo não definido";
+
+        const margemEsquerda = 15;
+        const margemDireita = 15;
+        const margemSuperior = 15;
+        const larguraPagina = 210;
+        const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
         
-        // Título Principal
+        // Cabeçalho
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(16);
-        pdf.text(tema, 105, 20, { align: 'center', maxWidth: 190 });
-
-        // Metadados
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(10);
-        pdf.text(`Candidato(a): ${nomeUsuario}`, 15, 35);
-        pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, 15, 41);
-        pdf.text(`Nota: ${nota}`, 15, 47);
-
-        // Linha Separadora
-        pdf.setLineWidth(0.5);
-        pdf.line(15, 52, 195, 52);
-
-        // Corpo do Texto Justificado
         pdf.setFontSize(12);
-        const margem = 15;
-        const larguraMaxima = 180; // Largura do texto (210mm da A4 - 2*15mm de margem)
-        const linhas = pdf.splitTextToSize(texto, larguraMaxima);
-        pdf.text(linhas, margem, 62, { align: 'justify' });
+        pdf.text("FOLHA DE TEXTO DEFINITIVO", larguraPagina / 2, margemSuperior, { align: 'center' });
         
-        pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.rect(margemEsquerda, margemSuperior + 5, larguraUtil, 20); // Caixa do cabeçalho
+        pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda + 2, margemSuperior + 10);
+        pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda + 2, margemSuperior + 15);
+        pdf.text(`Nota: ${nota}`, margemEsquerda + 2, margemSuperior + 20);
+
+        // Área do Título
+        let y = margemSuperior + 30;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text("TÍTULO", margemEsquerda, y);
+        pdf.setLineWidth(0.2);
+        pdf.line(margemEsquerda, y + 2, larguraPagina - margemDireita, y + 2);
+        y += 8; // Espaço para o título
+
+        // Linhas da Redação
+        const alturaLinha = 8; // 8mm de altura para cada linha
+        const inicioLinhas = y;
+        pdf.setFontSize(8);
+        for (let i = 1; i <= 30; i++) {
+            pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
+            pdf.text(String(i).padStart(2, '0'), margemEsquerda - 4, y - 1);
+            y += alturaLinha;
+        }
+
+        // Adicionar o texto sobre as linhas
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(12);
+        
+        // Processa o texto para caber na largura das linhas
+        const textoProcessado = pdf.splitTextToSize(texto, larguraUtil - 2); // -2 para uma pequena margem interna
+
+        // Coloca cada linha do texto processado na pauta
+        let linhaAtual = 0;
+        textoProcessado.forEach(linhaTexto => {
+            if (linhaAtual < 30) {
+                const yPos = inicioLinhas + (linhaAtual * alturaLinha) - 2; // -2 para ajustar a posição vertical na linha
+                pdf.text(linhaTexto, margemEsquerda + 2, yPos);
+                linhaAtual++;
+            }
+        });
+
+        pdf.save(`redacao_FGV_${tema.substring(0, 15).replace(/\s+/g, '_')}.pdf`);
     }
 
     function corrigirRedacao_v2() {
@@ -1265,7 +1296,7 @@ observacoes.push("Texto com menos de 150 palavras."); }
 }
         if (nota < 0) nota = 0;
 
-        _notaRedacaoAtual = nota; // Armazena a nota na variável global
+        _notaRedacaoAtual = nota; 
 
 document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
 document.getElementById("btn-imprimir").style.display = "inline-block";
