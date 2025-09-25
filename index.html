@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <title>Plataforma de Estudos GFConcursos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta property="og:title" content="Plataforma de Estudos GFConcursos" />
+  <meta property="og:description" content="Afie seu conhecimento e prepare-se para os próximos desafios." />
+  <meta property="og:image" content="https://paivaes.github.io/Amachado.jpg" />
+  <meta property="og:url" content="https://paivaes.github.io/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Plataforma de Estudos GFConcursos">
+  <meta name="twitter:description" content="Afie seu conhecimento e prepare-se para os próximos desafios.">
+  <meta name="twitter:image" content="https://paivaes.github.io/Amachado.jpg">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,42 +22,57 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
-    .container { max-width: 1200px; margin: auto; padding: 20px; }
-    .card { background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
-    h2 { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; margin-bottom: 1rem; border-bottom: 2px solid #93c5fd; padding-bottom: 0.5rem;}
+    body { font-family: 'Inter', sans-serif;
+background-color: #f0f2f5; }
+    .container { max-width: 1200px; margin: auto; padding: 20px;
+}
+    .card { background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px;
+}
+    h2 { font-size: 1.5rem; font-weight: 700; color: #1e3a8a; margin-bottom: 1rem; border-bottom: 2px solid #93c5fd;
+padding-bottom: 0.5rem;}
     select, input, button, textarea {
         padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
+border-radius: 0.375rem;
         border: 1px solid #d1d5db;
         transition: all 0.2s;
         font-size: 1rem;
     }
-    textarea { width: 100%; min-height: 250px; }
+    textarea { width: 100%;
+min-height: 250px; }
     button { cursor: pointer; }
-    button:hover { opacity: 0.9; }
+    button:hover { opacity: 0.9;
+}
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .tab-button { background-color: #e5e7eb; }
+    .tab-button { background-color: #e5e7eb;
+}
     .tab-button.active { background-color: #3b82f6; color: white; }
-    .option-button { display: block; width: 100%; text-align: left; background-color: #f3f4f6; margin-bottom: 0.5rem; }
-    .option-button:hover { background-color: #e5e7eb; }
+    .option-button { display: block; width: 100%;
+text-align: left; background-color: #f3f4f6; margin-bottom: 0.5rem; }
+    .option-button:hover { background-color: #e5e7eb;
+}
     .option-button.correct { background-color: #d1fae5; border-color: #10b981; }
-    .option-button.incorrect { background-color: #fee2e2; border-color: #ef4444; }
+    .option-button.incorrect { background-color: #fee2e2; border-color: #ef4444;
+}
     .priority-item { cursor: grab; user-select: none; }
-    .priority-item:active { cursor: grabbing; background-color: #f0f4ff; }
+    .priority-item:active { cursor: grabbing; background-color: #f0f4ff;
+}
     .dragging { opacity: 0.5; }
-    .fade-in { animation: fadeIn 0.3s ease-out; }
-    .fade-out { animation: fadeOut 0.3s ease-in forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+    .fade-in { animation: fadeIn 0.3s ease-out;
+}
+    .fade-out { animation: fadeOut 0.3s ease-in forwards;
+}
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1);
+} }
+    @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0;
+transform: scale(0.95); } }
     
     .tarefa-cronograma-item {
         cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
+transition: transform 0.2s, box-shadow 0.2s;
     }
     .tarefa-cronograma-item:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 10px rgba(0,0,0,0.1);
+box-shadow: 0 6px 10px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -60,7 +85,8 @@
 
     <div id="global-error-container" class="hidden my-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
       <h3 class="font-bold">Erro de Permissão do Banco de Dados</h3>
-      <p id="global-error-message" class="text-sm">Ocorreu um erro ao tentar salvar os dados. Verifique se as Regras de Segurança do seu Firestore estão configuradas corretamente.</p>
+      <p id="global-error-message" class="text-sm">Ocorreu um erro ao tentar salvar os dados.
+Verifique se as Regras de Segurança do seu Firestore estão configuradas corretamente.</p>
     </div>
 
     <div id="auth-container" class="card max-w-md mx-auto">
@@ -68,9 +94,11 @@
             <h2 class="text-2xl font-bold text-center mb-4 border-0">Acessar Plataforma</h2>
             <input type="email" id="login-email" placeholder="Seu e-mail" class="w-full mb-3 p-2 border rounded">
            <input type="password" id="login-password" placeholder="Sua senha" class="w-full mb-4 p-2 border rounded">
-           <button id="btn-login" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">Entrar</button>
+         
+  <button id="btn-login" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">Entrar</button>
             <p class="text-center text-sm mt-4">
-                Não tem uma conta? <a href="#" id="show-signup" class="text-blue-600 hover:underline">Cadastre-se</a>
+                Não tem uma conta?
+<a href="#" id="show-signup" class="text-blue-600 hover:underline">Cadastre-se</a>
             </p>
         </div>
 
@@ -78,9 +106,11 @@
             <h2 class="text-2xl font-bold text-center mb-4 border-0">Criar Nova Conta</h2>
             <input type="email" id="signup-email" placeholder="Seu e-mail" class="w-full mb-3 p-2 border rounded">
             <input type="password" id="signup-password" placeholder="Crie uma senha (mínimo 6 caracteres)" class="w-full mb-4 p-2 border rounded">
-            <button id="btn-signup" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Cadastrar</button>
+ 
+           <button id="btn-signup" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Cadastrar</button>
             <p class="text-center text-sm mt-4">
-                Já tem uma conta? <a href="#" id="show-login" class="text-blue-600 hover:underline">Faça o login</a>
+                Já tem uma conta?
+<a href="#" id="show-login" class="text-blue-600 hover:underline">Faça o login</a>
             </p>
         </div>
     </div>
@@ -93,18 +123,21 @@
 
    
        <div id="tabs-container" class="mb-6">
-          <div class="md:hidden text-right mb-4">
+      
+    <div class="md:hidden text-right mb-4">
               <button id="menu-toggle" class="p-2 rounded bg-gray-200">Menu</button>
           </div>
           <nav id="nav-menu" class="hidden md:flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
               <button class="tab-button px-4 py-2 rounded" data-tab="estudo">Estudo</button>
                <button class="tab-button px-4 py-2 rounded" data-tab="cronograma">Cronograma</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="simulados">Simulados</button>
+        
+      <button class="tab-button px-4 py-2 rounded" data-tab="simulados">Simulados</button>
               <button class="tab-button px-4 py-2 rounded" data-tab="redacao">Redação</button>
               <button class="tab-button px-4 py-2 rounded" data-tab="progresso">Progresso</button>
               <button class="tab-button px-4 py-2 rounded" data-tab="edital">Edital</button>
               <button class="tab-button px-4 py-2 rounded" data-tab="perfil">Meu Perfil</button>
-              <button class="tab-button px-4 py-2 rounded" data-tab="ranking">Ranking</button>
+            
+  <button class="tab-button px-4 py-2 rounded" data-tab="ranking">Ranking</button>
               <button class="tab-button px-4 py-2 rounded" data-tab="desafios">Desafios</button>
           </nav>
       </div>
@@ -113,124 +146,153 @@
         <div id="tab-content-estudo" class="tab-content">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <div class="card">
+           
+     <div class="card">
                     <label for="seletorDisciplina" class="block mb-1 font-semibold">Selecione a Disciplina para Praticar:</label>
                     <select id="seletorDisciplina" class="w-full"></select>
                 </div>
-                <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
+                <div class="card"><h2 class="m-0">Praticar Questões</h2><div class="grid grid-cols-2 gap-4"><div><label for="nivelDificuldade" class="block mb-1 font-semibold">Dificuldade:</label><select id="nivelDificuldade" 
+class="w-full"><option value="">Todas</option><option value="facil">Fácil</option><option value="medio">Médio</option><option value="dificil">Difícil</option></select></div><div><label for="quantidadeQuestoes" class="block mb-1 font-semibold">Quantidade:</label><input type="number" id="quantidadeQuestoes" value="10" min="1" max="100" class="w-full"></div></div><button id="btn-iniciar-pratica" class="w-full bg-orange-500 text-white font-semibold mt-4 py-2 hover:bg-orange-600">Praticar Disciplina Selecionada</button></div>
                 <div class="card"><h2 class="m-0">Revisão Inteligente 🧠</h2><label for="quantidadeQuestoesInteligente" class="block mb-1 font-semibold">Quantidade de Questões:</label><input type="number" id="quantidadeQuestoesInteligente" value="20" min="5" max="100" class="w-full mb-2"><button id="btn-revisao-inteligente" class="w-full bg-indigo-600 text-white font-semibold">Iniciar Revisão Inteligente</button></div>
               </div>
    
                <div>
-                <div class="card"><h2 class="m-0">Metas e Prioridades do Ciclo</h2><div class="mb-4"><label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label><input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full"></div><div class="mb-4 border-t pt-4 mt-4"><label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label><input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full"></div><div><label class="block font-semibold mb-1">Prioridade das Disciplinas:</label><p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p><div id="lista-prioridades" class="border rounded p-2 space-y-2"><p class="text-slate-400">Carregando disciplinas...</p></div></div><button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button><button id="btn-encerrar-ciclo" class="w-full bg-red-500 text-white font-semibold mt-2 py-2">Encerrar Ciclo Atual</button></div>
-                <div class="card"><h2 class="m-0">Progresso por Disciplina</h2><div id="progressoDisciplinas"></div></div>
+    
+            <div class="card"><h2 class="m-0">Metas e Prioridades do Ciclo</h2><div class="mb-4"><label for="ciclo-nome-input" class="block font-semibold mb-1">Nome do Ciclo:</label><input type="text" id="ciclo-nome-input" placeholder="Ex: Rumo à Aprovação (ALE-RO)" class="w-full"></div><div class="mb-4 border-t pt-4 mt-4"><label for="meta-geral-horas" class="block font-semibold mb-1">Meta Geral de Horas do Ciclo:</label><input type="number" id="meta-geral-horas" placeholder="Ex: 100" class="w-full"></div><div><label class="block font-semibold mb-1">Prioridade das Disciplinas:</label><p class="text-sm text-slate-500 mb-2">Arraste para reordenar (a de cima é a mais importante).</p><div id="lista-prioridades" class="border rounded p-2 space-y-2"><p class="text-slate-400">Carregando disciplinas...</p></div></div><button id="btn-salvar-metas" class="w-full bg-blue-600 text-white font-semibold mt-4">Salvar e Distribuir Horas</button><button id="btn-encerrar-ciclo" class="w-full bg-red-500 text-white font-semibold mt-2 py-2">Encerrar Ciclo Atual</button></div>
+       
+         <div class="card"><h2 class="m-0">Progresso por Disciplina</h2><div id="progressoDisciplinas"></div></div>
                 <div class="card"><h2 class="m-0">Revisões Agendadas</h2><div id="listaRevisoes"></div></div>
               </div>
             </div>
         </div>
         <div id="tab-content-cronograma" class="tab-content hidden">
             <div class="card">
-                <h2 class="m-0">Sessão de Estudo (Cronômetro)</h2>
+        
+        <h2 class="m-0">Sessão de Estudo (Cronômetro)</h2>
                 <div id="cronometro-wrapper" class="mt-4 space-y-3 transition-all duration-300 rounded-lg">
                     <div id="cronometro-display-info" class="p-4 bg-blue-50 rounded-lg text-center">
                         <p id="cronometro-texto-info" class="text-sm text-slate-600">Clique em uma tarefa no seu cronograma semanal para começar.</p>
-                        <div id="cronometro-info-selecionada" class="hidden mt-2 font-semibold text-blue-800">
+     
+                   <div id="cronometro-info-selecionada" class="hidden mt-2 font-semibold text-blue-800">
                             <p><strong>Disciplina:</strong> <span id="cronometro-disciplina-display"></span></p>
                             <p><strong>Assunto:</strong> <span id="cronometro-assunto-display"></span></p>
-                        </div>
+                
+        </div>
                     </div>
                     
                     <div id="timer-display" class="text-center text-4xl font-bold my-4 text-slate-700">00:00:00</div>
-                    <button id="btn-toggle-sessao" class="w-full bg-green-600 text-white font-semibold py-2" disabled>Iniciar Estudo</button>
+                    <button id="btn-toggle-sessao" class="w-full bg-green-600 text-white font-semibold 
+py-2" disabled>Iniciar Estudo</button>
                 </div>
             </div>
             
             <div class="card">
                 <h2 class="m-0">Meu Cronograma Semanal</h2>
-                <form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 items-end">
+                <form id="form-cronograma" class="mb-6 mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4 
+items-end">
                   <div class="flex-grow">
                         <label for="materia-cronograma" class="block text-sm font-medium text-gray-700">Matéria</label>
                         <select id="materia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select>
-                    </div>
+             
+       </div>
           
                    <div id="assunto-cronograma-container" class="flex-grow hidden">
                         <label for="assunto-cronograma" class="block text-sm font-medium text-gray-700">Assunto</label>
-                        <select id="assunto-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select>
+                        <select id="assunto-cronograma" required class="mt-1 block w-full px-3 py-2 
+bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select>
                    
                   </div>
                     <div class="flex-grow">
                         <label for="dia-cronograma" class="block text-sm font-medium text-gray-700">Dia da Semana</label>
-                        <select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+    
+                    <select id="dia-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                              <option value="segunda">Segunda-feira</option>
                             <option value="terca">Terça-feira</option>
-                            <option value="quarta">Quarta-feira</option>
+      
+                      <option value="quarta">Quarta-feira</option>
                            <option value="quinta">Quinta-feira</option>
                             <option value="sexta">Sexta-feira</option>
-                            <option value="sabado">Sábado</option>
+                    
+        <option value="sabado">Sábado</option>
                             <option value="domingo">Domingo</option>
                         </select>
                     </div>
-                    <div class="flex-grow">
+                  
+  <div class="flex-grow">
                         <label for="horario-cronograma" class="block text-sm font-medium text-gray-700">Horário</label>
                           <input type="time" id="horario-cronograma" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button>
+      
+              <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Adicionar</button>
                 </form>
        
                  <div id="container-dias-cronograma" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4"></div>
             </div>
         </div>
-        <div id="tab-content-simulados" class="tab-content hidden"><div class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
+        <div id="tab-content-simulados" class="tab-content hidden"><div 
+class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
         <div id="tab-content-redacao" class="tab-content hidden"><div class="card"><main id="modulo-redacao-container"><section id="secao-redacao"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Temas Disponíveis</h2><div id="temas-redacao" class="grid grid-cols-1 md:grid-cols-2 gap-6"><p>Carregando temas...</p></div></section><section id="secao-redacoes-salvas" class="mt-12"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Minhas Redações Salvas</h2><div id="lista-redacoes-salvas-v2" class="space-y-4"><p class="text-gray-500">Carregando redações salvas...</p></div></section></main></div></div>
-        <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
+        <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid 
+grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
         <div id="tab-content-edital" class="tab-content hidden">
           <div class="card">
-            <h2 class="m-0">Gerenciar Edital</h2>
+          
+  <h2 class="m-0">Gerenciar Edital</h2>
             <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">1. Cadastrar Nova Disciplina</h3>
+              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">1.
+Cadastrar Nova Disciplina</h3>
               <div class="flex flex-col sm:flex-row gap-2 mt-4">
                 <input type="text" id="nova-disciplina-nome-edital" placeholder="Ex: Direito Constitucional" class="w-full">
                 <button id="btn-cadastrar-disciplina-edital" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap">Adicionar Disciplina</button>
               </div>
             </div>
      
+
                  <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">2. Gerenciar Disciplinas e Assuntos</h3>
+              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">2.
+Gerenciar Disciplinas e Assuntos</h3>
               <div id="edital-disciplinas-container" class="mt-4 space-y-4">
                   <p class="text-slate-500 text-center">Nenhuma disciplina cadastrada ainda.</p>
               </div>
             </div>
           </div>
         </div>
-        <div id="tab-content-perfil" class="tab-content hidden"><div class="card"><div class="flex justify-between items-center"><h2 class="m-0">Meu Perfil</h2><button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button></div><div id="perfil-usuario" class="space-y-2 mt-4"></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3><div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📚 Histórico de Ciclos</h3><div id="historico-ciclos-container" class="space-y-3"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3><div id="lista-redacoes-salvas-perfil" class="space-y-2"></div></div></div></div>
+        <div id="tab-content-perfil" class="tab-content hidden"><div class="card"><div 
+class="flex justify-between items-center"><h2 class="m-0">Meu Perfil</h2><button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button></div><div id="perfil-usuario" class="space-y-2 mt-4"></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3><div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📚 Histórico de Ciclos</h3><div id="historico-ciclos-container" class="space-y-3"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3><div id="lista-redacoes-salvas-perfil" class="space-y-2"></div></div></div></div>
         <div id="tab-content-ranking" class="tab-content hidden"><div class="card"><h2 class="m-0">Ranking Geral</h2><div id="ranking-geral-container" class="space-y-2"></div></div></div>
         <div id="tab-content-desafios" class="tab-content hidden"><div class="card"><h2 class="m-0">Desafios 1x1</h2><div id="desafios-container" class="space-y-3"></div></div></div>
       </div>
     </div>
   </div>
 
-  <div id="modal-questoes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40"><div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"><div class="flex justify-between items-center mb-4"><h2 id="modal-titulo" class="m-0 p-0 border-0">Simulado</h2><button id="btn-fechar-modal-questoes" class="text-2xl font-bold">&times;</button></div><div id="modal-corpo"></div></div></div>
+  <div id="modal-questoes" class="fixed inset-0 
+bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40"><div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"><div class="flex justify-between items-center mb-4"><h2 id="modal-titulo" class="m-0 p-0 border-0">Simulado</h2><button id="btn-fechar-modal-questoes" class="text-2xl font-bold">&times;</button></div><div id="modal-corpo"></div></div></div>
   
-  <div id="modal-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Escreva sua Redação</h2><p id="titulo-redacao" class="text-gray-700 mt-1"></p></div><div class="p-6 flex-grow overflow-y-auto"><textarea id="texto-redacao" class="w-full h-64 p-3 border rounded-md focus:ring-2 focus:ring-blue-500 transition" placeholder="Comece a escrever seu texto aqui..."></textarea><div id="resultado-correcao" class="mt-4"></div></div><div class="p-6 bg-gray-50 border-t flex flex-wrap gap-2 justify-end"><button id="btn-fechar-escrever" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button><button id="btn-corrigir" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id="btn-salvar" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Salvar Redação</button><button id="btn-imprimir" style="display: none;" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">Imprimir/PDF</button></div></div></div>
+  <div id="modal-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Escreva sua Redação</h2><p id="titulo-redacao" class="text-gray-700 mt-1"></p></div><div class="p-6 flex-grow overflow-y-auto"><textarea id="texto-redacao" class="w-full h-64 p-3 border rounded-md focus:ring-2 focus:ring-blue-500 transition" placeholder="Comece a escrever seu texto aqui..."></textarea><div id="resultado-correcao" class="mt-4"></div></div><div class="p-6 bg-gray-50 border-t flex flex-wrap gap-2 justify-end"><button id="btn-fechar-escrever" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button><button id="btn-corrigir" class="bg-yellow-500 text-white px-4 
+py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id="btn-salvar" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Salvar Redação</button><button id="btn-imprimir" style="display: none;"
+class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">Imprimir/PDF</button></div></div></div>
   <div id="modal-ver-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Visualizar Redação</h2><p id="ver-titulo-redacao" class="text-gray-700 mt-1"></p></div><div id="ver-texto-redacao" class="p-6 flex-grow overflow-y-auto whitespace-pre-wrap"></div><div class="p-6 bg-gray-50 border-t flex justify-end"><button id="btn-fechar-ver" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button></div></div></div>
   
   <div id="modal-horas" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm fade-in">
           <div class="p-6 border-b">
-             <h2 class="text-xl font-bold m-0 border-0">Definir Tempo de Estudo</h2>
+     
+        <h2 class="text-xl font-bold m-0 border-0">Definir Tempo de Estudo</h2>
           </div>
           <div class="p-6 space-y-4">
               <div>
                   <label for="modal-horas-input" class="block mb-1 font-semibold">Quantidade de Horas:</label>
                   <input type="number" id="modal-horas-input" value="1" min="0.1" step="0.1" class="w-full">
-              </div>
+ 
+             </div>
           </div>
           <div class="p-6 bg-gray-50 border-t flex justify-end gap-2">
               <button id="btn-cancelar-horas" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Cancelar</button>
               <button id="btn-confirmar-horas" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Confirmar</button>
           </div>
       </div>
-  </div>
+ 
+ </div>
 
   <div id="notification-container" class="fixed top-5 right-5 z-50 space-y-2"></div>
 
@@ -239,24 +301,23 @@
     // CONFIGURAÇÃO DO FIREBASE
     // =========================
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    
-    // =========================
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// =========================
     // VARIÁVEIS GLOBAIS
     // =========================
     let app, db, auth;
-    let timerInterval;
+let timerInterval;
     let segundosCorridos = 0;
     let tarefaAtualId = null; 
     let graficoPizza = null;
     let graficoDesempenhoModos = null;
-    let graficoLinhaModos = null;
+let graficoLinhaModos = null;
     let metaAcertosGlobal = 0;
     const modalCorpo = document.getElementById('modal-corpo');
     let questoesDoSimulado = [];
     let questaoAtualIndex = 0;
-    let pontuacao = 0;
+let pontuacao = 0;
     let _db_r, _userId_r, _appId_r, _temaRedacaoAtual;
 
     // ===============================================
@@ -264,97 +325,101 @@
     // ===============================================
     function showNotification(message, type = 'success') {
         const container = document.getElementById('notification-container');
-        if (!container) return;
+if (!container) return;
         const notif = document.createElement('div');
-        notif.className = `p-4 text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
+        notif.className = `p-4 text-white ${type === 'error' ?
+'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
         notif.textContent = message;
         container.appendChild(notif);
         setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
-    }
+}
 
     function abrirModal(modalId) { 
         const modal = document.getElementById(modalId);
-        if(modal) modal.classList.remove('hidden'); 
+if(modal) modal.classList.remove('hidden'); 
     }
 
     function fecharModal(modalId) {
         const modal = document.getElementById(modalId);
-        if (!modal) return;
+if (!modal) return;
         const content = modal.querySelector('.fade-in');
         if (content) {
             content.classList.add('fade-out');
-            content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
-        } else { 
+content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
+} else { 
             modal.classList.add("hidden");
-        }
+}
     }
 
     async function atualizarPerfilPublico(config) {
         const { db, appId, userId } = config;
-        const user = auth.currentUser;
+const user = auth.currentUser;
         if (!user) return;
         
         const publicProfileRef = doc(db, `artifacts/${appId}/public/data/usuarios`, userId);
-        try {
+try {
             await setDoc(publicProfileRef, {
                 nome: user.email, 
                 uid: userId,
                 lastSeen: serverTimestamp()
             }, { merge: true });
-        } catch (e) {
+} catch (e) {
             handleFirestoreError(e, "Atualizar Perfil Público");
-        }
+}
     }
 
     function handleFirestoreError(error, context) {
         console.error(`Erro de Firestore em '${context}':`, error);
-        if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
+if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
             const errorContainer = document.getElementById('global-error-container');
-            const errorMessage = document.getElementById('global-error-message');
-            errorMessage.textContent = `Falha na operação '${context}'. Parece que as Regras de Segurança do seu Firestore estão bloqueando a ação. Por favor, verifique se as regras corretas foram aplicadas ao seu projeto no Console do Firebase.`;
+const errorMessage = document.getElementById('global-error-message');
+            errorMessage.textContent = `Falha na operação '${context}'.
+Parece que as Regras de Segurança do seu Firestore estão bloqueando a ação.
+Por favor, verifique se as regras corretas foram aplicadas ao seu projeto no Console do Firebase.`;
             errorContainer.classList.remove('hidden');
-        } else {
+} else {
             showNotification(`Erro em '${context}': ${error.message}`, 'error');
-        }
+}
     }
 
     function getDragAfterElement(container, y) { 
         const draggableElements = [...container.querySelectorAll('.priority-item:not(.dragging)')];
-        return draggableElements.reduce((closest, child) => { 
+return draggableElements.reduce((closest, child) => { 
             const box = child.getBoundingClientRect(); 
             const offset = y - box.top - box.height / 2; 
             if (offset < 0 && offset > closest.offset) { 
                 return { offset: offset, element: child }; 
-            } else { 
+            } 
+else { 
                 return closest; 
             } 
         }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
+}
 
     function getDateRange(periodo) { 
-        const agora = new Date(); 
-        let dataInicio;
+        const agora = new Date();
+let dataInicio;
         if (periodo === 'semana') dataInicio = new Date(agora.setDate(agora.getDate() - 7));
-        else if (periodo === 'mes') dataInicio = new Date(agora.setMonth(agora.getMonth() - 1)); 
+else if (periodo === 'mes') dataInicio = new Date(agora.setMonth(agora.getMonth() - 1)); 
         else dataInicio = new Date(0); 
         return Timestamp.fromDate(dataInicio);
-    }
+}
 
     function formatarTempo(totalSegundos) {
         const s = Math.max(0, totalSegundos);
-        const horas = Math.floor(s / 3600);
+const horas = Math.floor(s / 3600);
         const minutos = Math.floor((s % 3600) / 60);
         const segundos = Math.floor(s % 60);
-        return [horas, minutos, segundos]
+return [horas, minutos, segundos]
             .map(v => v.toString().padStart(2, '0'))
             .join(':');
-    }
+}
 
     function updateTimerDisplayFromHours(horas) {
         const timerDisplay = document.getElementById('timer-display');
-        segundosCorridos = (horas || 0) * 3600;
+segundosCorridos = (horas || 0) * 3600;
         timerDisplay.textContent = formatarTempo(segundosCorridos);
-    }
+}
 
     // =========================
     // FUNÇÃO PRINCIPAL
@@ -367,79 +432,81 @@
           storageBucket: "gfconcursos-app.firebasestorage.app",
           messagingSenderId: "615439428502",
           appId: "1:615439428502:web:b399549c3969e052098bb7"
-        };
+ 
+       };
 
         if (typeof __firebase_config !== 'undefined' && __firebase_config !== '{}') {
             try {
                 const envConfig = JSON.parse(__firebase_config);
-                if (envConfig.projectId) firebaseConfig = envConfig;
+if (envConfig.projectId) firebaseConfig = envConfig;
             } catch (e) {
                 console.warn("Configuração do ambiente (__firebase_config) é inválida. Usando configuração fixa.");
-            }
+}
         }
         
         if (!firebaseConfig.projectId) {
             console.error("Nenhuma configuração válida do Firebase foi encontrada.");
-            document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente.</h1>';
+document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente.</h1>';
             return;
         }
 
         try {
             app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
+db = getFirestore(app);
             auth = getAuth(app);
         } catch (e) {
             console.error("Erro ao inicializar Firebase:", e);
-            document.body.innerHTML = `<h1>Erro ao inicializar Firebase: ${e.message}</h1>`;
+document.body.innerHTML = `<h1>Erro ao inicializar Firebase: ${e.message}</h1>`;
             return;
         }
 
         configurarNavegacaoAbas();
         iniciarAutenticacao();
-    }
+}
     
     // =========================
     // NAVEGAÇÃO POR ABAS E UI
     // =========================
     function configurarNavegacaoAbas() {
         const tabsContainer = document.getElementById('tabs-container');
-        if (!tabsContainer) return;
+if (!tabsContainer) return;
 
         const tabButtons = tabsContainer.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
-        document.getElementById('menu-toggle').addEventListener('click', () => {
+document.getElementById('menu-toggle').addEventListener('click', () => {
             document.getElementById('nav-menu').classList.toggle('hidden');
         });
-        tabButtons.forEach(button => {
+tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const tab = button.dataset.tab;
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 tabContents.forEach(content => {
-                     if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
+            
+         if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
                     else content.classList.add('hidden');
                 });
                 if (window.innerWidth < 768) document.getElementById('nav-menu').classList.add('hidden');
             });
         });
-        document.getElementById('show-signup').addEventListener('click', (e) => {
+document.getElementById('show-signup').addEventListener('click', (e) => {
           e.preventDefault();
           document.getElementById('login-view').classList.add('hidden');
           document.getElementById('signup-view').classList.remove('hidden');
         });
-        document.getElementById('show-login').addEventListener('click', (e) => {
+document.getElementById('show-login').addEventListener('click', (e) => {
           e.preventDefault();
           document.getElementById('signup-view').classList.add('hidden');
           document.getElementById('login-view').classList.remove('hidden');
         });
-    }
+}
 
     // =========================
     // AUTENTICAÇÃO E INICIALIZAÇÃO
     // =========================
     function iniciarAutenticacao() {
         document.getElementById('btn-login').addEventListener('click', handleLogin);
-        document.getElementById('btn-signup').addEventListener('click', handleSignUp);
+document.getElementById('btn-signup').addEventListener('click', handleSignUp);
         document.getElementById('btn-logout').addEventListener('click', handleLogout);
 
         onAuthStateChanged(auth, async (user) => {
@@ -449,56 +516,59 @@
             if (user) {
                 authContainer.classList.add('hidden');
                 appWrapper.classList.remove('hidden');
-                document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
+                
+document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 const config = { db, auth, appId, userId: user.uid };
            
                 document.querySelector('.tab-button[data-tab="estudo"]').click();
-                
+   
+             
                 await inicializarApp(config);
                 inicializarModuloCronograma(config);
                 inicializarModuloRedacao(config);
             } else {
                 authContainer.classList.remove('hidden');
-                appWrapper.classList.add('hidden');
+        
+        appWrapper.classList.add('hidden');
             }
         });
-    }
+}
 
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+const password = document.getElementById('login-password').value;
         if (!email || !password) {
             showNotification("Por favor, preencha e-mail e senha.", "error");
-            return;
+return;
         }
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            showNotification("Login bem-sucedido!", "success");
+showNotification("Login bem-sucedido!", "success");
         } catch (error) {
             console.error("Erro de login:", error);
-            showNotification(`Erro ao entrar: ${error.message}`, "error");
+showNotification(`Erro ao entrar: ${error.message}`, "error");
         }
     }
 
     async function handleSignUp() {
         const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
+const password = document.getElementById('signup-password').value;
         if (!email || !password) {
             showNotification("Por favor, preencha e-mail e senha.", "error");
-            return;
+return;
         }
         if (password.length < 6) {
             showNotification("A senha deve ter pelo menos 6 caracteres.", "error");
-            return;
+return;
         }
         try {
             await createUserWithEmailAndPassword(auth, email, password);
-            showNotification("Conta criada com sucesso! Bem-vindo!", "success");
+showNotification("Conta criada com sucesso! Bem-vindo!", "success");
         } catch (error) {
             console.error("Erro de cadastro:", error.code);
-            showNotification(`Erro ao cadastrar: ${error.message}`, "error");
+showNotification(`Erro ao cadastrar: ${error.message}`, "error");
         }
     }
 
@@ -506,12 +576,12 @@
         try {
             if(timerInterval) {
                 await salvarSessaoPendente({db, auth, appId: 'default-app-id', userId: auth.currentUser.uid});
-            }
+}
             await signOut(auth);
             showNotification("Você saiu com sucesso.", "success");
-        } catch (error) {
+} catch (error) {
             showNotification("Erro ao sair.", "error");
-        }
+}
     }
 
     // =========================
@@ -519,52 +589,54 @@
     // =========================
     async function inicializarApp(config) {
         const { db, auth, appId, userId } = config;
-        await atualizarPerfilPublico(config);
+await atualizarPerfilPublico(config);
 
         const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData');
         const userDoc = await getDoc(userDocRef);
-        if(userDoc.exists()) {
+if(userDoc.exists()) {
             const userData = userDoc.data();
-            metaAcertosGlobal = userData.metaAcertos || 80;
+metaAcertosGlobal = userData.metaAcertos || 80;
             document.getElementById('meta-geral-horas').value = userData.metaGeralHoras || '';
             document.getElementById('ciclo-nome-input').value = userData.cicloAtualNome || 'Ciclo 1: Rumo à Aprovação (ALE-RO)';
-            await carregarPrioridades(config, userData.prioridadeDisciplinas);
+await carregarPrioridades(config, userData.prioridadeDisciplinas);
         } else {
             await carregarPrioridades(config, []);
-        }
+}
         
         const funcoesCarregamento = [
             () => carregarDisciplinas(config), () => carregarProgressoDisciplinas(config), () => carregarEvolucaoQuestoes(config),
             () => carregarRevisoes(config), () => carregarDesempenhoPorModo(config), () => carregarEvolucaoCronologicaPorModo(config),
             () => carregarEdital(config), () => carregarPerfil(config), () => carregarMedalhas(config), () => carregarRanking(config),
             () => carregarDesafios(config), () => carregarSimulados(config)
-        ];
+ 
+       ];
         
-        for(const funcao of funcoesCarregamento) { try { await funcao(); } catch (error) { console.error(`Erro ao executar ${funcao.name}:`, error); } }
+        for(const funcao of funcoesCarregamento) { try { await funcao();
+} catch (error) { console.error(`Erro ao executar ${funcao.name}:`, error); } }
 
         document.getElementById('btn-cadastrar-disciplina-edital').addEventListener('click', () => handleCadastrarDisciplina(config));
-        document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
+document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
         document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => { carregarDesempenhoPorModo(config); carregarEvolucaoCronologicaPorModo(config); });
         document.getElementById('btnCompararMeta').addEventListener('click', () => toggleLinhaMeta());
-        document.getElementById('btn-iniciar-pratica').addEventListener('click', () => { const idDisciplina = document.getElementById("seletorDisciplina").value; if (!idDisciplina) { alert("Por favor, escolha uma disciplina."); return; } iniciarSimulado(config, idDisciplina, null, null, 'pratica'); });
-        document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(config));
+document.getElementById('btn-iniciar-pratica').addEventListener('click', () => { const idDisciplina = document.getElementById("seletorDisciplina").value; if (!idDisciplina) { alert("Por favor, escolha uma disciplina."); return; } iniciarSimulado(config, idDisciplina, null, null, 'pratica'); });
+document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(config));
         document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(config));
         document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => fecharModal('modal-questoes'));
         document.getElementById('btn-encerrar-ciclo').addEventListener('click', () => handleEncerrarCiclo(config));
         
         document.getElementById('btn-toggle-sessao').addEventListener('click', () => toggleSessaoDeEstudo(config));
-        
-        document.getElementById('btn-confirmar-horas').addEventListener('click', () => {
+document.getElementById('btn-confirmar-horas').addEventListener('click', () => {
             const horas = parseFloat(document.getElementById('modal-horas-input').value);
             if (horas > 0) {
                 updateTimerDisplayFromHours(horas);
                 document.getElementById('btn-toggle-sessao').disabled = false;
                 fecharModal('modal-horas');
             } else {
-                showNotification("Por favor, insira um valor de horas válido.", "error");
+  
+              showNotification("Por favor, insira um valor de horas válido.", "error");
             }
         });
-        document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
+document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
     }
     
     // =========================
@@ -573,118 +645,116 @@
 
     async function toggleSessaoDeEstudo(config) {
         const btn = document.getElementById('btn-toggle-sessao');
-        const isRunning = timerInterval != null;
+const isRunning = timerInterval != null;
 
         if (isRunning) {
             clearInterval(timerInterval);
-            timerInterval = null;
+timerInterval = null;
             btn.textContent = 'Retomar Estudo';
             btn.classList.remove('bg-red-600');
             btn.classList.add('bg-green-600');
             await salvarSessaoPendente(config);
-        } else {
+} else {
             if (tarefaAtualId === null) {
                 showNotification("Nenhuma tarefa selecionada.", "error");
-                return;
+return;
             }
             if (segundosCorridos <= 0) {
                 showNotification("Tempo de estudo zerado. Selecione a tarefa novamente e defina as horas.", "error");
-                return;
+return;
             }
 
             btn.textContent = 'Pausar Estudo';
             btn.classList.remove('bg-green-600');
             btn.classList.add('bg-red-600');
-
-            timerInterval = setInterval(async () => {
+timerInterval = setInterval(async () => {
                 segundosCorridos--;
                 document.getElementById('timer-display').textContent = formatarTempo(segundosCorridos);
 
                 if (segundosCorridos <= 0) {
                     clearInterval(timerInterval);
-                    timerInterval = null;
+                    timerInterval 
+= null;
                     btn.textContent = 'Iniciar Estudo';
                     btn.classList.remove('bg-red-600');
                     btn.classList.add('bg-green-600');
                     btn.disabled = true;
-                    showNotification("Sessão de estudo concluída!", "success");
+              
+      showNotification("Sessão de estudo concluída!", "success");
                     await marcarTarefaComoConcluida(config);
                 }
             }, 1000);
-        }
+}
     }
     
     async function marcarTarefaComoConcluida(config) {
         if (!tarefaAtualId) return;
-        try {
+try {
             const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
-            await updateDoc(tarefaRef, { status: "concluido", segundosRestantes: deleteField() });
+await updateDoc(tarefaRef, { status: "concluido", segundosRestantes: deleteField() });
             
             showNotification(`Tarefa marcada como concluída!`, "success");
             await carregarCronograma(config); 
             
             tarefaAtualId = null; 
             document.getElementById('cronometro-info-selecionada').classList.add('hidden');
-            document.getElementById('cronometro-texto-info').textContent = 'Clique em uma tarefa no seu cronograma semanal para começar.';
+document.getElementById('cronometro-texto-info').textContent = 'Clique em uma tarefa no seu cronograma semanal para começar.';
             document.getElementById('cronometro-wrapper').classList.remove('p-2', 'border-2', 'border-yellow-400');
             updateTimerDisplayFromHours(0);
-        } catch(error) {
+} catch(error) {
             handleFirestoreError(error, "Marcar Tarefa como Concluída");
-        }
+}
     }
     
     async function selecionarTarefaParaEstudo(tarefaElement, config) {
         const { tarefaId, materia, assunto, status, segundosRestantes } = tarefaElement.dataset;
-
-        if (timerInterval !== null && tarefaAtualId !== tarefaId) {
+if (timerInterval !== null && tarefaAtualId !== tarefaId) {
             showNotification("Por favor, pause o estudo atual antes de selecionar uma nova tarefa.", "error");
-            return;
+return;
         }
         
         tarefaAtualId = tarefaId;
-        
-        document.getElementById('cronometro-disciplina-display').textContent = materia;
+document.getElementById('cronometro-disciplina-display').textContent = materia;
         document.getElementById('cronometro-assunto-display').textContent = assunto;
         document.getElementById('cronometro-info-selecionada').classList.remove('hidden');
         document.getElementById('cronometro-wrapper').classList.remove('p-2', 'border-2', 'border-yellow-400');
 
         const btn = document.getElementById('btn-toggle-sessao');
-
-        if (status === 'pausado' && parseInt(segundosRestantes, 10) > 0) {
+if (status === 'pausado' && parseInt(segundosRestantes, 10) > 0) {
             segundosCorridos = parseInt(segundosRestantes, 10);
-            document.getElementById('timer-display').textContent = formatarTempo(segundosCorridos);
+document.getElementById('timer-display').textContent = formatarTempo(segundosCorridos);
             btn.textContent = 'Retomar Estudo';
             btn.disabled = false;
             document.getElementById('cronometro-texto-info').textContent = 'Você tem uma sessão de estudo pendente.';
-            document.getElementById('cronometro-wrapper').classList.add('p-2', 'border-2', 'border-yellow-400');
+document.getElementById('cronometro-wrapper').classList.add('p-2', 'border-2', 'border-yellow-400');
         } else {
             updateTimerDisplayFromHours(0);
-            btn.disabled = true;
+btn.disabled = true;
             btn.textContent = 'Iniciar Estudo';
             document.getElementById('cronometro-texto-info').textContent = 'Defina o tempo e inicie o seu estudo.';
             document.getElementById('modal-horas-input').value = 1;
-            abrirModal('modal-horas');
+abrirModal('modal-horas');
         }
     }
 
     async function salvarSessaoPendente(config) {
         if (!tarefaAtualId) return;
-        const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
+const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
         try {
             await updateDoc(tarefaRef, {
                 status: "pausado",
                 segundosRestantes: segundosCorridos
             });
-            console.log("Sessão pendente salva na tarefa.");
+console.log("Sessão pendente salva na tarefa.");
             await carregarCronograma(config);
         } catch (e) {
             handleFirestoreError(e, "Salvar Sessão Pendente");
-        }
+}
     }
 
     function inicializarModuloCronograma(config) {
         document.getElementById('form-cronograma').addEventListener('submit', (e) => adicionarTarefaCronograma(e, config));
-        document.getElementById('materia-cronograma').addEventListener('change', (e) => handleMateriaChangeCronograma(e, config));
+document.getElementById('materia-cronograma').addEventListener('change', (e) => handleMateriaChangeCronograma(e, config));
         
         const container = document.getElementById('container-dias-cronograma');
         container.addEventListener('click', (e) => {
@@ -693,55 +763,54 @@
                 selecionarTarefaParaEstudo(tarefaElement, config);
             }
         });
-
-        renderizarEstruturaDias();
+renderizarEstruturaDias();
         carregarCronograma(config);
         carregarDisciplinasNoCronograma(config);
     }
 
     function renderizarEstruturaDias() {
         const container = document.getElementById('container-dias-cronograma');
-        if(!container) return;
+if(!container) return;
         container.innerHTML = '';
         const dias = {
             "segunda": "Segunda-feira", "terca": "Terça-feira", "quarta": "Quarta-feira",
             "quinta": "Quinta-feira", "sexta": "Sexta-feira", "sabado": "Sábado", "domingo": "Domingo"
         };
-        for (const diaId in dias) {
+for (const diaId in dias) {
             const displayName = dias[diaId];
-            container.innerHTML += `<div class="bg-gray-100 p-3 rounded-lg"><h3 class="font-semibold text-center border-b pb-2 mb-2">${displayName}</h3><div id="lista-tarefas-${diaId}" class="space-y-2"><p class="text-xs text-gray-400 text-center">Nenhuma tarefa.</p></div></div>`;
-        }
+container.innerHTML += `<div class="bg-gray-100 p-3 rounded-lg"><h3 class="font-semibold text-center border-b pb-2 mb-2">${displayName}</h3><div id="lista-tarefas-${diaId}" class="space-y-2"><p class="text-xs text-gray-400 text-center">Nenhuma tarefa.</p></div></div>`;
+}
     }
 
     async function adicionarTarefaCronograma(e, config) {
         e.preventDefault();
-        const materiaSelect = document.getElementById('materia-cronograma');
+const materiaSelect = document.getElementById('materia-cronograma');
         const materia = materiaSelect.options[materiaSelect.selectedIndex].text;
         const assuntoSelect = document.getElementById('assunto-cronograma');
         const assunto = assuntoSelect.value;
         const dia = document.getElementById('dia-cronograma').value;
-        const horario = document.getElementById('horario-cronograma').value;
+const horario = document.getElementById('horario-cronograma').value;
 
         if (!materia || materiaSelect.value === "" || !dia || !horario || !assunto) { 
             showNotification("Preencha todos os campos, incluindo matéria e assunto.", "error");
-            return; 
+return; 
         }
         try {
             const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
-            await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId, status: "pendente" });
+await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId, status: "pendente" });
             showNotification("Tarefa adicionada!");
             document.getElementById('form-cronograma').reset();
             document.getElementById('assunto-cronograma-container').classList.add('hidden');
             carregarCronograma(config);
-        } catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
+} catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
     }
     
     async function carregarCronograma(config) {
         renderizarEstruturaDias();
-        const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
+const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
         const q = query(collection(config.db, collectionPath), where("usuarioId", "==", config.userId));
         const querySnapshot = await getDocs(q);
-        const tarefasPorDia = {};
+const tarefasPorDia = {};
         querySnapshot.forEach(doc => {
             const tarefa = { id: doc.id, ...doc.data() };
             if (!tarefasPorDia[tarefa.dia]) {
@@ -749,45 +818,49 @@
             }
             tarefasPorDia[tarefa.dia].push(tarefa);
         });
-        for (const diaId in tarefasPorDia) {
+for (const diaId in tarefasPorDia) {
             const containerTarefas = document.getElementById(`lista-tarefas-${diaId}`);
-            if (containerTarefas) {
+if (containerTarefas) {
                 containerTarefas.innerHTML = '';
-                tarefasPorDia[diaId].sort((a, b) => a.horario.localeCompare(b.horario));
+tarefasPorDia[diaId].sort((a, b) => a.horario.localeCompare(b.horario));
                 tarefasPorDia[diaId].forEach(tarefa => {
                     const isConcluida = tarefa.status === 'concluido';
                     const isPausada = tarefa.status === 'pausado';
 
                     const div = document.createElement('div');
                     
-                    let bgColorClass = 'bg-white';
+ 
+                   let bgColorClass = 'bg-white';
                     if (isConcluida) {
                         bgColorClass = 'bg-green-100 border-l-4 border-green-500';
                     } else if (isPausada) {
-                        bgColorClass = 'bg-red-100 border-l-4 border-red-500';
+    
+                    bgColorClass = 'bg-red-100 border-l-4 border-red-500';
                     }
                     div.className = `tarefa-cronograma-item p-2 rounded shadow-sm flex justify-between items-center text-sm ${bgColorClass}`;
                     
-                    div.dataset.tarefaId = tarefa.id;
+      
+              div.dataset.tarefaId = tarefa.id;
                     div.dataset.materia = tarefa.materia;
                     div.dataset.assunto = tarefa.assunto;
                     div.dataset.dia = tarefa.dia;
-                    div.dataset.status = tarefa.status;
+                  
+  div.dataset.status = tarefa.status;
                     div.dataset.segundosRestantes = tarefa.segundosRestantes || 0;
 
                     let infoHTML = `<div><p class="font-bold">${tarefa.horario} - ${tarefa.materia}</p><p class="text-xs text-gray-500 pl-1">${tarefa.assunto}</p>`;
-                    if (isPausada && tarefa.segundosRestantes > 0) {
+if (isPausada && tarefa.segundosRestantes > 0) {
                         infoHTML += `<p class="text-xs text-red-600 font-semibold pl-1">Pendente: ${formatarTempo(tarefa.segundosRestantes)}</p>`;
-                    }
+}
                     infoHTML += `</div>`;
-                    div.innerHTML = infoHTML;
+div.innerHTML = infoHTML;
                   
                   const removeBtn = document.createElement('button');
                     removeBtn.innerHTML = '&times;';
                     removeBtn.className = "text-red-500 hover:text-red-700 font-bold text-lg px-2";
-                    removeBtn.onclick = (e) => {
-                        e.stopPropagation(); 
-                        removerTarefaCronograma(tarefa.id, config);
+removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+removerTarefaCronograma(tarefa.id, config);
                     };
       
                     div.appendChild(removeBtn);
@@ -800,101 +873,112 @@
     async function removerTarefaCronograma(tarefaId, config) {
         try {
             const docPath = `artifacts/${config.appId}/users/${config.userId}/cronograma/${tarefaId}`;
-            await deleteDoc(doc(config.db, docPath));
+await deleteDoc(doc(config.db, docPath));
             showNotification("Tarefa removida.");
             carregarCronograma(config);
         } catch (error) { handleFirestoreError(error, "Remover Tarefa do Cronograma");
-        }
+}
     }
 
     // =========================
     // MÓDULO DE REDAÇÃO
     // =========================
     function inicializarModuloRedacao(config) {
-        _db_r = config.db; _userId_r = config.userId; _appId_r = config.appId;
+        _db_r = config.db;
+_userId_r = config.userId; _appId_r = config.appId;
         carregarTemasRedacao_v2();
         carregarRedacoesSalvas_v2();
         document.getElementById("btn-fechar-escrever")?.addEventListener("click", () => fecharModal('modal-redacao'));
         document.getElementById("btn-fechar-ver")?.addEventListener("click", () => fecharModal('modal-ver-redacao'));
         document.getElementById("btn-salvar")?.addEventListener("click", salvarRedacao_v2);
         document.getElementById("btn-corrigir")?.addEventListener("click", corrigirRedacao_v2);
-        document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
+document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
     }
     async function carregarTemasRedacao_v2() {
         const temas = [{ titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" }, { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" }, { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }];
-        const container = document.getElementById("temas-redacao");
+const container = document.getElementById("temas-redacao");
         if (!container) return;
         container.innerHTML = "";
-        temas.forEach((tema) => {
+temas.forEach((tema) => {
             const div = document.createElement("div");
             div.className = "p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col";
             div.innerHTML = `<div class="flex-grow"><h3 class="text-lg font-semibold text-gray-900">${tema.titulo}</h3><p class="text-sm text-gray-500 mt-2">Ano: ${tema.ano} | Banca: ${tema.banca}</p></div><button class="escrever-redacao-btn mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 self-start transition-colors">Escrever Redação</button>`;
             div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
-               _temaRedacaoAtual = tema.titulo;
+         
+      _temaRedacaoAtual = tema.titulo;
                 document.getElementById("titulo-redacao").textContent = tema.titulo;
                 document.getElementById("texto-redacao").value = "";
                 document.getElementById("resultado-correcao").innerHTML = "";
                 document.getElementById("btn-imprimir").style.display = "none";
-                abrirModal('modal-redacao');
+abrirModal('modal-redacao');
             });
             container.appendChild(div);
         });
     }
     async function salvarRedacao_v2() {
         const texto = document.getElementById("texto-redacao").value.trim();
-        if (!texto) { showNotification("Digite sua redação antes de salvar.", "error"); return; }
+if (!texto) { showNotification("Digite sua redação antes de salvar.", "error"); return;
+}
         try {
             const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
-            await addDoc(collection(_db_r, collectionPath), { tema: _temaRedacaoAtual, texto: texto, data: serverTimestamp(), usuarioId: _userId_r });
+await addDoc(collection(_db_r, collectionPath), { tema: _temaRedacaoAtual, texto: texto, data: serverTimestamp(), usuarioId: _userId_r });
             showNotification("Redação salva com sucesso!");
             fecharModal('modal-redacao');
             carregarRedacoesSalvas_v2();
-        } catch (erro) { handleFirestoreError(erro, "Salvar Redação"); }
+} catch (erro) { handleFirestoreError(erro, "Salvar Redação"); }
     }
     async function carregarRedacoesSalvas_v2() {
         const container = document.getElementById("lista-redacoes-salvas-v2");
-        if(!container) return;
+if(!container) return;
         const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
         const q = query(collection(_db_r, collectionPath), where("usuarioId", "==", _userId_r));
-        try {
+try {
             const querySnapshot = await getDocs(q);
-            container.innerHTML = "";
-            if(querySnapshot.empty) { container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`; return; }
+container.innerHTML = "";
+            if(querySnapshot.empty) { container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`; return;
+}
             querySnapshot.forEach((doc) => {
                 const redacao = doc.data();
                 const div = document.createElement("div");
                 div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center";
-                div.innerHTML = `<div><h4 class="font-semibold text-gray-800">${redacao.tema}</h4><p class="text-sm text-gray-500">Salva em: ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p></div><button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>`;
+                div.innerHTML = `<div><h4 class="font-semibold text-gray-800">${redacao.tema}</h4><p class="text-sm text-gray-500">Salva em: 
+${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p></div><button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>`;
                 div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
                     document.getElementById('ver-titulo-redacao').textContent = redacao.tema;
                     document.getElementById('ver-texto-redacao').textContent = redacao.texto;
-                    abrirModal('modal-ver-redacao');
+                    
+abrirModal('modal-ver-redacao');
                 });
                 container.appendChild(div);
-            });
+});
         } catch(error) { handleFirestoreError(error, "Carregar Redações Salvas"); }
     }
     function corrigirRedacao_v2() {
         const texto = document.getElementById("texto-redacao").value.trim();
-        if (!texto) { showNotification("Digite o texto antes de corrigir.", "error"); return; }
+if (!texto) { showNotification("Digite o texto antes de corrigir.", "error"); return;
+}
         let nota = 100; let observacoes = [];
-        if (texto.length < 500) { nota -= 20; observacoes.push("O texto está um pouco curto."); }
-        if (!/portanto|conclui-se|logo|enfim/i.test(texto)) { nota -= 15; observacoes.push("Reforce a conclusão com conectivos."); }
-        if (texto.split(' ').length < 150) { nota -= 20; observacoes.push("Texto com menos de 150 palavras."); }
-        if (nota > 90) { observacoes.push("Excelente estrutura!"); }
+if (texto.length < 500) { nota -= 20; observacoes.push("O texto está um pouco curto.");
+}
+        if (!/portanto|conclui-se|logo|enfim/i.test(texto)) { nota -= 15; observacoes.push("Reforce a conclusão com conectivos.");
+}
+        if (texto.split(' ').length < 150) { nota -= 20;
+observacoes.push("Texto com menos de 150 palavras."); }
+        if (nota > 90) { observacoes.push("Excelente estrutura!");
+}
         if (nota < 0) nota = 0;
-        document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
-        document.getElementById("btn-imprimir").style.display = "inline-block";
+document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
+document.getElementById("btn-imprimir").style.display = "inline-block";
     }
     function imprimirRedacao_v2() {
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
+const pdf = new jsPDF();
         pdf.setFontSize(16); pdf.text(`Tema: ${_temaRedacaoAtual}`, 10, 10);
         pdf.setFontSize(12);
         pdf.text(pdf.splitTextToSize(document.getElementById("texto-redacao").value, 180), 10, 20);
         pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s/g, '_')}.pdf`);
         showNotification("Gerando PDF...");
-    }
+}
 
     // =========================
     // RESTANTE DOS MÓDULOS
@@ -902,250 +986,254 @@
     
     async function carregarDisciplinas(config) {
       const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
-      const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
       const seletor = document.getElementById("seletorDisciplina");
       if (seletor) {
         seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
-      }
+}
      
       if (snapshot.empty) {
           const msg = '<option value="">Cadastre disciplinas no Edital</option>';
-          if (seletor) seletor.innerHTML = msg;
+if (seletor) seletor.innerHTML = msg;
       } else {
           snapshot.forEach(doc => {
               const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
               if (seletor) seletor.innerHTML += optionHTML;
           });
-      }
+}
       await carregarDisciplinasNoCronograma(config);
       
       const seletorDisciplinaEl = document.getElementById('seletorDisciplina');
-      if (seletorDisciplinaEl) {
+if (seletorDisciplinaEl) {
         seletorDisciplinaEl.addEventListener('change', () => carregarAssuntos(config));
-      }
+}
     }
     
     async function carregarDisciplinasNoCronograma(config) {
       const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
-      const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
       const seletorCronograma = document.getElementById("materia-cronograma");
       seletorCronograma.innerHTML = '<option value="">-- Escolha uma matéria --</option>';
-      if (snapshot.empty) {
+if (snapshot.empty) {
           seletorCronograma.innerHTML = '<option value="">Cadastre disciplinas no Edital</option>';
-      } else {
+} else {
         snapshot.forEach(doc => {
             seletorCronograma.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
         });
-      }
+}
     }
     
     async function carregarAssuntos(config) {
       const idDisciplina = document.getElementById("seletorDisciplina").value;
-      const container = document.getElementById("listaAssuntos");
+const container = document.getElementById("listaAssuntos");
       if(!container) return;
       container.innerHTML = "";
       if (!idDisciplina) return;
       
       const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, idDisciplina));
-      if (!disciplinaDoc.exists()) return;
+if (!disciplinaDoc.exists()) return;
       const assuntos = disciplinaDoc.data().assuntos || {};
       
       if (Object.keys(assuntos).length === 0) {
         container.innerHTML = "<p class='text-slate-500 text-center'>Nenhum assunto cadastrado.<br>Adicione na aba 'Edital'.</p>";
-        return;
+return;
       }
 
       for (const assuntoId in assuntos) {
         const a = assuntos[assuntoId];
-        container.innerHTML += `<div class="border p-3 rounded-lg"><h4 class="font-bold text-lg">${a.nome}</h4><p class="text-sm text-gray-600 my-2">${a.resumo || 'Sem resumo.'}</p><button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button></div>`;
-      }
+container.innerHTML += `<div class="border p-3 rounded-lg"><h4 class="font-bold text-lg">${a.nome}</h4><p class="text-sm text-gray-600 my-2">${a.resumo ||
+'Sem resumo.'}</p><button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button></div>`;
+}
       document.querySelectorAll('.btn-praticar-assunto').forEach(btn => btn.addEventListener('click', (e) => iniciarSimulado(config, e.currentTarget.dataset.disciplinaId, e.currentTarget.dataset.assuntoNome, null, 'pratica')));
-    }
+}
 
     async function carregarEdital(config) {
         const { db, appId, userId } = config;
-        const container = document.getElementById('edital-disciplinas-container');
+const container = document.getElementById('edital-disciplinas-container');
         container.innerHTML = "<p class='text-slate-500 text-center'>A carregar edital...</p>";
 
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
-        const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
             container.innerHTML = "<p class='text-slate-500 text-center'>Nenhuma disciplina cadastrada ainda. Adicione uma acima para começar.</p>";
-            return;
+return;
         }
 
         container.innerHTML = '';
-        snapshot.forEach(doc => {
+snapshot.forEach(doc => {
             const disciplina = { id: doc.id, ...doc.data() };
             
             const disciplinaCard = document.createElement('div');
             disciplinaCard.className = 'border p-4 rounded-lg bg-white';
             
             let assuntosHTML = '<ul class="list-disc ml-5 mt-2 space-y-1 text-gray-700">';
-            if (disciplina.assuntos && Object.keys(disciplina.assuntos).length > 0) {
+   
+         if (disciplina.assuntos && Object.keys(disciplina.assuntos).length > 0) {
                 for (const assuntoId in disciplina.assuntos) {
                     assuntosHTML += `
                         <li class="flex justify-between items-center">
-                            <span>${disciplina.assuntos[assuntoId].nome}</span>
+               
+             <span>${disciplina.assuntos[assuntoId].nome}</span>
                             <button data-disciplina-id="${disciplina.id}" data-assunto-id="${assuntoId}" class="excluir-assunto-btn text-red-400 hover:text-red-600 font-bold text-lg leading-none">&times;</button>
                         </li>`;
                 }
-            } else {
+           
+ } else {
                 assuntosHTML += '<li class="text-gray-400 list-none">Nenhum assunto cadastrado.</li>';
-            }
+}
             assuntosHTML += '</ul>';
-
-            disciplinaCard.innerHTML = `
+disciplinaCard.innerHTML = `
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-lg text-blue-700">${disciplina.nome}</h3>
                     <button data-id="${disciplina.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
                 </div>
-                ${assuntosHTML}
+         
+       ${assuntosHTML}
                 <div class="flex gap-2 mt-4 pt-4 border-t">
                     <input type="text" placeholder="Novo assunto" class="w-full novo-assunto-input">
                     <button data-id="${disciplina.id}" class="btn-cadastrar-assunto bg-green-500 text-white font-semibold px-4 py-1 rounded hover:bg-green-600 whitespace-nowrap">Adicionar Assunto</button>
-                </div>
+                
+</div>
             `;
             container.appendChild(disciplinaCard);
         });
-
-        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => btn.addEventListener('click', (e) => handleExcluirDisciplina(config, e.currentTarget.dataset.id)));
+container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => btn.addEventListener('click', (e) => handleExcluirDisciplina(config, e.currentTarget.dataset.id)));
         container.querySelectorAll('.btn-cadastrar-assunto').forEach(btn => btn.addEventListener('click', (e) => {
             const disciplinaId = e.currentTarget.dataset.id;
             const input = e.currentTarget.previousElementSibling;
             handleCadastrarAssunto(config, disciplinaId, input);
         }));
-        container.querySelectorAll('.excluir-assunto-btn').forEach(btn => btn.addEventListener('click', (e) => {
+container.querySelectorAll('.excluir-assunto-btn').forEach(btn => btn.addEventListener('click', (e) => {
             const { disciplinaId, assuntoId } = e.currentTarget.dataset;
             handleExcluirAssunto(config, disciplinaId, assuntoId);
         }));
-    }
+}
     
     async function handleCadastrarDisciplina(config) {
         const nomeInput = document.getElementById('nova-disciplina-nome-edital');
-        const nomeDisciplina = nomeInput.value.trim();
+const nomeDisciplina = nomeInput.value.trim();
 
         if (!nomeDisciplina) {
             showNotification("Por favor, digite o nome da disciplina.", "error");
-            return;
+return;
         }
 
         try {
             const disciplinasRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`);
-            const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
+const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
             const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
+if (!querySnapshot.empty) {
                 showNotification(`A disciplina "${nomeDisciplina}" já existe.`, "error");
-                return;
+return;
             }
 
             await addDoc(disciplinasRef, {
                 nome: nomeDisciplina,
                 assuntos: {} 
             });
-            showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
+showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
             nomeInput.value = '';
 
             await carregarEdital(config);
             await carregarDisciplinas(config);
             await carregarPrioridades(config, []);
-        } catch (error) {
+} catch (error) {
             handleFirestoreError(error, "Cadastrar Nova Disciplina");
-        }
+}
     }
     
     async function handleCadastrarAssunto(config, disciplinaId, inputElement) {
         const nomeAssunto = inputElement.value.trim();
-        if (!nomeAssunto) {
+if (!nomeAssunto) {
             showNotification("Digite o nome do assunto.", "error");
-            return;
+return;
         }
 
         const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
         const newAssuntoId = `assunto_${Date.now()}`;
-        try {
+try {
             await updateDoc(docRef, {
                 [`assuntos.${newAssuntoId}`]: { nome: nomeAssunto }
             });
-            showNotification("Assunto adicionado!", "success");
+showNotification("Assunto adicionado!", "success");
             inputElement.value = '';
             await carregarEdital(config);
         } catch (error) {
             handleFirestoreError(error, "Adicionar Assunto");
-        }
+}
     }
 
     async function handleExcluirAssunto(config, disciplinaId, assuntoId) {
         const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
-        try {
+try {
             await updateDoc(docRef, {
                 [`assuntos.${assuntoId}`]: deleteField()
             });
-            showNotification("Assunto excluído.", "success");
+showNotification("Assunto excluído.", "success");
             await carregarEdital(config);
         } catch (error) {
             handleFirestoreError(error, "Excluir Assunto");
-        }
+}
     }
     
     async function handleMateriaChangeCronograma(event, config) {
         const disciplinaId = event.target.value;
-        const assuntoContainer = document.getElementById('assunto-cronograma-container');
+const assuntoContainer = document.getElementById('assunto-cronograma-container');
         const assuntoSelect = document.getElementById('assunto-cronograma');
 
         if (!disciplinaId) {
             assuntoContainer.classList.add('hidden');
-            assuntoSelect.innerHTML = '';
+assuntoSelect.innerHTML = '';
             return;
         }
 
         const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId));
-        if (disciplinaDoc.exists()) {
+if (disciplinaDoc.exists()) {
             const assuntos = disciplinaDoc.data().assuntos || {};
-            assuntoSelect.innerHTML = '<option value="">-- Escolha um assunto --</option>';
+assuntoSelect.innerHTML = '<option value="">-- Escolha um assunto --</option>';
             if(Object.keys(assuntos).length === 0){
                 assuntoSelect.innerHTML = '<option value="">Nenhum assunto cadastrado</option>';
-            } else {
+} else {
                 for (const id in assuntos) {
                     assuntoSelect.innerHTML += `<option value="${assuntos[id].nome}">${assuntos[id].nome}</option>`;
-                }
+}
             }
             assuntoContainer.classList.remove('hidden');
-        }
+}
     }
 
-    async function baixarEditalPDF() { alert("Funcionalidade de PDF do edital dinâmico em desenvolvimento."); }
+    async function baixarEditalPDF() { alert("Funcionalidade de PDF do edital dinâmico em desenvolvimento.");
+}
     
     async function carregarPerfil(config) {
         const { db, appId, userId } = config;
-        const container = document.getElementById('perfil-usuario');
+const container = document.getElementById('perfil-usuario');
         const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); if(userDoc.exists()) { const data = userDoc.data();
-        container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
+container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
         carregarHistoricoCiclos(config);
-    }
+}
     
     async function handleEncerrarCiclo(config) {
         const { db, appId, userId } = config;
-        const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim() || 'Ciclo sem nome';
+const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim() || 'Ciclo sem nome';
         
         const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`));
         const registrosSnapshot = await getDocs(qTempo);
-        let totalMinutosCiclo = 0;
+let totalMinutosCiclo = 0;
         registrosSnapshot.forEach(r => totalMinutosCiclo += r.data().minutos);
 
         const historicoRef = collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`);
-        await addDoc(historicoRef, {
+await addDoc(historicoRef, {
             nome: nomeCiclo,
             dataConclusao: serverTimestamp(),
             totalHoras: (totalMinutosCiclo / 60).toFixed(1)
         });
-        
-        const batch = writeBatch(db);
+const batch = writeBatch(db);
         registrosSnapshot.forEach(doc => {
             batch.delete(doc.ref);
         });
-        await batch.commit();
+await batch.commit();
 
         document.getElementById('ciclo-nome-input').value = `Novo Ciclo`;
         document.getElementById('meta-geral-horas').value = '';
@@ -1153,17 +1241,17 @@
         
         await carregarProgressoDisciplinas(config);
         await carregarPerfil(config);
-    }
+}
 
     async function carregarHistoricoCiclos(config) {
         const { db, appId, userId } = config;
-        const container = document.getElementById('historico-ciclos-container');
+const container = document.getElementById('historico-ciclos-container');
         container.innerHTML = "<p>Carregando histórico...</p>";
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`), orderBy("dataConclusao", "desc"));
         const snapshot = await getDocs(q);
-        if (snapshot.empty) {
+if (snapshot.empty) {
             container.innerHTML = "<p class='text-slate-500'>Nenhum ciclo concluído ainda.</p>";
-            return;
+return;
         }
         
         container.innerHTML = snapshot.docs.map(doc => {
@@ -1171,67 +1259,68 @@
             const data = ciclo.dataConclusao ? new Date(ciclo.dataConclusao.seconds * 1000).toLocaleDateString() : 'Data indisponível';
             return `
                 <div class="border-b pb-2">
-                          <p class="font-semibold">${ciclo.nome}</p>
+          
+                <p class="font-semibold">${ciclo.nome}</p>
                     <p class="text-sm text-gray-600">Concluído em: ${data} - Total de ${ciclo.totalHoras} horas</p>
                 </div>
             `;
         }).join('');
-    }
+}
 
 
     async function baixarRelatorioPDF(config) {
         alert("Gerando Relatório PDF...");
-        const { db, appId, userId } = config;
+const { db, appId, userId } = config;
         const { jsPDF } = window.jspdf;
-        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); 
+const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); 
         const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`)); 
         const qTreinos = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`));
-        const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
+const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
         let totalMinutos = 0; tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
-        let totalAcertos = 0, totalQuestoes = 0; treinosSnap.forEach(doc => { totalAcertos += doc.data().acertos || 0; totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0); });
-        const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
-        const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
-        const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
-        html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
-    }
+let totalAcertos = 0, totalQuestoes = 0; treinosSnap.forEach(doc => { totalAcertos += doc.data().acertos || 0; totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0); });
+const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
+const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
+const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
+html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
+}
     
     async function carregarMedalhas(config) { const container = document.getElementById('listaMedalhas');
-        container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`; }
+container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`; }
     
     async function carregarRanking(config) {
         const { db, appId, userId } = config;
-        const container = document.getElementById('ranking-geral-container'); container.innerHTML = "<p>Carregando...</p>";
+const container = document.getElementById('ranking-geral-container'); container.innerHTML = "<p>Carregando...</p>";
         const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); 
         const ranking = [];
-        for(const userDoc of usersSnapshot.docs) {
+for(const userDoc of usersSnapshot.docs) {
             const publicData = userDoc.data();
-            const uid = userDoc.id;
+const uid = userDoc.id;
             
             let pontuacao = Math.floor(Math.random() * 5000);
-            ranking.push({
+ranking.push({
                 uid: uid,
                 nome: publicData.nome || `Aluno-${uid.substring(0, 6)}`,
                 pontuacao: pontuacao
             });
-        }
+}
         
         ranking.sort((a, b) => b.pontuacao - a.pontuacao);
-        container.innerHTML = ranking.map((user, index) => `<div class="flex justify-between p-2 rounded ${user.uid === userId ? 'bg-blue-100' : ''}"><p>${index + 1}. ${user.nome}</p><p>${user.pontuacao.toLocaleString()} pts</p></div>`).join('');
-    }
+container.innerHTML = ranking.map((user, index) => `<div class="flex justify-between p-2 rounded ${user.uid === userId ? 'bg-blue-100' : ''}"><p>${index + 1}. ${user.nome}</p><p>${user.pontuacao.toLocaleString()} pts</p></div>`).join('');
+}
 
     async function carregarDesafios(config) {
         const { db, appId, userId } = config;
-        const container = document.getElementById('desafios-container'); container.innerHTML = "<p>Carregando...</p>";
+const container = document.getElementById('desafios-container'); container.innerHTML = "<p>Carregando...</p>";
         const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); let usersHTML = "";
-        usersSnapshot.forEach(doc => { if (doc.id !== userId) { const user = doc.data(); usersHTML += `<div class="flex justify-between p-3 border rounded"><p>${user.nome || doc.id}</p><button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white px-3 py-1">Desafiar</button></div>`; } });
-        container.innerHTML = usersHTML;
+usersSnapshot.forEach(doc => { if (doc.id !== userId) { const user = doc.data(); usersHTML += `<div class="flex justify-between p-3 border rounded"><p>${user.nome || doc.id}</p><button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white px-3 py-1">Desafiar</button></div>`; } });
+container.innerHTML = usersHTML;
         document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
-    }
+}
     
     async function handleExcluirDisciplina(config, disciplinaId) {
         try {
             const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
-            await deleteDoc(docRef);
+await deleteDoc(docRef);
             
             showNotification("Disciplina excluída com sucesso!", "success");
 
@@ -1239,129 +1328,128 @@
             await carregarDisciplinas(config);
             
             const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
-            const userDoc = await getDoc(userDocRef);
+const userDoc = await getDoc(userDocRef);
             const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
             await carregarPrioridades(config, prioridadesSalvas);
             await carregarProgressoDisciplinas(config);
-        } catch (error) {
+} catch (error) {
             handleFirestoreError(error, "Excluir Disciplina");
-        }
+}
     }
     
     async function carregarPrioridades(config, prioridadesSalvas = []) {
         const { db, appId, userId } = config;
-        const container = document.getElementById('lista-prioridades');
+const container = document.getElementById('lista-prioridades');
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
-        let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
-        if (snapshot.empty) {
+let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
+if (snapshot.empty) {
             container.innerHTML = '<p class="text-slate-500 text-center">Nenhuma disciplina cadastrada.</p>';
-            return;
+return;
         }
 
         disciplinas.sort((a, b) => { const indexA = prioridadesSalvas.indexOf(a.id); const indexB = prioridadesSalvas.indexOf(b.id); if (indexA > -1 && indexB > -1) return indexA - indexB; if (indexA > -1) return -1; if (indexB > -1) return 1; return 0; });
-        container.innerHTML = disciplinas.map(d => `
+container.innerHTML = disciplinas.map(d => `
             <div class="priority-item p-2 border rounded bg-gray-50 flex justify-between items-center" draggable="true" data-id="${d.id}">
                 <span>${d.nome}</span>
                 <button data-id="${d.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
             </div>
         `).join('');
-        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => {
+container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const disciplinaId = e.currentTarget.dataset.id;
                 handleExcluirDisciplina(config, disciplinaId);
             });
         });
-        const draggables = container.querySelectorAll('.priority-item');
+const draggables = container.querySelectorAll('.priority-item');
         draggables.forEach(draggable => { draggable.addEventListener('dragstart', () => draggable.classList.add('dragging')); draggable.addEventListener('dragend', () => draggable.classList.remove('dragging')); });
-        container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
-    }
+container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
+}
     
     async function carregarProgressoDisciplinas(config) {
         const { db, appId, userId } = config;
-        const container = document.getElementById("progressoDisciplinas");
+const container = document.getElementById("progressoDisciplinas");
         container.innerHTML = "<p class='text-slate-500'>A carregar...</p>";
         const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData'));
-        const metasPorDisciplina = userDoc.exists() ?
+const metasPorDisciplina = userDoc.exists() ?
  userDoc.data().metasPorDisciplina || {} : {};
         const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`), where("usuarioId", "==", userId));
-        const registrosSnapshot = await getDocs(qTempo);
+const registrosSnapshot = await getDocs(qTempo);
         const tempoPorDisciplina = {};
         registrosSnapshot.forEach(r => { const data = r.data(); tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos; });
-        const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome")));
+const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome")));
         container.innerHTML = "";
         if (disciplinasSnapshot.empty) { container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>"; return;
-        }
+}
         disciplinasSnapshot.forEach(docSnap => { const d = docSnap.data(); const idDisciplina = docSnap.id; const metaHoras = metasPorDisciplina[idDisciplina] || 0; const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0; const horasEstudadas = minutosEstudados / 60; const percentual = metaHoras > 0 ? Math.min((horasEstudadas / metaHoras) * 100, 100) : 0; container.innerHTML += `<div class="mb-4"><p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p><div class="w-full bg-gray-200 rounded-full h-4 mt-1"><div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div></div></div>`; });
-    }
+}
     
     async function carregarEvolucaoQuestoes(config) {
         const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/historico_questoes`), where("usuarioId", "==", config.userId));
-        const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
         let hoje = 0, semana = 0, mes = 0, total = 0;
-        const agora = new Date();
+const agora = new Date();
         const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
         const inicioSemana = new Date(agora); inicioSemana.setDate(agora.getDate() - agora.getDay());
-        const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
         snapshot.forEach(doc => { const dataResp = doc.data().dataResposta; if (dataResp && dataResp.seconds) { const data = new Date(dataResp.seconds * 1000); if(!isNaN(data.getTime())) { total++; if (data >= inicioHoje) hoje++; if (data >= inicioSemana) semana++; if (data >= inicioMes) mes++; } } });
-        document.getElementById("evolucaoDiaria").textContent = hoje; document.getElementById("evolucaoSemanal").textContent = semana; document.getElementById("evolucaoMensal").textContent = mes; document.getElementById("evolucaoTotal").textContent = total;
+document.getElementById("evolucaoDiaria").textContent = hoje; document.getElementById("evolucaoSemanal").textContent = semana; document.getElementById("evolucaoMensal").textContent = mes; document.getElementById("evolucaoTotal").textContent = total;
         const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d"); if (graficoPizza) graficoPizza.destroy();
-        graficoPizza = new Chart(ctx, { type: 'pie', data: { labels: ['Hoje', 'Esta Semana', 'Este Mês'], datasets: [{ data: [hoje, semana-hoje, mes-semana], backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB'] }] } });
-    }
+graficoPizza = new Chart(ctx, { type: 'pie', data: { labels: ['Hoje', 'Esta Semana', 'Este Mês'], datasets: [{ data: [hoje, semana-hoje, mes-semana], backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB'] }] } });
+}
 
     async function carregarRevisoes(config) {
         const container = document.getElementById("listaRevisoes");
-        container.innerHTML = "<p>A carregar...</p>";
+container.innerHTML = "<p>A carregar...</p>";
         const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/revisoes`), where("usuarioId", "==", config.userId));
         const snapshot = await getDocs(q);
-        if (snapshot.empty) { container.innerHTML = "<p>Nenhuma revisão encontrada.</p>"; return; }
+if (snapshot.empty) { container.innerHTML = "<p>Nenhuma revisão encontrada.</p>"; return; }
         const agora = new Date();
-        let revisoesPendentesHTML = ""; let revisoesPendentesCount = 0;
+let revisoesPendentesHTML = ""; let revisoesPendentesCount = 0;
         snapshot.forEach(doc => { const r = doc.data(); if (r.status !== 'pendente') return; const revisoesAgendadas = r.revisoesAgendadas || []; revisoesAgendadas.forEach(dataStr => { const dataRevisao = new Date(dataStr); if (dataRevisao <= agora) { revisoesPendentesCount++; revisoesPendentesHTML += `<div class="border p-2 rounded mb-2 bg-yellow-100"><p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p><p class="text-sm">Revisão: ${dataRevisao.toLocaleDateString()}</p></div>`; } }); });
-        if (revisoesPendentesCount === 0) { container.innerHTML = "<p>Nenhuma revisão pendente.</p>"; } else { container.innerHTML = revisoesPendentesHTML;
-        }
+if (revisoesPendentesCount === 0) { container.innerHTML = "<p>Nenhuma revisão pendente.</p>"; } else { container.innerHTML = revisoesPendentesHTML;
+}
     }
     
     async function carregarDesempenhoPorModo(config) {
         const { db, appId, userId } = config;
-        const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
+const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId));
-        const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
         const dados = { simulado: { acertos: 0, erros: 0 }, pratica: { acertos: 0, erros: 0 } };
-        snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio && dados[treino.modo]) { dados[treino.modo].acertos += treino.acertos || 0; dados[treino.modo].erros += treino.erros || 0; } });
-        const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d'); if(graficoDesempenhoModos) graficoDesempenhoModos.destroy();
+snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio && dados[treino.modo]) { dados[treino.modo].acertos += treino.acertos || 0; dados[treino.modo].erros += treino.erros || 0; } });
+const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d'); if(graficoDesempenhoModos) graficoDesempenhoModos.destroy();
         graficoDesempenhoModos = new Chart(ctx, { type: 'bar', data: { labels: ['Simulado', 'Prática'], datasets: [{ label: 'Acertos', data: [dados.simulado.acertos, dados.pratica.acertos], backgroundColor: 'rgba(75, 192, 192, 0.6)' }, { label: 'Erros', data: [dados.simulado.erros, dados.pratica.erros], backgroundColor: 'rgba(255, 99, 132, 0.6)' }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Desempenho por Modo' } } } });
-    }
+}
     
     async function carregarEvolucaoCronologicaPorModo(config) {
         const { db, appId, userId } = config;
-        const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
+const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId));
-        const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
         const dadosPorData = {}; snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio) { const data = dataTreino.toISOString().split('T')[0]; if (!dadosPorData[data]) dadosPorData[data] = { acertos: 0, total: 0 }; dadosPorData[data].acertos += treino.acertos; dadosPorData[data].total += (treino.acertos + treino.erros); } });
-        const labels = Object.keys(dadosPorData).sort(); const dataPoints = labels.map(label => { const dia = dadosPorData[label]; return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0; });
-        const ctx = document.getElementById('graficoLinhaModos').getContext('2d'); if(graficoLinhaModos) graficoLinhaModos.destroy();
+const labels = Object.keys(dadosPorData).sort(); const dataPoints = labels.map(label => { const dia = dadosPorData[label]; return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0; });
+const ctx = document.getElementById('graficoLinhaModos').getContext('2d'); if(graficoLinhaModos) graficoLinhaModos.destroy();
         graficoLinhaModos = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: '% de Acertos', data: dataPoints, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.1 }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Evolução de Acertos' } } } });
-    }
+}
 
     function toggleLinhaMeta() { if (!graficoLinhaModos) return;
-        const metaDataset = { label: `Meta (${metaAcertosGlobal}%)`, data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal), borderColor: 'rgba(255, 99, 132, 1)', borderDash: [5, 5], fill: false, pointRadius: 0 };
-        const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta')); if (metaIndex > -1) { graficoLinhaModos.data.datasets.splice(metaIndex, 1); } else { graficoLinhaModos.data.datasets.push(metaDataset); } graficoLinhaModos.update();
-    }
+const metaDataset = { label: `Meta (${metaAcertosGlobal}%)`, data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal), borderColor: 'rgba(255, 99, 132, 1)', borderDash: [5, 5], fill: false, pointRadius: 0 };
+const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta')); if (metaIndex > -1) { graficoLinhaModos.data.datasets.splice(metaIndex, 1); } else { graficoLinhaModos.data.datasets.push(metaDataset); } graficoLinhaModos.update();
+}
     
     async function carregarSimulados(config) {
         const container = document.getElementById('lista-simulados');
-        container.innerHTML = "<p>A carregar...</p>";
+container.innerHTML = "<p>A carregar...</p>";
         const q = query(collection(db, `artifacts/${config.appId}/public/data/simulados`)); const snapshot = await getDocs(q);
-        if (snapshot.empty) { container.innerHTML = "<p>Nenhum simulado encontrado.</p>"; return; }
+if (snapshot.empty) { container.innerHTML = "<p>Nenhum simulado encontrado.</p>"; return; }
         container.innerHTML = snapshot.docs.map(doc => { const s = doc.data(); return `<div class="border p-3 rounded flex justify-between items-center"><p><strong>${s.banca} - ${s.ano}</strong><br>${s.cargo}</p><button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white px-4 py-2">Iniciar</button></div>`; }).join('');
-        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
-        } }); });
+document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${config.appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
+} }); });
     }
     
     document.addEventListener('DOMContentLoaded', iniciarAplicacao);
   </script>
 </body>
 </html>
-
