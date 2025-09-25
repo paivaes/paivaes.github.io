@@ -273,6 +273,20 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
 class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">Imprimir/PDF</button></div></div></div>
   <div id="modal-ver-redacao" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"><div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in"><div class="p-6 border-b"><h2 class="text-xl font-bold m-0 border-0">Visualizar Redação</h2><p id="ver-titulo-redacao" class="text-gray-700 mt-1"></p></div><div id="ver-texto-redacao" class="p-6 flex-grow overflow-y-auto whitespace-pre-wrap"></div><div class="p-6 bg-gray-50 border-t flex justify-end"><button id="btn-fechar-ver" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition">Fechar</button></div></div></div>
   
+  <div id="modal-tema-detalhes" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col fade-in">
+          <div class="p-6 border-b flex justify-between items-center">
+              <h2 id="detalhes-tema-titulo" class="text-xl font-bold m-0 border-0">Detalhes do Tema</h2>
+              <button id="btn-fechar-detalhes" class="text-2xl font-bold">&times;</button>
+          </div>
+          <div id="detalhes-tema-corpo" class="p-6 flex-grow overflow-y-auto space-y-4">
+              </div>
+          <div class="p-6 bg-gray-50 border-t flex justify-end">
+              <button id="btn-iniciar-escrita-redacao" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Iniciar Escrita</button>
+          </div>
+      </div>
+  </div>
+
   <div id="modal-horas" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm fade-in">
           <div class="p-6 border-b">
@@ -336,7 +350,7 @@ if (!container) return;
 
     function abrirModal(modalId) { 
         const modal = document.getElementById(modalId);
-if(modal) modal.classList.remove('hidden'); 
+if(modal) modal.classList.add('hidden'); 
     }
 
     function fecharModal(modalId) {
@@ -932,28 +946,165 @@ _userId_r = config.userId; _appId_r = config.appId;
         document.getElementById("btn-salvar")?.addEventListener("click", salvarRedacao_v2);
         document.getElementById("btn-corrigir")?.addEventListener("click", corrigirRedacao_v2);
 document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
+        
+        // Listeners para o novo modal de detalhes
+        document.getElementById('btn-fechar-detalhes').addEventListener('click', () => fecharModal('modal-tema-detalhes'));
     }
+
+    // NOVA FUNÇÃO para abrir o modal com detalhes do tema
+    function abrirModalDetalhesTema(tema) {
+        document.getElementById('detalhes-tema-titulo').textContent = tema.titulo;
+        const corpo = document.getElementById('detalhes-tema-corpo');
+        
+        const analise = tema.analise;
+        corpo.innerHTML = `
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-semibold text-lg text-blue-700">Entendendo o Tema</h3>
+                    <p class="text-gray-600 mt-1">${analise.entendimento}</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-blue-700">Linhas de Argumentação</h3>
+                    <div class="mt-1 space-y-2">
+                        ${analise.argumentos.map(arg => `
+                            <div class="p-3 bg-gray-50 rounded-md">
+                                <p class="font-semibold text-gray-800">${arg.titulo}</p>
+                                <p class="text-gray-600">${arg.texto}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-blue-700">Exemplos para Enriquecer</h3>
+                    <ul class="list-disc list-inside text-gray-600 mt-1 space-y-1">
+                        ${analise.exemplos.map(ex => `<li>${ex}</li>`).join('')}
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-blue-700">Estrutura de Resposta (Modelo)</h3>
+                    <div class="mt-1 space-y-2 text-sm">
+                        <p><strong>Introdução:</strong> ${analise.estrutura.introducao}</p>
+                        <p><strong>Desenvolvimento 1:</strong> ${analise.estrutura.d1}</p>
+                        <p><strong>Desenvolvimento 2:</strong> ${analise.estrutura.d2}</p>
+                        <p><strong>Conclusão:</strong> ${analise.estrutura.conclusao}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Configura o botão "Iniciar Escrita" para abrir o modal de redação
+        const btnIniciarEscrita = document.getElementById('btn-iniciar-escrita-redacao');
+        btnIniciarEscrita.onclick = () => {
+            fecharModal('modal-tema-detalhes');
+            
+            _temaRedacaoAtual = tema.titulo;
+            _notaRedacaoAtual = null;
+            document.getElementById("titulo-redacao").textContent = tema.titulo;
+            document.getElementById("texto-redacao").value = "";
+            document.getElementById("resultado-correcao").innerHTML = "";
+            document.getElementById("btn-imprimir").style.display = "none";
+            abrirModal('modal-redacao');
+        };
+
+        abrirModal('modal-tema-detalhes');
+    }
+
     async function carregarTemasRedacao_v2() {
+        // Banco de dados com temas e análises completas
         const temas = [
             { 
                 titulo: "O paradoxo da escolha: a liberdade em um mundo de opções infinitas", 
                 ano: 2023, 
-                banca: "FGV" 
+                banca: "FGV",
+                analise: {
+                    entendimento: "A proposta questiona se ter muitas opções realmente nos torna mais livres e felizes, ou se, paradoxalmente, a sobrecarga de escolhas nos leva à ansiedade, paralisia e insatisfação.",
+                    argumentos: [
+                        { titulo: "Argumento 1: O excesso de opções é prejudicial", texto: "Sustentar que a necessidade de analisar inúmeras alternativas gera um custo mental e emocional elevado. Aumenta a expectativa por um resultado 'perfeito', tornando a decepção mais provável e diminuindo a satisfação com a escolha feita." },
+                        { titulo: "Argumento 2: A multiplicidade de escolhas é uma conquista", texto: "Defender que a dificuldade não está no número de opções, mas na falta de preparo do indivíduo (educação, autoconhecimento) para lidar com elas, sendo uma ferramenta essencial da liberdade." }
+                    ],
+                    exemplos: [
+                        "Catálogos de streaming (Netflix) com milhares de títulos, resultando em mais tempo procurando do que assistindo.",
+                        "Psicólogo Barry Schwartz, autor do livro 'O Paradoxo da Escolha'.",
+                        "Conceito de 'Modernidade Líquida' de Zygmunt Bauman sobre a insegurança gerada pela fluidez de referências."
+                    ],
+                    estrutura: {
+                        introducao: "Contextualizar a sociedade como a 'era das opções'. Apresentar a tese de que a abundância de escolhas gerou um efeito paradoxal de aprisionamento e ansiedade.",
+                        d1: "Aprofundar como a sobrecarga de informações leva à paralisia decisória, usando o exemplo do consumo ou da tecnologia.",
+                        d2: "Argumentar que a liberdade de escolha é essencial, mas que a sociedade de consumo a explora sem oferecer ferramentas para um discernimento saudável.",
+                        conclusao: "Propor uma reflexão sobre a necessidade de desenvolver um 'filtro crítico' para transformar a liberdade de escolha em bem-estar."
+                    }
+                }
             },
             { 
                 titulo: "A busca pela felicidade no mundo contemporâneo: entre o ser e o ter", 
                 ano: 2022, 
-                banca: "FGV" 
+                banca: "FGV",
+                analise: {
+                    entendimento: "A proposta pede uma reflexão sobre o que define a felicidade hoje. Ela é alcançada através de posses materiais e status (o 'ter') ou por meio de experiências, valores e desenvolvimento pessoal (o 'ser')?",
+                    argumentos: [
+                        { titulo: "Crítica à felicidade no 'Ter'", texto: "Argumentar que a sociedade de consumo atrela a felicidade à aquisição de bens, criando um ciclo vicioso de desejo e insatisfação. Essa felicidade é efêmera." },
+                        { titulo: "Valorização da felicidade no 'Ser'", texto: "Defender que a felicidade genuína e duradoura provém de fontes internas e não-materiais, como relacionamentos, propósito e experiências. O 'ser' está ligado a valores perenes." }
+                    ],
+                    exemplos: [
+                        "A ostentação nas redes sociais, onde a felicidade é um espetáculo baseado em posses.",
+                        "Filosofia antiga como o Epicurismo ou Estoicismo, que focam em fatores internos.",
+                        "Crescimento de movimentos como o minimalismo, que prega o desapego material.",
+                        "Erich Fromm, autor de 'Ter ou Ser?'."
+                    ],
+                    estrutura: {
+                        introducao: "Apresentar a busca pela felicidade como constante humana e a tese de que, embora a sociedade valorize o 'ter', a satisfação plena reside no 'ser'.",
+                        d1: "Criticar a lógica consumista, usando o exemplo das redes sociais para ilustrar a frustração gerada pela comparação.",
+                        d2: "Apresentar a valorização do 'ser' como alternativa, usando o minimalismo ou a busca por propósito como exemplos de caminhos para uma felicidade resiliente.",
+                        conclusao: "Reafirmar a tese e concluir sobre a importância de uma mudança de paradigma para um conceito de felicidade mais sustentável e humano."
+                    }
+                }
             },
             { 
                 titulo: "A invisibilidade social e suas consequências na sociedade brasileira", 
                 ano: 2021, 
-                banca: "FGV" 
+                banca: "FGV",
+                analise: {
+                    entendimento: "A proposta pede uma análise sobre os grupos sociais que não são 'vistos' ou reconhecidos pela sociedade e pelo Estado, e quais os impactos desse apagamento.",
+                    argumentos: [
+                        { titulo: "Causas da Invisibilidade", texto: "Discutir que a invisibilidade é um projeto social e histórico, fruto do preconceito estrutural (racismo, aporofobia), da negligência estatal e da representação estereotipada pela mídia." },
+                        { titulo: "Consequências da Invisibilidade", texto: "Detalhar os efeitos práticos desse apagamento: negação de direitos básicos, marginalização, perpetuação da pobreza, violência e o impacto na saúde mental desses indivíduos." }
+                    ],
+                    exemplos: [
+                        "População em situação de rua, povos indígenas, comunidades quilombolas, catadores de recicláveis.",
+                        "A forma como passamos por uma pessoa em situação de rua e 'não a vemos', como se fosse parte da paisagem.",
+                        "A Constituição Federal que garante direitos a todos, mas que na prática não se efetiva para esses grupos."
+                    ],
+                    estrutura: {
+                        introducao: "Definir 'invisibilidade social' e apresentar a tese de que este fenômeno é um dos principais obstáculos para uma sociedade justa e democrática no Brasil.",
+                        d1: "Explorar as causas históricas e estruturais, usando o exemplo da população em situação de rua para ilustrar a falha do Estado e da sociedade.",
+                        d2: "Discutir as graves consequências, como a perpetuação da miséria, usando o exemplo dos povos indígenas e a luta por seus direitos e terras.",
+                        conclusao: "Propor ações para combater o problema, como políticas públicas inclusivas, promoção da representatividade e conscientização social."
+                    }
+                } 
             },
             {
                 titulo: "A persistência da memória na era do esquecimento digital",
                 ano: 2020,
-                banca: "FGV"
+                banca: "FGV",
+                analise: {
+                    entendimento: "O tema propõe uma reflexão sobre como a tecnologia (internet, redes sociais) afeta nossa memória individual e coletiva. Ela nos ajuda a lembrar de tudo ou, paradoxalmente, nos incentiva a esquecer, já que tudo pode ser 'guardado' externamente?",
+                    argumentos: [
+                        { titulo: "A tecnologia como extensão da memória", texto: "Argumentar que as ferramentas digitais funcionam como um poderoso arquivo, preservando informações, fotos e eventos que seriam perdidos. A memória coletiva nunca foi tão vasta e acessível." },
+                        { titulo: "A tecnologia como promotora do esquecimento", texto: "Defender que a facilidade de armazenar dados externamente (em nuvens, HDs) atrofia nossa capacidade de memorização interna. O fluxo constante de informações banais soterra memórias importantes." }
+                    ],
+                    exemplos: [
+                        "Álbuns de fotos digitais em redes sociais (Facebook, Instagram) que 'lembram' de eventos passados por nós.",
+                        "A 'Síndrome do Google', onde não nos esforçamos para memorizar informações, pois sabemos que podemos pesquisá-las a qualquer momento.",
+                        "O direito ao esquecimento: um debate jurídico sobre apagar dados do passado na internet.",
+                        "O filme 'Brilho Eterno de uma Mente sem Lembranças' como metáfora sobre a importância das memórias, mesmo as dolorosas."
+                    ],
+                    estrutura: {
+                        introducao: "Contextualizar a era digital e o volume de informações. Apresentar a tese de que a tecnologia, ao mesmo tempo que cria um arquivo quase infinito, pode estar enfraquecendo nossa capacidade intrínseca de formar e reter memórias significativas.",
+                        d1: "Desenvolver o argumento positivo, mostrando como a internet democratizou o acesso a arquivos históricos e permite a preservação da memória pessoal em larga escala.",
+                        d2: "Desenvolver o argumento crítico, mostrando como a dependência de dispositivos externos e o excesso de estímulos podem levar a uma memória superficial e a uma cultura do esquecimento.",
+                        conclusao: "Equilibrar as duas perspectivas e concluir que o desafio contemporâneo não é armazenar, mas sim saber o que vale a pena ser lembrado, cultivando uma relação consciente com a tecnologia para que ela sirva à memória, e não a substitua."
+                    }
+                }
             }
         ];
 const container = document.getElementById("temas-redacao");
@@ -963,15 +1114,10 @@ temas.forEach((tema) => {
             const div = document.createElement("div");
             div.className = "p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col";
             div.innerHTML = `<div class="flex-grow"><h3 class="text-lg font-semibold text-gray-900">${tema.titulo}</h3><p class="text-sm text-gray-500 mt-2">Ano: ${tema.ano} | Banca: ${tema.banca}</p></div><button class="escrever-redacao-btn mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 self-start transition-colors">Escrever Redação</button>`;
+            
+            // MODIFICADO: Agora o botão abre o modal de detalhes
             div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
-         
-      _temaRedacaoAtual = tema.titulo;
-                _notaRedacaoAtual = null; // Reseta a nota ao iniciar uma nova redação
-                document.getElementById("titulo-redacao").textContent = tema.titulo;
-                document.getElementById("texto-redacao").value = "";
-                document.getElementById("resultado-correcao").innerHTML = "";
-                document.getElementById("btn-imprimir").style.display = "none";
-abrirModal('modal-redacao');
+                abrirModalDetalhesTema(tema);
             });
             container.appendChild(div);
         });
@@ -1566,4 +1712,3 @@ document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.ad
   </script>
 </body>
 </html>
-
