@@ -934,7 +934,28 @@ _userId_r = config.userId; _appId_r = config.appId;
 document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
     }
     async function carregarTemasRedacao_v2() {
-        const temas = [{ titulo: "A influência das redes sociais no comportamento juvenil", ano: 2022, banca: "ENEM" }, { titulo: "Desafios da mobilidade urbana no Brasil", ano: 2021, banca: "Fuvest" }, { titulo: "O papel da tecnologia na educação contemporânea", ano: 2023, banca: "Unicamp" }];
+        const temas = [
+            { 
+                titulo: "O paradoxo da escolha: a liberdade em um mundo de opções infinitas", 
+                ano: 2023, 
+                banca: "FGV" 
+            },
+            { 
+                titulo: "A busca pela felicidade no mundo contemporâneo: entre o ser e o ter", 
+                ano: 2022, 
+                banca: "FGV" 
+            },
+            { 
+                titulo: "A invisibilidade social e suas consequências na sociedade brasileira", 
+                ano: 2021, 
+                banca: "FGV" 
+            },
+            {
+                titulo: "A persistência da memória na era do esquecimento digital",
+                ano: 2020,
+                banca: "FGV"
+            }
+        ];
 const container = document.getElementById("temas-redacao");
         if (!container) return;
         container.innerHTML = "";
