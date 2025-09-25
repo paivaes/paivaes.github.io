@@ -318,7 +318,7 @@ let graficoLinhaModos = null;
     let questoesDoSimulado = [];
     let questaoAtualIndex = 0;
 let pontuacao = 0;
-    let _db_r, _userId_r, _appId_r, _temaRedacaoAtual;
+    let _db_r, _userId_r, _appId_r, _temaRedacaoAtual, _notaRedacaoAtual;
 
     // ===============================================
     // FUNÇÕES UTILITÁRIAS E AUXILIARES
@@ -505,7 +505,6 @@ document.getElementById('show-login').addEventListener('click', (e) => {
     // AUTENTICAÇÃO E INICIALIZAÇÃO
     // =========================
     
-    // ++ NOVA FUNÇÃO DE RESET ADICIONADA AQUI ++
     function resetCronometroState() {
         if (timerInterval) {
             clearInterval(timerInterval);
@@ -514,7 +513,6 @@ document.getElementById('show-login').addEventListener('click', (e) => {
         segundosCorridos = 0;
         tarefaAtualId = null;
         
-        // Reseta também a interface do cronômetro para o estado inicial
         const timerDisplay = document.getElementById('timer-display');
         if (timerDisplay) {
             timerDisplay.textContent = '00:00:00';
@@ -572,7 +570,6 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 authContainer.classList.remove('hidden');
         
         appWrapper.classList.add('hidden');
-                // ++ CHAMADA DA FUNÇÃO DE RESET ADICIONADA AQUI ++
                 resetCronometroState();
             }
         });
@@ -616,7 +613,6 @@ showNotification(`Erro ao cadastrar: ${error.message}`, "error");
 
     async function handleLogout() {
         try {
-            // A correção anterior foi removida daqui, pois a nova abordagem é mais completa.
             if(timerInterval) {
                 await salvarSessaoPendente({db, auth, appId: 'default-app-id', userId: auth.currentUser.uid});
 }
@@ -949,6 +945,7 @@ temas.forEach((tema) => {
             div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
          
       _temaRedacaoAtual = tema.titulo;
+                _notaRedacaoAtual = null; // Reseta a nota ao iniciar uma nova redação
                 document.getElementById("titulo-redacao").textContent = tema.titulo;
                 document.getElementById("texto-redacao").value = "";
                 document.getElementById("resultado-correcao").innerHTML = "";
@@ -964,7 +961,14 @@ if (!texto) { showNotification("Digite sua redação antes de salvar.", "error")
 }
         try {
             const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
-await addDoc(collection(_db_r, collectionPath), { tema: _temaRedacaoAtual, texto: texto, data: serverTimestamp(), usuarioId: _userId_r });
+            const dadosParaSalvar = { 
+                tema: _temaRedacaoAtual, 
+                texto: texto, 
+                data: serverTimestamp(), 
+                usuarioId: _userId_r,
+                nota: _notaRedacaoAtual // Adiciona a nota (pode ser null se não foi corrigida)
+            };
+await addDoc(collection(_db_r, collectionPath), dadosParaSalvar);
             showNotification("Redação salva com sucesso!");
             fecharModal('modal-redacao');
             carregarRedacoesSalvas_v2();
@@ -974,7 +978,7 @@ await addDoc(collection(_db_r, collectionPath), { tema: _temaRedacaoAtual, texto
         const container = document.getElementById("lista-redacoes-salvas-v2");
 if(!container) return;
         const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
-        const q = query(collection(_db_r, collectionPath), where("usuarioId", "==", _userId_r));
+        const q = query(collection(_db_r, collectionPath), orderBy("data", "desc"));
 try {
             const querySnapshot = await getDocs(q);
 container.innerHTML = "";
@@ -983,19 +987,61 @@ container.innerHTML = "";
             querySnapshot.forEach((doc) => {
                 const redacao = doc.data();
                 const div = document.createElement("div");
-                div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center";
-                div.innerHTML = `<div><h4 class="font-semibold text-gray-800">${redacao.tema}</h4><p class="text-sm text-gray-500">Salva em: 
-${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p></div><button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>`;
+                div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center gap-2";
+                
+                let notaHtml = '';
+                if (typeof redacao.nota === 'number') {
+                    notaHtml = `<p class="font-bold text-blue-600 text-lg">${redacao.nota}</p>`;
+                }
+
+                div.innerHTML = `
+                    <div class="flex-grow">
+                        <h4 class="font-semibold text-gray-800">${redacao.tema}</h4>
+                        <p class="text-sm text-gray-500">Salva em: 
+${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p>
+                    </div>
+                    ${notaHtml}
+                    <div class="flex items-center gap-2">
+                        <button data-id="${doc.id}" class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>
+                        <button data-id="${doc.id}" class="excluir-redacao-btn bg-red-100 text-red-700 px-3 py-1 rounded-md hover:bg-red-200 text-sm transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                            </svg>
+                        </button>
+                    </div>`;
+
                 div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
                     document.getElementById('ver-titulo-redacao').textContent = redacao.tema;
                     document.getElementById('ver-texto-redacao').textContent = redacao.texto;
                     
 abrirModal('modal-ver-redacao');
                 });
+                
+                div.querySelector('.excluir-redacao-btn').addEventListener('click', (e) => {
+                    const redacaoId = e.currentTarget.dataset.id;
+                    excluirRedacao_v2(redacaoId);
+                });
+
                 container.appendChild(div);
 });
         } catch(error) { handleFirestoreError(error, "Carregar Redações Salvas"); }
     }
+    
+    async function excluirRedacao_v2(redacaoId) {
+        if (!confirm("Tem certeza que deseja excluir esta redação? Esta ação não pode ser desfeita.")) {
+            return;
+        }
+        try {
+            const docPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes/${redacaoId}`;
+            await deleteDoc(doc(_db_r, docPath));
+            showNotification("Redação excluída com sucesso.");
+            carregarRedacoesSalvas_v2(); // Atualiza a lista
+        } catch (error) {
+            handleFirestoreError(error, "Excluir Redação");
+        }
+    }
+
     function corrigirRedacao_v2() {
         const texto = document.getElementById("texto-redacao").value.trim();
 if (!texto) { showNotification("Digite o texto antes de corrigir.", "error"); return;
@@ -1010,6 +1056,9 @@ observacoes.push("Texto com menos de 150 palavras."); }
         if (nota > 90) { observacoes.push("Excelente estrutura!");
 }
         if (nota < 0) nota = 0;
+
+        _notaRedacaoAtual = nota; // Armazena a nota na variável global
+
 document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
 document.getElementById("btn-imprimir").style.display = "inline-block";
     }
