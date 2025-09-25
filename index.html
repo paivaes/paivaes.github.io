@@ -348,9 +348,10 @@ if (!container) return;
         setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
 }
 
+    // CORREÇÃO APLICADA AQUI
     function abrirModal(modalId) { 
         const modal = document.getElementById(modalId);
-if(modal) modal.classList.add('hidden'); 
+        if(modal) modal.classList.remove('hidden'); 
     }
 
     function fecharModal(modalId) {
@@ -947,11 +948,9 @@ _userId_r = config.userId; _appId_r = config.appId;
         document.getElementById("btn-corrigir")?.addEventListener("click", corrigirRedacao_v2);
 document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
         
-        // Listeners para o novo modal de detalhes
         document.getElementById('btn-fechar-detalhes').addEventListener('click', () => fecharModal('modal-tema-detalhes'));
     }
 
-    // NOVA FUNÇÃO para abrir o modal com detalhes do tema
     function abrirModalDetalhesTema(tema) {
         document.getElementById('detalhes-tema-titulo').textContent = tema.titulo;
         const corpo = document.getElementById('detalhes-tema-corpo');
@@ -992,7 +991,6 @@ document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedac
             </div>
         `;
 
-        // Configura o botão "Iniciar Escrita" para abrir o modal de redação
         const btnIniciarEscrita = document.getElementById('btn-iniciar-escrita-redacao');
         btnIniciarEscrita.onclick = () => {
             fecharModal('modal-tema-detalhes');
@@ -1010,7 +1008,6 @@ document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedac
     }
 
     async function carregarTemasRedacao_v2() {
-        // Banco de dados com temas e análises completas
         const temas = [
             { 
                 titulo: "O paradoxo da escolha: a liberdade em um mundo de opções infinitas", 
@@ -1115,7 +1112,6 @@ temas.forEach((tema) => {
             div.className = "p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col";
             div.innerHTML = `<div class="flex-grow"><h3 class="text-lg font-semibold text-gray-900">${tema.titulo}</h3><p class="text-sm text-gray-500 mt-2">Ano: ${tema.ano} | Banca: ${tema.banca}</p></div><button class="escrever-redacao-btn mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 self-start transition-colors">Escrever Redação</button>`;
             
-            // MODIFICADO: Agora o botão abre o modal de detalhes
             div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
                 abrirModalDetalhesTema(tema);
             });
@@ -1133,7 +1129,7 @@ if (!texto) { showNotification("Digite sua redação antes de salvar.", "error")
                 texto: texto, 
                 data: serverTimestamp(), 
                 usuarioId: _userId_r,
-                nota: _notaRedacaoAtual // Adiciona a nota (pode ser null se não foi corrigida)
+                nota: _notaRedacaoAtual 
             };
 await addDoc(collection(_db_r, collectionPath), dadosParaSalvar);
             showNotification("Redação salva com sucesso!");
