@@ -504,6 +504,46 @@ document.getElementById('show-login').addEventListener('click', (e) => {
     // =========================
     // AUTENTICAÇÃO E INICIALIZAÇÃO
     // =========================
+    
+    // ++ NOVA FUNÇÃO DE RESET ADICIONADA AQUI ++
+    function resetCronometroState() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        timerInterval = null;
+        segundosCorridos = 0;
+        tarefaAtualId = null;
+        
+        // Reseta também a interface do cronômetro para o estado inicial
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.textContent = '00:00:00';
+        }
+
+        const btn = document.getElementById('btn-toggle-sessao');
+        if (btn) {
+            btn.textContent = 'Iniciar Estudo';
+            btn.classList.remove('bg-red-600', 'bg-yellow-500');
+            btn.classList.add('bg-green-600');
+            btn.disabled = true;
+        }
+
+        const infoSelecionada = document.getElementById('cronometro-info-selecionada');
+        if (infoSelecionada) {
+            infoSelecionada.classList.add('hidden');
+        }
+
+        const textoInfo = document.getElementById('cronometro-texto-info');
+        if (textoInfo) {
+            textoInfo.textContent = 'Clique em uma tarefa no seu cronograma semanal para começar.';
+        }
+        
+        const wrapper = document.getElementById('cronometro-wrapper');
+        if(wrapper) {
+            wrapper.classList.remove('p-2', 'border-2', 'border-yellow-400');
+        }
+    }
+
     function iniciarAutenticacao() {
         document.getElementById('btn-login').addEventListener('click', handleLogin);
 document.getElementById('btn-signup').addEventListener('click', handleSignUp);
@@ -532,6 +572,8 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 authContainer.classList.remove('hidden');
         
         appWrapper.classList.add('hidden');
+                // ++ CHAMADA DA FUNÇÃO DE RESET ADICIONADA AQUI ++
+                resetCronometroState();
             }
         });
 }
@@ -574,10 +616,9 @@ showNotification(`Erro ao cadastrar: ${error.message}`, "error");
 
     async function handleLogout() {
         try {
+            // A correção anterior foi removida daqui, pois a nova abordagem é mais completa.
             if(timerInterval) {
                 await salvarSessaoPendente({db, auth, appId: 'default-app-id', userId: auth.currentUser.uid});
-                clearInterval(timerInterval);
-                timerInterval = null;
 }
             await signOut(auth);
             showNotification("Você saiu com sucesso.", "success");
