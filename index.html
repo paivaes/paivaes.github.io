@@ -348,7 +348,6 @@ if (!container) return;
         setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
 }
 
-    // CORREÇÃO APLICADA AQUI
     function abrirModal(modalId) { 
         const modal = document.getElementById(modalId);
         if(modal) modal.classList.remove('hidden'); 
@@ -1148,7 +1147,7 @@ container.innerHTML = "";
             if(querySnapshot.empty) { container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`; return;
 }
             querySnapshot.forEach((doc) => {
-                const redacao = doc.data();
+                const redacao = { id: doc.id, ...doc.data() };
                 const div = document.createElement("div");
                 div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center gap-2";
                 
@@ -1165,8 +1164,14 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
                     </div>
                     ${notaHtml}
                     <div class="flex items-center gap-2">
-                        <button data-id="${doc.id}" class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>
-                        <button data-id="${doc.id}" class="excluir-redacao-btn bg-red-100 text-red-700 px-3 py-1 rounded-md hover:bg-red-200 text-sm transition">
+                        <button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>
+                        <button class="exportar-pdf-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16">
+                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 1.5v2a1 1 0 0 0 1 1h2l-3-3z"/>
+                                <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.877.37-.198.815-.145 1.132.059.281.19.487.453.605.772a.7.7 0 0 1-.42.835l-.143.07a.5.5 0 0 0-.29.002l-.126-.06a.236.236 0 0 0-.115-.166c-.138-.068-.29-.082-.451-.015a.25.25 0 0 0-.158.25c.006.1.03.19.054.282.023.09.05.17.08.242.043.103.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.016-.239.004-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166.3.3 0 0 0 .451.015c.14-.067.248-.192.283-.347a.817.817 0 0 0-.119-.668.97.97 0 0 0-.51-.378c-.244-.085-.516-.043-.728.116a.8.8 0 0 0-.3.465c-.053.162-.053.335.002.5.05.15.134.29.254.426.12.132.254.25.398.358.182.135.38.216.616.223a.4.4 0 0 1 .42.44l-.143.07a.5.5 0 0 0-.29.002l-.126-.06a.236.236 0 0 0-.115-.166c-.158-.076-.351-.076-.51-.045a.25.25 0 0 0-.158.25c.006.095.03.18.054.262.023.08.05.15.08.212.043.104.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.015-.239.003-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 0-.158.25z"/>
+                            </svg>
+                        </button>
+                        <button class="excluir-redacao-btn bg-red-100 text-red-700 px-3 py-1 rounded-md hover:bg-red-200 text-sm transition">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
                                 <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
@@ -1177,13 +1182,15 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
                 div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
                     document.getElementById('ver-titulo-redacao').textContent = redacao.tema;
                     document.getElementById('ver-texto-redacao').textContent = redacao.texto;
-                    
-abrirModal('modal-ver-redacao');
+                    abrirModal('modal-ver-redacao');
                 });
                 
-                div.querySelector('.excluir-redacao-btn').addEventListener('click', (e) => {
-                    const redacaoId = e.currentTarget.dataset.id;
-                    excluirRedacao_v2(redacaoId);
+                div.querySelector('.excluir-redacao-btn').addEventListener('click', () => {
+                    excluirRedacao_v2(redacao.id);
+                });
+
+                div.querySelector('.exportar-pdf-btn').addEventListener('click', () => {
+                    exportarRedacaoSalvaPDF(redacao);
                 });
 
                 container.appendChild(div);
@@ -1203,6 +1210,44 @@ abrirModal('modal-ver-redacao');
         } catch (error) {
             handleFirestoreError(error, "Excluir Redação");
         }
+    }
+
+    // NOVA FUNÇÃO para exportar redação salva para PDF
+    function exportarRedacaoSalvaPDF(redacao) {
+        showNotification("Gerando PDF da redação...");
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+
+        const tema = redacao.tema;
+        const texto = redacao.texto;
+        const nota = typeof redacao.nota === 'number' ? `${redacao.nota} / 100` : "Não corrigida";
+        const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
+        const nomeCiclo = document.getElementById('ciclo-nome-input').value || "Ciclo não definido";
+        
+        // Título Principal
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(16);
+        pdf.text(tema, 105, 20, { align: 'center', maxWidth: 190 });
+
+        // Metadados
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        pdf.text(`Candidato(a): ${nomeUsuario}`, 15, 35);
+        pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, 15, 41);
+        pdf.text(`Nota: ${nota}`, 15, 47);
+
+        // Linha Separadora
+        pdf.setLineWidth(0.5);
+        pdf.line(15, 52, 195, 52);
+
+        // Corpo do Texto Justificado
+        pdf.setFontSize(12);
+        const margem = 15;
+        const larguraMaxima = 180; // Largura do texto (210mm da A4 - 2*15mm de margem)
+        const linhas = pdf.splitTextToSize(texto, larguraMaxima);
+        pdf.text(linhas, margem, 62, { align: 'justify' });
+        
+        pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
     }
 
     function corrigirRedacao_v2() {
