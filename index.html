@@ -1212,11 +1212,11 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         }
     }
 
-    // FUNÇÃO DE EXPORTAÇÃO DE PDF TOTALMENTE REFEITA
+    // FUNÇÃO DE EXPORTAÇÃO DE PDF ATUALIZADA
     function gerarPDFPadraoFGV(redacao) {
         showNotification("Gerando PDF no padrão FGV...");
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4'); // Padrão A4: 210 x 297 mm
+        const pdf = new jsPDF('p', 'mm', 'a4');
 
         const tema = redacao.tema;
         const texto = redacao.texto;
@@ -1224,60 +1224,64 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
         const nomeCiclo = document.getElementById('ciclo-nome-input').value || "Ciclo não definido";
 
-        const margemEsquerda = 15;
-        const margemDireita = 15;
+        const margemEsquerda = 20;
+        const margemDireita = 20;
         const margemSuperior = 15;
         const larguraPagina = 210;
         const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
-        
+        let y = margemSuperior;
+
         // Cabeçalho
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(12);
-        pdf.text("FOLHA DE TEXTO DEFINITIVO", larguraPagina / 2, margemSuperior, { align: 'center' });
+        pdf.text("FOLHA DE TEXTO DEFINITIVO", larguraPagina / 2, y, { align: 'center' });
+        y += 10;
         
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(9);
-        pdf.rect(margemEsquerda, margemSuperior + 5, larguraUtil, 20); // Caixa do cabeçalho
-        pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda + 2, margemSuperior + 10);
-        pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda + 2, margemSuperior + 15);
-        pdf.text(`Nota: ${nota}`, margemEsquerda + 2, margemSuperior + 20);
+        pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda, y);
+        y += 5;
+        pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda, y);
+        y += 5;
+        pdf.text(`Nota: ${nota}`, margemEsquerda, y);
+        y += 8;
 
         // Área do Título
-        let y = margemSuperior + 30;
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(10);
         pdf.text("TÍTULO", margemEsquerda, y);
+        y += 2;
         pdf.setLineWidth(0.2);
-        pdf.line(margemEsquerda, y + 2, larguraPagina - margemDireita, y + 2);
-        y += 8; // Espaço para o título
+        pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
+        y += 4;
+        
+        // ** CORREÇÃO: ADICIONA O TÍTULO **
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(12);
+        pdf.text(tema, larguraPagina / 2, y, { align: 'center', maxWidth: larguraUtil });
+        y += 8;
 
         // Linhas da Redação
-        const alturaLinha = 8; // 8mm de altura para cada linha
+        const alturaLinha = 8.5;
         const inicioLinhas = y;
+        pdf.setLineDashPattern([0.5, 0.5], 0); // Linhas pontilhadas suaves
         pdf.setFontSize(8);
         for (let i = 1; i <= 30; i++) {
             pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
-            pdf.text(String(i).padStart(2, '0'), margemEsquerda - 4, y - 1);
+            pdf.text(String(i).padStart(2, '0'), margemEsquerda - 6, y - 1);
             y += alturaLinha;
         }
+        pdf.setLineDashPattern([], 0); // Reseta para linhas sólidas
 
-        // Adicionar o texto sobre as linhas
+        // ** CORREÇÃO: RENDERIZA O TEXTO JUSTIFICADO SOBRE AS LINHAS **
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
-        
-        // Processa o texto para caber na largura das linhas
-        const textoProcessado = pdf.splitTextToSize(texto, larguraUtil - 2); // -2 para uma pequena margem interna
-
-        // Coloca cada linha do texto processado na pauta
-        let linhaAtual = 0;
-        textoProcessado.forEach(linhaTexto => {
-            if (linhaAtual < 30) {
-                const yPos = inicioLinhas + (linhaAtual * alturaLinha) - 2; // -2 para ajustar a posição vertical na linha
-                pdf.text(linhaTexto, margemEsquerda + 2, yPos);
-                linhaAtual++;
-            }
+        const textoProcessado = pdf.splitTextToSize(texto, larguraUtil);
+        pdf.text(textoProcessado, margemEsquerda, inicioLinhas - 2.5, { 
+            align: 'justify', 
+            lineHeightFactor: 1.8 // Fator ajustado para alinhar com as linhas de 8.5mm
         });
-
+        
         pdf.save(`redacao_FGV_${tema.substring(0, 15).replace(/\s+/g, '_')}.pdf`);
     }
 
@@ -1702,14 +1706,14 @@ container.addEventListener('dragover', e => { e.preventDefault(); const afterEle
         const { db, appId, userId } = config;
 const container = document.getElementById("progressoDisciplinas");
         container.innerHTML = "<p class='text-slate-500'>A carregar...</p>";
-        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData'));
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${config.userId}/perfil`, 'userData'));
 const metasPorDisciplina = userDoc.exists() ?
  userDoc.data().metasPorDisciplina || {} : {};
-        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`), where("usuarioId", "==", userId));
+        const qTempo = query(collection(db, `artifacts/${appId}/users/${config.userId}/registro_tempo`), where("usuarioId", "==", userId));
 const registrosSnapshot = await getDocs(qTempo);
         const tempoPorDisciplina = {};
         registrosSnapshot.forEach(r => { const data = r.data(); tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos; });
-const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome")));
+const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${config.userId}/disciplinas`), orderBy("nome")));
         container.innerHTML = "";
         if (disciplinasSnapshot.empty) { container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>"; return;
 }
@@ -1746,7 +1750,7 @@ if (revisoesPendentesCount === 0) { container.innerHTML = "<p>Nenhuma revisão p
     async function carregarDesempenhoPorModo(config) {
         const { db, appId, userId } = config;
 const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
-        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId));
+        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
 const snapshot = await getDocs(q);
         const dados = { simulado: { acertos: 0, erros: 0 }, pratica: { acertos: 0, erros: 0 } };
 snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio && dados[treino.modo]) { dados[treino.modo].acertos += treino.acertos || 0; dados[treino.modo].erros += treino.erros || 0; } });
@@ -1757,7 +1761,7 @@ const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d'); 
     async function carregarEvolucaoCronologicaPorModo(config) {
         const { db, appId, userId } = config;
 const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
-        const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`), where("usuarioId", "==", userId));
+        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
 const snapshot = await getDocs(q);
         const dadosPorData = {}; snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio) { const data = dataTreino.toISOString().split('T')[0]; if (!dadosPorData[data]) dadosPorData[data] = { acertos: 0, total: 0 }; dadosPorData[data].acertos += treino.acertos; dadosPorData[data].total += (treino.acertos + treino.erros); } });
 const labels = Object.keys(dadosPorData).sort(); const dataPoints = labels.map(label => { const dia = dadosPorData[label]; return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0; });
