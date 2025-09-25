@@ -1212,7 +1212,7 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         }
     }
 
-    // FUNÇÃO DE EXPORTAÇÃO DE PDF ATUALIZADA
+    // FUNÇÃO DE EXPORTAÇÃO DE PDF CORRIGIDA
     function gerarPDFPadraoFGV(redacao) {
         showNotification("Gerando PDF no padrão FGV...");
         const { jsPDF } = window.jspdf;
@@ -1228,7 +1228,7 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         const margemDireita = 20;
         const margemSuperior = 15;
         const larguraPagina = 210;
-        const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
+        const larguraDisponivel = larguraPagina - margemEsquerda - margemDireita;
         let y = margemSuperior;
 
         // Cabeçalho
@@ -1250,36 +1250,38 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(10);
         pdf.text("TÍTULO", margemEsquerda, y);
-        y += 2;
-        pdf.setLineWidth(0.2);
-        pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
-        y += 4;
         
-        // ** CORREÇÃO: ADICIONA O TÍTULO **
+        // ** CORREÇÃO 1: Adiciona o texto do título ANTES da linha **
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
-        pdf.text(tema, larguraPagina / 2, y, { align: 'center', maxWidth: larguraUtil });
-        y += 8;
+        pdf.text(tema, larguraPagina / 2, y + 6, { align: 'center', maxWidth: larguraDisponivel });
+        y += 8; // Avança o Y para depois do título
+        
+        pdf.setLineWidth(0.2);
+        pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
+        y += 6; // Espaçamento após a linha do título
 
         // Linhas da Redação
         const alturaLinha = 8.5;
         const inicioLinhas = y;
-        pdf.setLineDashPattern([0.5, 0.5], 0); // Linhas pontilhadas suaves
+        pdf.setLineDashPattern([0.5, 0.5], 0);
         pdf.setFontSize(8);
         for (let i = 1; i <= 30; i++) {
             pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
             pdf.text(String(i).padStart(2, '0'), margemEsquerda - 6, y - 1);
             y += alturaLinha;
         }
-        pdf.setLineDashPattern([], 0); // Reseta para linhas sólidas
+        pdf.setLineDashPattern([], 0);
 
-        // ** CORREÇÃO: RENDERIZA O TEXTO JUSTIFICADO SOBRE AS LINHAS **
+        // ** CORREÇÃO 2: Usa uma largura de texto um pouco menor para evitar estouro na justificação **
+        const larguraTextoComFolga = larguraDisponivel - 2;
+        const textoProcessado = pdf.splitTextToSize(texto, larguraTextoComFolga);
+        
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
-        const textoProcessado = pdf.splitTextToSize(texto, larguraUtil);
         pdf.text(textoProcessado, margemEsquerda, inicioLinhas - 2.5, { 
             align: 'justify', 
-            lineHeightFactor: 1.8 // Fator ajustado para alinhar com as linhas de 8.5mm
+            lineHeightFactor: 1.8 
         });
         
         pdf.save(`redacao_FGV_${tema.substring(0, 15).replace(/\s+/g, '_')}.pdf`);
