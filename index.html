@@ -576,6 +576,8 @@ showNotification(`Erro ao cadastrar: ${error.message}`, "error");
         try {
             if(timerInterval) {
                 await salvarSessaoPendente({db, auth, appId: 'default-app-id', userId: auth.currentUser.uid});
+                clearInterval(timerInterval);
+                timerInterval = null;
 }
             await signOut(auth);
             showNotification("Você saiu com sucesso.", "success");
