@@ -1190,7 +1190,7 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
                 });
 
                 div.querySelector('.exportar-pdf-btn').addEventListener('click', () => {
-                    exportarRedacaoPDF(redacao);
+                    gerarPDFPadraoFGV(redacao);
                 });
 
                 container.appendChild(div);
@@ -1212,9 +1212,9 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         }
     }
 
-    // FUNÇÃO DE PDF ATUALIZADA PARA FORMATO SIMPLES E JUSTIFICADO
-    function exportarRedacaoPDF(redacao) {
-        showNotification("Gerando PDF da redação...");
+    // FUNÇÃO DE EXPORTAÇÃO DE PDF ATUALIZADA
+    function gerarPDFPadraoFGV(redacao) {
+        showNotification("Gerando PDF no padrão FGV...");
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
 
@@ -1226,45 +1226,67 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         
         const margemEsquerda = 20;
         const margemDireita = 20;
-        const margemSuperior = 20;
+        const margemSuperior = 15;
         const larguraPagina = 210;
-        const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
+        const larguraDisponivel = larguraPagina - margemEsquerda - margemDireita;
         let y = margemSuperior;
 
-        // Título Principal
+        // Cabeçalho
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(16);
-        const linhasTitulo = pdf.splitTextToSize(tema, larguraUtil);
-        pdf.text(linhasTitulo, larguraPagina / 2, y, { align: 'center' });
-        y += (linhasTitulo.length * 7) + 5;
-
-        // Metadados
+        pdf.setFontSize(12);
+        pdf.text("FOLHA DE TEXTO DEFINITIVO", larguraPagina / 2, y, { align: 'center' });
+        y += 10;
+        
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda, y);
         y += 5;
         pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda, y);
         y += 5;
         pdf.text(`Nota: ${nota}`, margemEsquerda, y);
-        y += 7;
+        y += 8;
 
-        // Linha Separadora
-        pdf.setLineWidth(0.5);
-        pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
-        y += 10;
-
-        // Corpo do Texto
+        // Área do Título (CORRIGIDO)
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text("TÍTULO", margemEsquerda, y);
+        
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
+        pdf.text(tema, larguraPagina / 2, y + 5, { align: 'center', maxWidth: larguraDisponivel });
+        y += 7; 
         
-        // CORREÇÃO: Usa uma largura de texto um pouco menor para a quebra de linha para evitar estouro
-        const larguraTextoComFolga = larguraUtil - 5; // Aumentei a folga de segurança para 5mm
-        const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
+        pdf.setLineWidth(0.2);
+        pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
+        y += 4;
+
+        // Linhas da Redação e Texto (CORRIGIDO)
+        const alturaLinha = 8.5;
+        const inicioLinhas = y;
+        pdf.setLineDashPattern([0.5, 0.5], 0); 
+        pdf.setFontSize(8);
+        pdf.setTextColor(150); // Cor cinza para as linhas
+        for (let i = 1; i <= 30; i++) {
+            pdf.text(String(i).padStart(2, '0'), margemEsquerda - 6, y + alturaLinha - 3);
+            pdf.line(margemEsquerda, y + alturaLinha, larguraPagina - margemDireita, y + alturaLinha);
+            y += alturaLinha;
+        }
+        pdf.setLineDashPattern([], 0);
+        pdf.setTextColor(0); // Reseta a cor para preto
+
+        // Adiciona o texto sobre as linhas
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(12);
+        const larguraTexto = larguraDisponivel - 2; // Margem de segurança
+        const textoProcessado = pdf.splitTextToSize(texto, larguraTexto);
         
-        // CORREÇÃO: Renderiza com alinhamento à esquerda, que é mais estável e profissional
-        pdf.text(linhas, margemEsquerda, y);
+        // Renderiza o texto com alinhamento JUSTIFICADO e espaçamento de linha calculado
+        pdf.text(textoProcessado, margemEsquerda, inicioLinhas, { 
+            align: 'justify', 
+            lineHeightFactor: 1.88 // Fator ajustado para alinhar com as linhas de 8.5mm
+        });
         
-        pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
+        pdf.save(`redacao_FGV_${tema.substring(0, 15).replace(/\s+/g, '_')}.pdf`);
     }
 
     function corrigirRedacao_v2() {
@@ -1293,7 +1315,7 @@ const pdf = new jsPDF();
         pdf.setFontSize(16); pdf.text(`Tema: ${_temaRedacaoAtual}`, 10, 10);
         pdf.setFontSize(12);
         pdf.text(pdf.splitTextToSize(document.getElementById("texto-redacao").value, 180), 10, 20);
-        pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s/g, '_')}.pdf`);
+        pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s+/g, '_')}.pdf`);
         showNotification("Gerando PDF...");
 }
 
