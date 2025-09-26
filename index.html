@@ -1841,11 +1841,37 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         const { appId } = config;
         const container = document.getElementById('lista-simulados');
         container.innerHTML = "<p>A carregar...</p>";
-        const q = query(collection(db, `artifacts/${appId}/public/data/simulados`)); const snapshot = await getDocs(q);
-        if (snapshot.empty) { container.innerHTML = "<p>Nenhum simulado encontrado.</p>"; return; }
+        const q = query(collection(db, `artifacts/${appId}/public/data/simulados`));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+            container.innerHTML = "<p>Nenhum simulado encontrado.</p>";
+            return;
+        }
         container.innerHTML = snapshot.docs.map(doc => { const s = doc.data(); return `<div class="border p-3 rounded flex justify-between items-center"><p><strong>${s.banca} - ${s.ano}</strong><br>${s.cargo}</p><button data-simulado-id="${doc.id}" class="btn-iniciar-simulado-prova bg-purple-600 text-white px-4 py-2">Iniciar</button></div>`; }).join('');
-        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => { btn.addEventListener('click', async (e) => { const simuladoId = e.currentTarget.dataset.simuladoId; const simuladoDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/simulados`, simuladoId)); if (simuladoDoc.exists()) { const questoesIds = simuladoDoc.data().questoes; if(!questoesIds || questoesIds.length === 0) { alert("Este simulado não possui questões associadas."); return; } const questoesPromises = []; for (let i = 0; i < questoesIds.length; i += 30) { const chunk = questoesIds.slice(i, i + 30); const qQuestoes = query(collection(db, `artifacts/${appId}/public/data/questoes`), where(documentId(), 'in', chunk)); questoesPromises.push(getDocs(qQuestoes)); } const questoesSnapshots = await Promise.all(questoesPromises); const questoes = []; questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() }))); iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
-        } }); });
+        
+        document.querySelectorAll('.btn-iniciar-simulado-prova').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const simuladoId = e.currentTarget.dataset.simuladoId;
+                const simuladoDoc = await getDoc(doc(db, `artifacts/${appId}/public/data/simulados`, simuladoId));
+                if (simuladoDoc.exists()) {
+                    const questoesIds = simuladoDoc.data().questoes;
+                    if (!questoesIds || questoesIds.length === 0) {
+                        alert("Este simulado não possui questões associadas.");
+                        return;
+                    }
+                    const questoesPromises = [];
+                    for (let i = 0; i < questoesIds.length; i += 30) {
+                        const chunk = questoesIds.slice(i, i + 30);
+                        const qQuestoes = query(collection(db, `artifacts/${appId}/public/data/questoes`), where(documentId(), 'in', chunk));
+                        questoesPromises.push(getDocs(qQuestoes));
+                    }
+                    const questoesSnapshots = await Promise.all(questoesPromises);
+                    const questoes = [];
+                    questoesSnapshots.forEach(snap => snap.forEach(d => questoes.push({ id: d.id, ...d.data() })));
+                    iniciarSimulado(config, null, simuladoDoc.data().nome, questoes, "simulado");
+                }
+            });
+        });
     }
     
     document.addEventListener('DOMContentLoaded', iniciarAplicacao);
