@@ -1190,7 +1190,7 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
                 });
 
                 div.querySelector('.exportar-pdf-btn').addEventListener('click', () => {
-                    gerarPDFPadraoFGV(redacao);
+                    exportarRedacaoPDF(redacao);
                 });
 
                 container.appendChild(div);
@@ -1212,11 +1212,11 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         }
     }
 
-    // FUNÇÃO DE EXPORTAÇÃO DE PDF CORRIGIDA E FINAL
-    function gerarPDFPadraoFGV(redacao) {
-        showNotification("Gerando PDF no padrão FGV...");
+    // FUNÇÃO DE PDF ATUALIZADA PARA FORMATO SIMPLES E JUSTIFICADO
+    function exportarRedacaoPDF(redacao) {
+        showNotification("Gerando PDF da redação...");
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4'); // Padrão A4: 210 x 297 mm
+        const pdf = new jsPDF('p', 'mm', 'a4');
 
         const tema = redacao.tema;
         const texto = redacao.texto;
@@ -1226,69 +1226,41 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         
         const margemEsquerda = 20;
         const margemDireita = 20;
-        const margemSuperior = 15;
+        const margemSuperior = 20;
         const larguraPagina = 210;
-        const larguraDisponivel = larguraPagina - margemEsquerda - margemDireita;
+        const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
         let y = margemSuperior;
 
-        // Cabeçalho
+        // Título Principal
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(12);
-        pdf.text("FOLHA DE TEXTO DEFINITIVO", larguraPagina / 2, y, { align: 'center' });
-        y += 10;
-        
+        pdf.setFontSize(16);
+        const linhasTitulo = pdf.splitTextToSize(tema, larguraUtil);
+        pdf.text(linhasTitulo, larguraPagina / 2, y, { align: 'center' });
+        y += (linhasTitulo.length * 7) + 5; // Pula linha proporcional ao tamanho do título
+
+        // Metadados
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(9);
+        pdf.setFontSize(10);
         pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda, y);
         y += 5;
         pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda, y);
         y += 5;
         pdf.text(`Nota: ${nota}`, margemEsquerda, y);
-        y += 8;
+        y += 7;
 
-        // --- CORREÇÃO DA ÁREA DO TÍTULO ---
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(10);
-        pdf.text("TÍTULO", margemEsquerda, y);
-        
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(12);
-        // Posiciona o texto do tema 5mm abaixo do rótulo "TÍTULO"
-        pdf.text(tema, larguraPagina / 2, y + 5, { align: 'center', maxWidth: larguraDisponivel });
-        
-        y += 7; // Pula para a posição da linha
-        pdf.setLineWidth(0.2);
+        // Linha Separadora
+        pdf.setLineWidth(0.5);
         pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
-        y += 4; // Espaço após a linha do título
+        y += 10;
 
-        // --- CORREÇÃO DO LAYOUT DO TEXTO ---
-        const alturaLinha = 8.5;
-        const inicioLinhas = y;
-        pdf.setLineDashPattern([0.5, 0.5], 0); 
-        pdf.setFontSize(8);
-        for (let i = 1; i <= 30; i++) {
-            pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
-            pdf.text(String(i).padStart(2, '0'), margemEsquerda - 6, y - 1);
-            y += alturaLinha;
-        }
-        pdf.setLineDashPattern([], 0);
-
-        const larguraTextoComFolga = larguraDisponivel - 2;
-        const textoProcessado = pdf.splitTextToSize(texto, larguraTextoComFolga);
-        
+        // Corpo do Texto Justificado
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
-        // Renderiza o texto com alinhamento à esquerda, linha por linha, para controle total
-        let linhaAtual = 0;
-        textoProcessado.forEach(linhaTexto => {
-            if (linhaAtual < 30) {
-                const yPos = inicioLinhas + (linhaAtual * alturaLinha) - 2.5; // Ajuste fino da posição vertical
-                pdf.text(linhaTexto, margemEsquerda, yPos);
-                linhaAtual++;
-            }
-        });
+        const larguraTextoComFolga = larguraUtil - 2; // Margem de segurança para justificação
+        const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
+        pdf.text(linhas, margemEsquerda, y, { align: 'justify' });
         
-        pdf.save(`redacao_FGV_${tema.substring(0, 15).replace(/\s+/g, '_')}.pdf`);
+        pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
     }
 
     function corrigirRedacao_v2() {
