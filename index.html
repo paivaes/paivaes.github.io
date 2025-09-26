@@ -1095,7 +1095,7 @@ document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedac
                         "O filme 'Brilho Eterno de uma Mente sem Lembranças' como metáfora sobre a importância das memórias, mesmo as dolorosas."
                     ],
                     estrutura: {
-                        introducao: "Contextualizar a era digital e o volume de informações. Apresentar a tese de que a tecnologia, ao mesmo tempo que cria um arquivo quase infinito, pode estar enfraquecendo nossa capacidade intrínseca de formar e reter memórias significativas.",
+                        introducao: "Contextualizar a era digital e o volume de informações. Apresentar a tese de que a tecnologia, ao mesmo tempo que cria um arquivo quase infinito, pode estar enfraquecendo nossa capacidade intríseca de formar e reter memórias significativas.",
                         d1: "Desenvolver o argumento positivo, mostrando como a internet democratizou o acesso a arquivos históricos e permite a preservação da memória pessoal em larga escala.",
                         d2: "Desenvolver o argumento crítico, mostrando como a dependência de dispositivos externos e o excesso de estímulos podem levar a uma memória superficial e a uma cultura do esquecimento.",
                         conclusao: "Equilibrar as duas perspectivas e concluir que o desafio contemporâneo não é armazenar, mas sim saber o que vale a pena ser lembrado, cultivando uma relação consciente com a tecnologia para que ela sirva à memória, e não a substitua."
@@ -1236,7 +1236,7 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         pdf.setFontSize(16);
         const linhasTitulo = pdf.splitTextToSize(tema, larguraUtil);
         pdf.text(linhasTitulo, larguraPagina / 2, y, { align: 'center' });
-        y += (linhasTitulo.length * 7) + 5; // Pula linha proporcional ao tamanho do título
+        y += (linhasTitulo.length * 7) + 5;
 
         // Metadados
         pdf.setFont("helvetica", "normal");
@@ -1253,12 +1253,16 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
         y += 10;
 
-        // Corpo do Texto Justificado
+        // Corpo do Texto
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
-        const larguraTextoComFolga = larguraUtil - 2; // Margem de segurança para justificação
+        
+        // CORREÇÃO: Usa uma largura de texto um pouco menor para a quebra de linha para evitar estouro
+        const larguraTextoComFolga = larguraUtil - 5; // Aumentei a folga de segurança para 5mm
         const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
-        pdf.text(linhas, margemEsquerda, y, { align: 'justify' });
+        
+        // CORREÇÃO: Renderiza com alinhamento à esquerda, que é mais estável e profissional
+        pdf.text(linhas, margemEsquerda, y);
         
         pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
     }
@@ -1640,7 +1644,7 @@ await deleteDoc(docRef);
             await carregarEdital(config);
             await carregarDisciplinas(config);
             
-            const userDocRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/perfil`, 'userData');
+            const userDocRef = doc(db, `artifacts/${appId}/users/${config.userId}/perfil`, 'userData');
 const userDoc = await getDoc(userDocRef);
             const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
             await carregarPrioridades(config, prioridadesSalvas);
