@@ -1841,8 +1841,10 @@ ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'D
         const { appId } = config;
         const container = document.getElementById('lista-simulados');
         container.innerHTML = "<p>A carregar...</p>";
+        
         const q = query(collection(db, `artifacts/${appId}/public/data/simulados`));
         const snapshot = await getDocs(q);
+
         if (snapshot.empty) {
             container.innerHTML = "<p>Nenhum simulado encontrado.</p>";
             return;
