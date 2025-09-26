@@ -345,511 +345,517 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
 
   <script type="module">
     // =========================
-    // CONFIGURAÇÃO DO 
- FIREBASE
+    // CONFIGURAÇÃO DO FIREBASE
     // =========================
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
- import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
- import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
- // =========================
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, getDocs, getDoc, query, where, orderBy, Timestamp, updateDoc, setDoc, documentId, addDoc, serverTimestamp, deleteDoc, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    // =========================
     // VARIÁVEIS GLOBAIS
     // =========================
     let app, db, auth;
- let timerInterval;
+    let timerInterval;
     let segundosCorridos = 0;
-    let tarefaAtualId = null; 
+    let tarefaAtualId = null;
     let graficoPizza = null;
     let graficoDesempenhoModos = null;
- let graficoLinhaModos = null;
+    let graficoLinhaModos = null;
     let metaAcertosGlobal = 0;
     const modalCorpo = document.getElementById('modal-corpo');
     let questoesDoSimulado = [];
     let questaoAtualIndex = 0;
- let pontuacao = 0;
+    let pontuacao = 0;
     let _db_r, _userId_r, _appId_r, _temaRedacaoAtual, _notaRedacaoAtual;
- // ===============================================
+
+    // ===============================================
     // FUNÇÕES UTILITÁRIAS E AUXILIARES
     // ===============================================
     function showNotification(message, type = 'success') {
         const container = document.getElementById('notification-container');
- if (!container) return;
+        if (!container) return;
         const notif = document.createElement('div');
         notif.className = `p-4 text-white ${type === 'error' ?
  'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
         notif.textContent = message;
         container.appendChild(notif);
-        setTimeout(() => { notif.classList.add('fade-out'); notif.addEventListener('animationend', () => notif.remove()); }, 3000);
- }
+        setTimeout(() => {
+            notif.classList.add('fade-out');
+            notif.addEventListener('animationend', () => notif.remove());
+        }, 3000);
+    }
 
-    function abrirModal(modalId) { 
+    function abrirModal(modalId) {
         const modal = document.getElementById(modalId);
- if(modal) modal.classList.remove('hidden'); 
+        if (modal) modal.classList.remove('hidden');
     }
 
     function fecharModal(modalId) {
         const modal = document.getElementById(modalId);
- if (!modal) return;
+        if (!modal) return;
         const content = modal.querySelector('.fade-in');
         if (content) {
             content.classList.add('fade-out');
- content.addEventListener('animationend', () => { modal.classList.add("hidden"); content.classList.remove('fade-out'); }, { once: true });
- } else { 
+            content.addEventListener('animationend', () => {
+                modal.classList.add("hidden");
+                content.classList.remove('fade-out');
+            }, {
+                once: true
+            });
+        } else {
             modal.classList.add("hidden");
- }
+        }
     }
 
     async function atualizarPerfilPublico(config) {
-        const { db, appId, userId } = config;
- const user = auth.currentUser;
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const user = auth.currentUser;
         if (!user) return;
-        
         const publicProfileRef = doc(db, `artifacts/${appId}/public/data/usuarios`, userId);
- try {
+        try {
             await setDoc(publicProfileRef, {
-                nome: user.email, 
+                nome: user.email,
                 uid: userId,
                 lastSeen: serverTimestamp()
-            }, { merge: true });
- } catch (e) {
+            }, {
+                merge: true
+            });
+        } catch (e) {
             handleFirestoreError(e, "Atualizar Perfil Público");
- }
+        }
     }
 
     function handleFirestoreError(error, context) {
         console.error(`Erro de Firestore em '${context}':`, error);
- if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
+        if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
             const errorContainer = document.getElementById('global-error-container');
- const errorMessage = document.getElementById('global-error-message');
-            errorMessage.textContent = `Falha na operação '${context}'.
- Parece que as Regras de Segurança do seu Firestore estão bloqueando a ação.
- Por favor, verifique se as regras corretas foram aplicadas ao seu projeto no Console do Firebase.`;
+            const errorMessage = document.getElementById('global-error-message');
+            errorMessage.textContent = `Falha na operação '${context}'. Parece que as Regras de Segurança do seu Firestore estão bloqueando a ação. Por favor, verifique se as regras corretas foram aplicadas ao seu projeto no Console do Firebase.`;
             errorContainer.classList.remove('hidden');
- } else {
+        } else {
             showNotification(`Erro em '${context}': ${error.message}`, 'error');
- }
+        }
     }
 
-    function getDragAfterElement(container, y) { 
+    function getDragAfterElement(container, y) {
         const draggableElements = [...container.querySelectorAll('.priority-item:not(.dragging)')];
- return draggableElements.reduce((closest, child) => { 
-            const box = child.getBoundingClientRect(); 
-            const offset = y - box.top - box.height / 2; 
-            if (offset < 0 && offset > closest.offset) { 
-                return { offset: offset, element: child }; 
-            } 
- 
-else { 
-                return closest; 
-            } 
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
- }
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return {
+                    offset: offset,
+                    element: child
+                };
+            } else {
+                return closest;
+            }
+        }, {
+            offset: Number.NEGATIVE_INFINITY
+        }).element;
+    }
 
-    function getDateRange(periodo) { 
+    function getDateRange(periodo) {
         const agora = new Date();
- let dataInicio;
+        let dataInicio;
         if (periodo === 'semana') dataInicio = new Date(agora.setDate(agora.getDate() - 7));
- else if (periodo === 'mes') dataInicio = new Date(agora.setMonth(agora.getMonth() - 1)); 
-        else dataInicio = new Date(0); 
+        else if (periodo === 'mes') dataInicio = new Date(agora.setMonth(agora.getMonth() - 1));
+        else dataInicio = new Date(0);
         return Timestamp.fromDate(dataInicio);
- }
+    }
 
     function formatarTempo(totalSegundos) {
         const s = Math.max(0, totalSegundos);
- const horas = Math.floor(s / 3600);
+        const horas = Math.floor(s / 3600);
         const minutos = Math.floor((s % 3600) / 60);
         const segundos = Math.floor(s % 60);
- return [horas, minutos, segundos]
+        return [horas, minutos, segundos]
             .map(v => v.toString().padStart(2, '0'))
             .join(':');
- }
+    }
 
     function updateTimerDisplayFromHours(horas) {
         const timerDisplay = document.getElementById('timer-display');
- segundosCorridos = (horas || 0) * 3600;
+        segundosCorridos = (horas || 0) * 3600;
         timerDisplay.textContent = formatarTempo(segundosCorridos);
- }
+    }
 
     // =========================
     // FUNÇÃO PRINCIPAL
     // =========================
     function iniciarAplicacao() {
         const firebaseConfig = {
-          apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
-          authDomain: "gfconcursos-app.firebaseapp.com",
-          projectId: "gfconcursos-app",
-          storageBucket: "gfconcursos-app.firebasestorage.app",
-          messagingSenderId: "615439428502",
-          appId: "1:615439428502:web:b399549c3969e052098bb7"
- 
- 
-       };
-
+            apiKey: "AIzaSyDqHXjI3lTXMgRWItxaP7An-JZe04YQ-Sg",
+            authDomain: "gfconcursos-app.firebaseapp.com",
+            projectId: "gfconcursos-app",
+            storageBucket: "gfconcursos-app.firebasestorage.app",
+            messagingSenderId: "615439428502",
+            appId: "1:615439428502:web:b399549c3969e052098bb7"
+        };
         if (typeof __firebase_config !== 'undefined' && __firebase_config !== '{}') {
             try {
                 const envConfig = JSON.parse(__firebase_config);
- if (envConfig.projectId) firebaseConfig = envConfig;
+                if (envConfig.projectId) firebaseConfig = envConfig;
             } catch (e) {
                 console.warn("Configuração do ambiente (__firebase_config) é inválida. Usando configuração fixa.");
- }
+            }
         }
-        
         if (!firebaseConfig.projectId) {
             console.error("Nenhuma configuração válida do Firebase foi encontrada.");
- document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente.</h1>';
+            document.body.innerHTML = '<h1>Erro Crítico: Configuração do Firebase ausente.</h1>';
             return;
         }
-
         try {
             app = initializeApp(firebaseConfig);
- db = getFirestore(app);
+            db = getFirestore(app);
             auth = getAuth(app);
         } catch (e) {
             console.error("Erro ao inicializar Firebase:", e);
- document.body.innerHTML = `<h1>Erro ao inicializar Firebase: ${e.message}</h1>`;
+            document.body.innerHTML = `<h1>Erro ao inicializar Firebase: ${e.message}</h1>`;
             return;
         }
-
         configurarNavegacaoAbas();
         iniciarAutenticacao();
- }
-    
+    }
+
     // =========================
     // NAVEGAÇÃO POR ABAS E UI
     // =========================
     function configurarNavegacaoAbas() {
         const tabsContainer = document.getElementById('tabs-container');
- if (!tabsContainer) return;
-
+        if (!tabsContainer) return;
         const tabButtons = tabsContainer.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
- document.getElementById('menu-toggle').addEventListener('click', () => {
+        document.getElementById('menu-toggle').addEventListener('click', () => {
             document.getElementById('nav-menu').classList.toggle('hidden');
         });
- tabButtons.forEach(button => {
+        tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const tab = button.dataset.tab;
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 tabContents.forEach(content => {
-            
- 
-         if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
+                    if (content.id === `tab-content-${tab}`) content.classList.remove('hidden');
                     else content.classList.add('hidden');
                 });
                 if (window.innerWidth < 768) document.getElementById('nav-menu').classList.add('hidden');
             });
         });
- document.getElementById('show-signup').addEventListener('click', (e) => {
-          e.preventDefault();
-          document.getElementById('login-view').classList.add('hidden');
-          document.getElementById('signup-view').classList.remove('hidden');
+        document.getElementById('show-signup').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('signup-view').classList.remove('hidden');
         });
- document.getElementById('show-login').addEventListener('click', (e) => {
-          e.preventDefault();
-          document.getElementById('signup-view').classList.add('hidden');
-          document.getElementById('login-view').classList.remove('hidden');
+        document.getElementById('show-login').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('signup-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
         });
- }
+    }
 
     // =========================
     // AUTENTICAÇÃO E INICIALIZAÇÃO
     // =========================
-    
     function resetCronometroState() {
         if (timerInterval) {
             clearInterval(timerInterval);
- }
+        }
         timerInterval = null;
         segundosCorridos = 0;
         tarefaAtualId = null;
- const timerDisplay = document.getElementById('timer-display');
+        const timerDisplay = document.getElementById('timer-display');
         if (timerDisplay) {
             timerDisplay.textContent = '00:00:00';
- }
-
+        }
         const btn = document.getElementById('btn-toggle-sessao');
- if (btn) {
+        if (btn) {
             btn.textContent = 'Iniciar Estudo';
             btn.classList.remove('bg-red-600', 'bg-yellow-500');
- btn.classList.add('bg-green-600');
+            btn.classList.add('bg-green-600');
             btn.disabled = true;
         }
-
         const infoSelecionada = document.getElementById('cronometro-info-selecionada');
- if (infoSelecionada) {
+        if (infoSelecionada) {
             infoSelecionada.classList.add('hidden');
- }
-
+        }
         const textoInfo = document.getElementById('cronometro-texto-info');
- if (textoInfo) {
+        if (textoInfo) {
             textoInfo.textContent = 'Clique em uma tarefa no seu cronograma semanal para começar.';
- }
-        
+        }
         const wrapper = document.getElementById('cronometro-wrapper');
- if(wrapper) {
+        if (wrapper) {
             wrapper.classList.remove('p-2', 'border-2', 'border-yellow-400');
- }
+        }
     }
 
     function iniciarAutenticacao() {
         document.getElementById('btn-login').addEventListener('click', handleLogin);
- document.getElementById('btn-signup').addEventListener('click', handleSignUp);
+        document.getElementById('btn-signup').addEventListener('click', handleSignUp);
         document.getElementById('btn-logout').addEventListener('click', handleLogout);
-
         onAuthStateChanged(auth, async (user) => {
             const authContainer = document.getElementById('auth-container');
             const appWrapper = document.getElementById('app-wrapper');
-
             if (user) {
                 authContainer.classList.add('hidden');
                 appWrapper.classList.remove('hidden');
-                
- 
-document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
-                
+                document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const config = { db, auth, appId, userId: user.uid };
-           
+                const config = {
+                    db,
+                    auth,
+                    appId,
+                    userId: user.uid
+                };
                 document.querySelector('.tab-button[data-tab="estudo"]').click();
-   
- 
-             
                 await inicializarApp(config);
                 inicializarModuloCronograma(config);
                 inicializarModuloRedacao(config);
             } else {
                 authContainer.classList.remove('hidden');
-        
- 
-        appWrapper.classList.add('hidden');
+                appWrapper.classList.add('hidden');
                 resetCronometroState();
             }
         });
- }
+    }
 
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
- const password = document.getElementById('login-password').value;
+        const password = document.getElementById('login-password').value;
         if (!email || !password) {
             showNotification("Por favor, preencha e-mail e senha.", "error");
- return;
+            return;
         }
         try {
             await signInWithEmailAndPassword(auth, email, password);
- showNotification("Login bem-sucedido!", "success");
+            showNotification("Login bem-sucedido!", "success");
         } catch (error) {
             console.error("Erro de login:", error);
- showNotification(`Erro ao entrar: ${error.message}`, "error");
+            showNotification(`Erro ao entrar: ${error.message}`, "error");
         }
     }
 
     async function handleSignUp() {
         const email = document.getElementById('signup-email').value;
- const password = document.getElementById('signup-password').value;
+        const password = document.getElementById('signup-password').value;
         if (!email || !password) {
             showNotification("Por favor, preencha e-mail e senha.", "error");
- return;
+            return;
         }
         if (password.length < 6) {
             showNotification("A senha deve ter pelo menos 6 caracteres.", "error");
- return;
+            return;
         }
         try {
             await createUserWithEmailAndPassword(auth, email, password);
- showNotification("Conta criada com sucesso! Bem-vindo!", "success");
+            showNotification("Conta criada com sucesso! Bem-vindo!", "success");
         } catch (error) {
             console.error("Erro de cadastro:", error.code);
- showNotification(`Erro ao cadastrar: ${error.message}`, "error");
+            showNotification(`Erro ao cadastrar: ${error.message}`, "error");
         }
     }
 
     async function handleLogout() {
         try {
-            if(timerInterval) {
-                await salvarSessaoPendente({db, auth, appId: 'default-app-id', userId: auth.currentUser.uid});
- }
+            if (timerInterval) {
+                await salvarSessaoPendente({
+                    db,
+                    auth,
+                    appId: 'default-app-id',
+                    userId: auth.currentUser.uid
+                });
+            }
             await signOut(auth);
             showNotification("Você saiu com sucesso.", "success");
- } catch (error) {
+        } catch (error) {
             showNotification("Erro ao sair.", "error");
- }
+        }
     }
 
     // =========================
     // FUNÇÃO GERAL DE INICIALIZAÇÃO DOS MÓDULOS
     // =========================
     async function inicializarApp(config) {
-        const { db, auth, appId, userId } = config;
- await atualizarPerfilPublico(config);
-
+        const {
+            db,
+            auth,
+            appId,
+            userId
+        } = config;
+        await atualizarPerfilPublico(config);
         const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData');
         const userDoc = await getDoc(userDocRef);
- if(userDoc.exists()) {
+        if (userDoc.exists()) {
             const userData = userDoc.data();
- metaAcertosGlobal = userData.metaAcertos || 80;
+            metaAcertosGlobal = userData.metaAcertos || 80;
             document.getElementById('meta-geral-horas').value = userData.metaGeralHoras || '';
             document.getElementById('ciclo-nome-input').value = userData.cicloAtualNome || 'Ciclo 1: Rumo à Aprovação (ALE-RO)';
- await carregarPrioridades(config, userData.prioridadeDisciplinas);
+            await carregarPrioridades(config, userData.prioridadeDisciplinas);
         } else {
             await carregarPrioridades(config, []);
- }
-        
+        }
         const funcoesCarregamento = [
             () => carregarDisciplinas(config), () => carregarProgressoDisciplinas(config), () => carregarEvolucaoQuestoes(config),
             () => carregarRevisoes(config), () => carregarDesempenhoPorModo(config), () => carregarEvolucaoCronologicaPorModo(config),
             () => carregarEdital(config), () => carregarPerfil(config), () => carregarMedalhas(config), () => carregarRanking(config),
             () => carregarDesafios(config), () => carregarSimulados(config)
- 
- 
-       ];
-        
-        for(const funcao of funcoesCarregamento) { try { await funcao();
- } catch (error) { console.error(`Erro ao executar ${funcao.name}:`, error); } }
-
+        ];
+        for (const funcao of funcoesCarregamento) {
+            try {
+                await funcao();
+            } catch (error) {
+                console.error(`Erro ao executar ${funcao.name}:`, error);
+            }
+        }
         document.getElementById('btn-cadastrar-disciplina-edital').addEventListener('click', () => handleCadastrarDisciplina(config));
- document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
-        document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => { carregarDesempenhoPorModo(config); carregarEvolucaoCronologicaPorModo(config); });
+        document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
+        document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => {
+            carregarDesempenhoPorModo(config);
+            carregarEvolucaoCronologicaPorModo(config);
+        });
         document.getElementById('btnCompararMeta').addEventListener('click', () => toggleLinhaMeta());
- document.getElementById('btn-iniciar-pratica').addEventListener('click', () => { const idDisciplina = document.getElementById("seletorDisciplina").value; if (!idDisciplina) { alert("Por favor, escolha uma disciplina."); return; } iniciarSimulado(config, idDisciplina, null, null, 'pratica'); });
- document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(config));
+        document.getElementById('btn-iniciar-pratica').addEventListener('click', () => {
+            const idDisciplina = document.getElementById("seletorDisciplina").value;
+            if (!idDisciplina) {
+                alert("Por favor, escolha uma disciplina.");
+                return;
+            }
+            iniciarSimulado(config, idDisciplina, null, null, 'pratica');
+        });
+        document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(config));
         document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(config));
         document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => fecharModal('modal-questoes'));
         document.getElementById('btn-encerrar-ciclo').addEventListener('click', () => handleEncerrarCiclo(config));
-        
         document.getElementById('btn-toggle-sessao').addEventListener('click', () => toggleSessaoDeEstudo(config));
- document.getElementById('btn-confirmar-horas').addEventListener('click', () => {
+        document.getElementById('btn-confirmar-horas').addEventListener('click', () => {
             const horas = parseFloat(document.getElementById('modal-horas-input').value);
             if (horas > 0) {
                 updateTimerDisplayFromHours(horas);
                 document.getElementById('btn-toggle-sessao').disabled = false;
                 fecharModal('modal-horas');
             } else {
-  
- 
-              showNotification("Por favor, insira um valor de horas válido.", "error");
+                showNotification("Por favor, insira um valor de horas válido.", "error");
             }
         });
- document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
+        document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
     }
+    // ... CÓDIGO RESTANTE ...
+    // NOTE: Funções como carregarRedacoesSalvas_v2, carregarEdital, etc. viriam aqui.
+    // O código será colado integralmente.
     
-    // =========================
-    // MÓDULO DE CRONOGRAMA
-    // =========================
-
     async function toggleSessaoDeEstudo(config) {
         const btn = document.getElementById('btn-toggle-sessao');
- const isRunning = timerInterval != null;
+        const isRunning = timerInterval != null;
 
         if (isRunning) {
             clearInterval(timerInterval);
- timerInterval = null;
+            timerInterval = null;
             btn.textContent = 'Retomar Estudo';
             btn.classList.remove('bg-red-600');
             btn.classList.add('bg-green-600');
             await salvarSessaoPendente(config);
- } else {
+        } else {
             if (tarefaAtualId === null) {
                 showNotification("Nenhuma tarefa selecionada.", "error");
- return;
+                return;
             }
             if (segundosCorridos <= 0) {
                 showNotification("Tempo de estudo zerado. Selecione a tarefa novamente e defina as horas.", "error");
- return;
+                return;
             }
 
             btn.textContent = 'Pausar Estudo';
             btn.classList.remove('bg-green-600');
             btn.classList.add('bg-red-600');
- timerInterval = setInterval(async () => {
+            timerInterval = setInterval(async () => {
                 segundosCorridos--;
                 document.getElementById('timer-display').textContent = formatarTempo(segundosCorridos);
 
                 if (segundosCorridos <= 0) {
                     clearInterval(timerInterval);
-                    timerInterval 
- 
-= null;
+                    timerInterval = null;
                     btn.textContent = 'Iniciar Estudo';
                     btn.classList.remove('bg-red-600');
                     btn.classList.add('bg-green-600');
                     btn.disabled = true;
-              
- 
-      showNotification("Sessão de estudo concluída!", "success");
+                    showNotification("Sessão de estudo concluída!", "success");
                     await marcarTarefaComoConcluida(config);
                 }
             }, 1000);
- }
+        }
     }
     
     async function marcarTarefaComoConcluida(config) {
         if (!tarefaAtualId) return;
- try {
+        try {
             const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
- await updateDoc(tarefaRef, { status: "concluido", segundosRestantes: deleteField() });
+            await updateDoc(tarefaRef, { status: "concluido", segundosRestantes: deleteField() });
             
             showNotification(`Tarefa marcada como concluída!`, "success");
             await carregarCronograma(config); 
             
             tarefaAtualId = null; 
             document.getElementById('cronometro-info-selecionada').classList.add('hidden');
- document.getElementById('cronometro-texto-info').textContent = 'Clique em uma tarefa no seu cronograma semanal para começar.';
+            document.getElementById('cronometro-texto-info').textContent = 'Clique em uma tarefa no seu cronograma semanal para começar.';
             document.getElementById('cronometro-wrapper').classList.remove('p-2', 'border-2', 'border-yellow-400');
             updateTimerDisplayFromHours(0);
- } catch(error) {
+        } catch(error) {
             handleFirestoreError(error, "Marcar Tarefa como Concluída");
- }
+        }
     }
     
     async function selecionarTarefaParaEstudo(tarefaElement, config) {
         const { tarefaId, materia, assunto, status, segundosRestantes } = tarefaElement.dataset;
- if (timerInterval !== null && tarefaAtualId !== tarefaId) {
+        if (timerInterval !== null && tarefaAtualId !== tarefaId) {
             showNotification("Por favor, pause o estudo atual antes de selecionar uma nova tarefa.", "error");
- return;
+            return;
         }
         
         tarefaAtualId = tarefaId;
- document.getElementById('cronometro-disciplina-display').textContent = materia;
+        document.getElementById('cronometro-disciplina-display').textContent = materia;
         document.getElementById('cronometro-assunto-display').textContent = assunto;
         document.getElementById('cronometro-info-selecionada').classList.remove('hidden');
         document.getElementById('cronometro-wrapper').classList.remove('p-2', 'border-2', 'border-yellow-400');
 
         const btn = document.getElementById('btn-toggle-sessao');
- if (status === 'pausado' && parseInt(segundosRestantes, 10) > 0) {
+        if (status === 'pausado' && parseInt(segundosRestantes, 10) > 0) {
             segundosCorridos = parseInt(segundosRestantes, 10);
- document.getElementById('timer-display').textContent = formatarTempo(segundosCorridos);
+            document.getElementById('timer-display').textContent = formatarTempo(segundosCorridos);
             btn.textContent = 'Retomar Estudo';
             btn.disabled = false;
             document.getElementById('cronometro-texto-info').textContent = 'Você tem uma sessão de estudo pendente.';
- document.getElementById('cronometro-wrapper').classList.add('p-2', 'border-2', 'border-yellow-400');
+            document.getElementById('cronometro-wrapper').classList.add('p-2', 'border-2', 'border-yellow-400');
         } else {
             updateTimerDisplayFromHours(0);
- btn.disabled = true;
+            btn.disabled = true;
             btn.textContent = 'Iniciar Estudo';
             document.getElementById('cronometro-texto-info').textContent = 'Defina o tempo e inicie o seu estudo.';
             document.getElementById('modal-horas-input').value = 1;
- abrirModal('modal-horas');
+            abrirModal('modal-horas');
         }
     }
 
     async function salvarSessaoPendente(config) {
         if (!tarefaAtualId) return;
- const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
+        const tarefaRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/cronograma`, tarefaAtualId);
         try {
             await updateDoc(tarefaRef, {
                 status: "pausado",
                 segundosRestantes: segundosCorridos
             });
- console.log("Sessão pendente salva na tarefa.");
+            console.log("Sessão pendente salva na tarefa.");
             await carregarCronograma(config);
         } catch (e) {
             handleFirestoreError(e, "Salvar Sessão Pendente");
- }
+        }
     }
 
     function inicializarModuloCronograma(config) {
         document.getElementById('form-cronograma').addEventListener('submit', (e) => adicionarTarefaCronograma(e, config));
- document.getElementById('materia-cronograma').addEventListener('change', (e) => handleMateriaChangeCronograma(e, config));
+        document.getElementById('materia-cronograma').addEventListener('change', (e) => handleMateriaChangeCronograma(e, config));
         
         const container = document.getElementById('container-dias-cronograma');
         container.addEventListener('click', (e) => {
@@ -858,54 +864,54 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 selecionarTarefaParaEstudo(tarefaElement, config);
             }
         });
- renderizarEstruturaDias();
+        renderizarEstruturaDias();
         carregarCronograma(config);
         carregarDisciplinasNoCronograma(config);
     }
 
     function renderizarEstruturaDias() {
         const container = document.getElementById('container-dias-cronograma');
- if(!container) return;
+        if(!container) return;
         container.innerHTML = '';
         const dias = {
             "segunda": "Segunda-feira", "terca": "Terça-feira", "quarta": "Quarta-feira",
             "quinta": "Quinta-feira", "sexta": "Sexta-feira", "sabado": "Sábado", "domingo": "Domingo"
         };
- for (const diaId in dias) {
+        for (const diaId in dias) {
             const displayName = dias[diaId];
- container.innerHTML += `<div class="bg-gray-100 p-3 rounded-lg"><h3 class="font-semibold text-center border-b pb-2 mb-2">${displayName}</h3><div id="lista-tarefas-${diaId}" class="space-y-2"><p class="text-xs text-gray-400 text-center">Nenhuma tarefa.</p></div></div>`;
- }
+            container.innerHTML += `<div class="bg-gray-100 p-3 rounded-lg"><h3 class="font-semibold text-center border-b pb-2 mb-2">${displayName}</h3><div id="lista-tarefas-${diaId}" class="space-y-2"><p class="text-xs text-gray-400 text-center">Nenhuma tarefa.</p></div></div>`;
+        }
     }
 
     async function adicionarTarefaCronograma(e, config) {
         e.preventDefault();
- const materiaSelect = document.getElementById('materia-cronograma');
+        const materiaSelect = document.getElementById('materia-cronograma');
         const materia = materiaSelect.options[materiaSelect.selectedIndex].text;
         const assuntoSelect = document.getElementById('assunto-cronograma');
         const assunto = assuntoSelect.value;
         const dia = document.getElementById('dia-cronograma').value;
- const horario = document.getElementById('horario-cronograma').value;
+        const horario = document.getElementById('horario-cronograma').value;
 
         if (!materia || materiaSelect.value === "" || !dia || !horario || !assunto) { 
             showNotification("Preencha todos os campos, incluindo matéria e assunto.", "error");
- return; 
+            return; 
         }
         try {
             const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
- await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId, status: "pendente" });
+            await addDoc(collection(config.db, collectionPath), { materia, assunto, dia, horario, usuarioId: config.userId, status: "pendente" });
             showNotification("Tarefa adicionada!");
             document.getElementById('form-cronograma').reset();
             document.getElementById('assunto-cronograma-container').classList.add('hidden');
             carregarCronograma(config);
- } catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
+        } catch (error) { handleFirestoreError(error, "Adicionar Tarefa ao Cronograma"); }
     }
     
     async function carregarCronograma(config) {
         renderizarEstruturaDias();
- const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
+        const collectionPath = `artifacts/${config.appId}/users/${config.userId}/cronograma`;
         const q = query(collection(config.db, collectionPath), where("usuarioId", "==", config.userId));
         const querySnapshot = await getDocs(q);
- const tarefasPorDia = {};
+        const tarefasPorDia = {};
         querySnapshot.forEach(doc => {
             const tarefa = { id: doc.id, ...doc.data() };
             if (!tarefasPorDia[tarefa.dia]) {
@@ -913,53 +919,45 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
             }
             tarefasPorDia[tarefa.dia].push(tarefa);
         });
- for (const diaId in tarefasPorDia) {
+        for (const diaId in tarefasPorDia) {
             const containerTarefas = document.getElementById(`lista-tarefas-${diaId}`);
- if (containerTarefas) {
+            if (containerTarefas) {
                 containerTarefas.innerHTML = '';
- tarefasPorDia[diaId].sort((a, b) => a.horario.localeCompare(b.horario));
+                tarefasPorDia[diaId].sort((a, b) => a.horario.localeCompare(b.horario));
                 tarefasPorDia[diaId].forEach(tarefa => {
                     const isConcluida = tarefa.status === 'concluido';
                     const isPausada = tarefa.status === 'pausado';
 
                     const div = document.createElement('div');
                     
- 
- 
                    let bgColorClass = 'bg-white';
                     if (isConcluida) {
                         bgColorClass = 'bg-green-100 border-l-4 border-green-500';
                     } else if (isPausada) {
-    
- 
-                    bgColorClass = 'bg-red-100 border-l-4 border-red-500';
+                        bgColorClass = 'bg-red-100 border-l-4 border-red-500';
                     }
                     div.className = `tarefa-cronograma-item p-2 rounded shadow-sm flex justify-between items-center text-sm ${bgColorClass}`;
                     
-      
- 
-              div.dataset.tarefaId = tarefa.id;
+                    div.dataset.tarefaId = tarefa.id;
                     div.dataset.materia = tarefa.materia;
                     div.dataset.assunto = tarefa.assunto;
                     div.dataset.dia = tarefa.dia;
-                  
- 
-  div.dataset.status = tarefa.status;
+                    div.dataset.status = tarefa.status;
                     div.dataset.segundosRestantes = tarefa.segundosRestantes || 0;
 
                     let infoHTML = `<div><p class="font-bold">${tarefa.horario} - ${tarefa.materia}</p><p class="text-xs text-gray-500 pl-1">${tarefa.assunto}</p>`;
- if (isPausada && tarefa.segundosRestantes > 0) {
+                    if (isPausada && tarefa.segundosRestantes > 0) {
                         infoHTML += `<p class="text-xs text-red-600 font-semibold pl-1">Pendente: ${formatarTempo(tarefa.segundosRestantes)}</p>`;
- }
+                    }
                     infoHTML += `</div>`;
- div.innerHTML = infoHTML;
+                    div.innerHTML = infoHTML;
                   
-                  const removeBtn = document.createElement('button');
+                    const removeBtn = document.createElement('button');
                     removeBtn.innerHTML = '&times;';
                     removeBtn.className = "text-red-500 hover:text-red-700 font-bold text-lg px-2";
- removeBtn.onclick = (e) => {
+                    removeBtn.onclick = (e) => {
                         e.stopPropagation();
- removerTarefaCronograma(tarefa.id, config);
+                        removerTarefaCronograma(tarefa.id, config);
                     };
       
                     div.appendChild(removeBtn);
@@ -972,11 +970,11 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
     async function removerTarefaCronograma(tarefaId, config) {
         try {
             const docPath = `artifacts/${config.appId}/users/${config.userId}/cronograma/${tarefaId}`;
- await deleteDoc(doc(config.db, docPath));
+            await deleteDoc(doc(config.db, docPath));
             showNotification("Tarefa removida.");
             carregarCronograma(config);
         } catch (error) { handleFirestoreError(error, "Remover Tarefa do Cronograma");
- }
+        }
     }
 
     // =========================
@@ -984,21 +982,21 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
     // =========================
     function inicializarModuloRedacao(config) {
         _db_r = config.db;
- _userId_r = config.userId; _appId_r = config.appId;
+        _userId_r = config.userId; _appId_r = config.appId;
         carregarTemasRedacao_v2();
         carregarRedacoesSalvas_v2();
         document.getElementById("btn-fechar-escrever")?.addEventListener("click", () => fecharModal('modal-redacao'));
         document.getElementById("btn-fechar-ver")?.addEventListener("click", () => fecharModal('modal-ver-redacao'));
         document.getElementById("btn-salvar")?.addEventListener("click", salvarRedacao_v2);
         document.getElementById("btn-corrigir")?.addEventListener("click", corrigirRedacao_v2);
- document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
+        document.getElementById("btn-imprimir")?.addEventListener("click", imprimirRedacao_v2);
         
         document.getElementById('btn-fechar-detalhes').addEventListener('click', () => fecharModal('modal-tema-detalhes'));
     }
 
     function abrirModalDetalhesTema(tema) {
         document.getElementById('detalhes-tema-titulo').textContent = tema.titulo;
- const corpo = document.getElementById('detalhes-tema-corpo');
+        const corpo = document.getElementById('detalhes-tema-corpo');
         
         const analise = tema.analise;
         corpo.innerHTML = `
@@ -1006,46 +1004,39 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 <div>
                     <h3 class="font-semibold text-lg text-blue-700">Entendendo o Tema</h3>
                     <p class="text-gray-600 mt-1">${analise.entendimento}</p>
-              
-   </div>
+                </div>
                 <div>
                     <h3 class="font-semibold text-lg text-blue-700">Linhas de Argumentação</h3>
                     <div class="mt-1 space-y-2">
                         ${analise.argumentos.map(arg => `
-         
-                    <div class="p-3 bg-gray-50 rounded-md">
+                            <div class="p-3 bg-gray-50 rounded-md">
                                 <p class="font-semibold text-gray-800">${arg.titulo}</p>
                                 <p class="text-gray-600">${arg.texto}</p>
-           
-                  </div>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
                 <div>
-       
-              <h3 class="font-semibold text-lg text-blue-700">Exemplos para Enriquecer</h3>
+                    <h3 class="font-semibold text-lg text-blue-700">Exemplos para Enriquecer</h3>
                     <ul class="list-disc list-inside text-gray-600 mt-1 space-y-1">
                         ${analise.exemplos.map(ex => `<li>${ex}</li>`).join('')}
                     </ul>
-           
-      </div>
+                </div>
                 <div>
                     <h3 class="font-semibold text-lg text-blue-700">Estrutura de Resposta (Modelo)</h3>
                     <div class="mt-1 space-y-2 text-sm">
                         <p><strong>Introdução:</strong> ${analise.estrutura.introducao}</p>
-     
-                    <p><strong>Desenvolvimento 1:</strong> ${analise.estrutura.d1}</p>
+                        <p><strong>Desenvolvimento 1:</strong> ${analise.estrutura.d1}</p>
                         <p><strong>Desenvolvimento 2:</strong> ${analise.estrutura.d2}</p>
                         <p><strong>Conclusão:</strong> ${analise.estrutura.conclusao}</p>
                     </div>
-        
-         </div>
+                </div>
             </div>
         `;
- const btnIniciarEscrita = document.getElementById('btn-iniciar-escrita-redacao');
+        const btnIniciarEscrita = document.getElementById('btn-iniciar-escrita-redacao');
         btnIniciarEscrita.onclick = () => {
             fecharModal('modal-tema-detalhes');
- _temaRedacaoAtual = tema.titulo;
+            _temaRedacaoAtual = tema.titulo;
             _notaRedacaoAtual = null;
             document.getElementById("titulo-redacao").textContent = tema.titulo;
             document.getElementById("texto-redacao").value = "";
@@ -1053,7 +1044,7 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
             document.getElementById("btn-imprimir").style.display = "none";
             abrirModal('modal-redacao');
         };
- abrirModal('modal-tema-detalhes');
+        abrirModal('modal-tema-detalhes');
     }
 
     async function carregarTemasRedacao_v2() {
@@ -1062,780 +1053,989 @@ document.getElementById('user-info').textContent = `Bem-vindo, ${user.email}`;
                 titulo: "O paradoxo da escolha: a liberdade em um mundo de opções infinitas", 
                 ano: 2023, 
                 banca: "FGV",
-    
-             analise: {
+                analise: {
                     entendimento: "A proposta questiona se ter muitas opções realmente nos torna mais livres e felizes, ou se, paradoxalmente, a sobrecarga de escolhas nos leva à ansiedade, paralisia e insatisfação.",
                     argumentos: [
-                  
-       { titulo: "Argumento 1: O excesso de opções é prejudicial", texto: "Sustentar que a necessidade de analisar inúmeras alternativas gera um custo mental e emocional elevado. Aumenta a expectativa por um resultado 'perfeito', tornando a decepção mais provável e diminuindo a satisfação com a escolha feita."
- },
-                        { titulo: "Argumento 2: A multiplicidade de escolhas é uma conquista", texto: "Defender que a dificuldade não está no número de opções, mas na falta de preparo do indivíduo (educação, autoconhecimento) para lidar com elas, sendo uma ferramenta essencial da liberdade."
- }
+                        { titulo: "Argumento 1: O excesso de opções é prejudicial", texto: "Sustentar que a necessidade de analisar inúmeras alternativas gera um custo mental e emocional elevado. Aumenta a expectativa por um resultado 'perfeito', tornando a decepção mais provável e diminuindo a satisfação com a escolha feita." },
+                        { titulo: "Argumento 2: A multiplicidade de escolhas é uma conquista", texto: "Defender que a dificuldade não está no número de opções, mas na falta de preparo do indivíduo (educação, autoconhecimento) para lidar com elas, sendo uma ferramenta essencial da liberdade." }
                     ],
                     exemplos: [
                         "Catálogos de streaming (Netflix) com milhares de títulos, resultando em mais tempo procurando do que assistindo.",
-                    
-     "Psicólogo Barry Schwartz, autor do livro 'O Paradoxo da Escolha'.",
+                        "Psicólogo Barry Schwartz, autor do livro 'O Paradoxo da Escolha'.",
                         "Conceito de 'Modernidade Líquida' de Zygmunt Bauman sobre a insegurança gerada pela fluidez de referências."
- ],
+                    ],
                     estrutura: {
                         introducao: "Contextualizar a sociedade como a 'era das opções'. Apresentar a tese de que a abundância de escolhas gerou um efeito paradoxal de aprisionamento e ansiedade.",
-                        d1: "Aprofundar como a sobrecarga de 
- informações leva à paralisia decisória, usando o exemplo do consumo ou da tecnologia.",
+                        d1: "Aprofundar como a sobrecarga de informações leva à paralisia decisória, usando o exemplo do consumo ou da tecnologia.",
                         d2: "Argumentar que a liberdade de escolha é essencial, mas que a sociedade de consumo a explora sem oferecer ferramentas para um discernimento saudável.",
-                        conclusao: "Propor uma reflexão sobre a necessidade de desenvolver um 'filtro crítico' para transformar a liberdade de 
- escolha em bem-estar."
+                        conclusao: "Propor uma reflexão sobre a necessidade de desenvolver um 'filtro crítico' para transformar a liberdade de escolha em bem-estar."
                     }
                 }
             },
             { 
                 titulo: "A busca pela felicidade no mundo contemporâneo: entre o ser e o ter", 
                 ano: 2022, 
-        
-         banca: "FGV",
+                banca: "FGV",
                 analise: {
                     entendimento: "A proposta pede uma reflexão sobre o que define a felicidade hoje. Ela é alcançada através de posses materiais e status (o 'ter') ou por meio de experiências, valores e desenvolvimento pessoal (o 'ser')?",
-                    
- argumentos: [
-                        { titulo: "Crítica à felicidade no 'Ter'", texto: "Argumentar que a sociedade de consumo atrela a felicidade à aquisição de bens, criando um ciclo vicioso de desejo e insatisfação. Essa felicidade é efêmera."
- },
-                        { titulo: "Valorização da felicidade no 'Ser'", texto: "Defender que a felicidade genuína e duradoura provém de fontes internas e não-materiais, como relacionamentos, propósito e experiências. O 'ser' está ligado a valores perenes."
- }
+                    argumentos: [
+                        { titulo: "Crítica à felicidade no 'Ter'", texto: "Argumentar que a sociedade de consumo atrela a felicidade à aquisição de bens, criando um ciclo vicioso de desejo e insatisfação. Essa felicidade é efêmera." },
+                        { titulo: "Valorização da felicidade no 'Ser'", texto: "Defender que a felicidade genuína e duradoura provém de fontes internas e não-materiais, como relacionamentos, propósito e experiências. O 'ser' está ligado a valores perenes." }
                     ],
                     exemplos: [
                         "A ostentação nas redes sociais, onde a felicidade é um espetáculo baseado em posses.",
-                      
-   "Filosofia antiga como o Epicurismo ou Estoicismo, que focam em fatores internos.",
+                        "Filosofia antiga como o Epicurismo ou Estoicismo, que focam em fatores internos.",
                         "Crescimento de movimentos como o minimalismo, que prega o desapego material.",
                         "Erich Fromm, autor de 'Ter ou Ser?'."
- ],
+                    ],
                     estrutura: {
                         introducao: "Apresentar a busca pela felicidade como constante humana e a tese de que, embora a sociedade valorize o 'ter', a satisfação plena reside no 'ser'.",
-                        d1: "Criticar a lógica consumista, usando 
- o exemplo das redes sociais para ilustrar a frustração gerada pela comparação.",
+                        d1: "Criticar a lógica consumista, usando o exemplo das redes sociais para ilustrar a frustração gerada pela comparação.",
                         d2: "Apresentar a valorização do 'ser' como alternativa, usando o minimalismo ou a busca por propósito como exemplos de caminhos para uma felicidade resiliente.",
-                        conclusao: "Reafirmar a tese e concluir sobre a importância de uma mudança de paradigma para um conceito de 
- felicidade mais sustentável e humano."
+                        conclusao: "Reafirmar a tese e concluir sobre a importância de uma mudança de paradigma para um conceito de felicidade mais sustentável e humano."
                     }
                 }
             },
             { 
                 titulo: "A invisibilidade social e suas consequências na sociedade brasileira", 
                 ano: 2021, 
-          
-       banca: "FGV",
+                banca: "FGV",
                 analise: {
                     entendimento: "A proposta pede uma análise sobre os grupos sociais que não são 'vistos' ou reconhecidos pela sociedade e pelo Estado, e quais os impactos desse apagamento.",
                     argumentos: [
-         
-                { titulo: "Causas da Invisibilidade", texto: "Discutir que a invisibilidade é um projeto social e histórico, fruto do preconceito estrutural (racismo, aporofobia), da negligência estatal e da representação estereotipada pela mídia."
- },
-                        { titulo: "Consequências da Invisibilidade", texto: "Detalhar os efeitos práticos desse apagamento: negação de direitos básicos, marginalização, perpetuação da pobreza, violência e o impacto na saúde mental desses indivíduos."
- }
+                        { titulo: "Causas da Invisibilidade", texto: "Discutir que a invisibilidade é um projeto social e histórico, fruto do preconceito estrutural (racismo, aporofobia), da negligência estatal e da representação estereotipada pela mídia." },
+                        { titulo: "Consequências da Invisibilidade", texto: "Detalhar os efeitos práticos desse apagamento: negação de direitos básicos, marginalização, perpetuação da pobreza, violência e o impacto na saúde mental desses indivíduos." }
                     ],
                     exemplos: [
                         "População em situação de rua, povos indígenas, comunidades quilombolas, catadores de recicláveis.",
-                        
- "A forma como passamos por uma pessoa em situação de rua e 'não a vemos', como se fosse parte da paisagem.",
+                        "A forma como passamos por uma pessoa em situação de rua e 'não a vemos', como se fosse parte da paisagem.",
                         "A Constituição Federal que garante direitos a todos, mas que na prática não se efetiva para esses grupos."
- ],
+                    ],
                     estrutura: {
                         introducao: "Definir 'invisibilidade social' e apresentar a tese de que este fenômeno é um dos principais obstáculos para uma sociedade justa e democrática no Brasil.",
-                        d1: "Explorar as causas históricas e estruturais, 
- usando o exemplo da população em situação de rua para ilustrar a falha do Estado e da sociedade.",
+                        d1: "Explorar as causas históricas e estruturais, usando o exemplo da população em situação de rua para ilustrar a falha do Estado e da sociedade.",
                         d2: "Discutir as graves consequências, como a perpetuação da miséria, usando o exemplo dos povos indígenas e a luta por seus direitos e terras.",
-                        conclusao: "Propor ações para combater o problema, como políticas públicas inclusivas, promoção 
- da representatividade e conscientização social."
+                        conclusao: "Propor ações para combater o problema, como políticas públicas inclusivas, promoção da representatividade e conscientização social."
                     }
                 } 
             },
             {
                 titulo: "A persistência da memória na era do esquecimento digital",
                 ano: 2020,
-            
-     banca: "FGV",
+                banca: "FGV",
                 analise: {
                     entendimento: "O tema propõe uma reflexão sobre como a tecnologia (internet, redes sociais) afeta nossa memória individual e coletiva. Ela nos ajuda a lembrar de tudo ou, paradoxalmente, nos incentiva a esquecer, já que tudo pode ser 'guardado' externamente?",
-                    
- argumentos: [
-                        { titulo: "A tecnologia como extensão da memória", texto: "Argumentar que as ferramentas digitais funcionam como um poderoso arquivo, preservando informações, fotos e eventos que seriam perdidos. A memória coletiva nunca foi tão vasta e acessível."
- },
-                        { titulo: "A tecnologia como promotora do esquecimento", texto: "Defender que a facilidade de armazenar dados externamente (em nuvens, HDs) atrofia nossa capacidade de memorização interna. O fluxo constante de informações banais soterra memórias importantes."
- }
+                    argumentos: [
+                        { titulo: "A tecnologia como extensão da memória", texto: "Argumentar que as ferramentas digitais funcionam como um poderoso arquivo, preservando informações, fotos e eventos que seriam perdidos. A memória coletiva nunca foi tão vasta e acessível." },
+                        { titulo: "A tecnologia como promotora do esquecimento", texto: "Defender que a facilidade de armazenar dados externamente (em nuvens, HDs) atrofia nossa capacidade de memorização interna. O fluxo constante de informações banais soterra memórias importantes." }
                     ],
                     exemplos: [
                         "Álbuns de fotos digitais em redes sociais (Facebook, Instagram) que 'lembram' de eventos passados por nós.",
-                    
-     "A 'Síndrome do Google', onde não nos esforçamos para memorizar informações, pois sabemos que podemos pesquisá-las a qualquer momento.",
+                        "A 'Síndrome do Google', onde não nos esforçamos para memorizar informações, pois sabemos que podemos pesquisá-las a qualquer momento.",
                         "O direito ao esquecimento: um debate jurídico sobre apagar dados do passado na internet.",
-                        "O filme 'Brilho Eterno de uma Mente sem Lembranças' como metáfora sobre a importância das memórias, mesmo 
- as dolorosas."
+                        "O filme 'Brilho Eterno de uma Mente sem Lembranças' como metáfora sobre a importância das memórias, mesmo as dolorosas."
                     ],
                     estrutura: {
                         introducao: "Contextualizar a era digital e o volume de informações. Apresentar a tese de que a tecnologia, ao mesmo tempo que cria um arquivo quase infinito, pode estar enfraquecendo nossa capacidade intrínseca de formar e reter memórias significativas.",
-                
-         d1: "Desenvolver o argumento positivo, mostrando como a internet democratizou o acesso a arquivos históricos e permite a preservação da memória pessoal em larga escala.",
+                        d1: "Desenvolver o argumento positivo, mostrando como a internet democratizou o acesso a arquivos históricos e permite a preservação da memória pessoal em larga escala.",
                         d2: "Desenvolver o argumento crítico, mostrando como a dependência de dispositivos externos e o excesso de estímulos podem levar a uma memória superficial e a uma cultura do esquecimento.",
-                
-         conclusao: "Equilibrar as duas perspectivas e concluir que o desafio contemporâneo não é armazenar, mas sim saber o que vale a pena ser lembrado, cultivando uma relação consciente com a tecnologia para que ela sirva à memória, e não a substitua."
- }
+                        conclusao: "Equilibrar as duas perspectivas e concluir que o desafio contemporâneo não é armazenar, mas sim saber o que vale a pena ser lembrado, cultivando uma relação consciente com a tecnologia para que ela sirva à memória, e não a substitua."
+                    }
                 }
             }
         ];
- const container = document.getElementById("temas-redacao");
+        const container = document.getElementById("temas-redacao");
         if (!container) return;
         container.innerHTML = "";
- temas.forEach((tema) => {
+        temas.forEach((tema) => {
             const div = document.createElement("div");
             div.className = "p-6 bg-white rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col";
             div.innerHTML = `<div class="flex-grow"><h3 class="text-lg font-semibold text-gray-900">${tema.titulo}</h3><p class="text-sm text-gray-500 mt-2">Ano: ${tema.ano} | Banca: ${tema.banca}</p></div><button class="escrever-redacao-btn mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 self-start transition-colors">Escrever Redação</button>`;
             
-            
- div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
+            div.querySelector(".escrever-redacao-btn").addEventListener("click", () => {
                 abrirModalDetalhesTema(tema);
             });
             container.appendChild(div);
         });
- }
+    }
+
     async function salvarRedacao_v2() {
         const texto = document.getElementById("texto-redacao").value.trim();
- if (!texto) { showNotification("Digite sua redação antes de salvar.", "error"); return;
- }
+        if (!texto) {
+            showNotification("Digite sua redação antes de salvar.", "error");
+            return;
+        }
         try {
             const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
- const dadosParaSalvar = { 
-                tema: _temaRedacaoAtual, 
-                texto: texto, 
-                data: serverTimestamp(), 
+            const dadosParaSalvar = {
+                tema: _temaRedacaoAtual,
+                texto: texto,
+                data: serverTimestamp(),
                 usuarioId: _userId_r,
-                nota: _notaRedacaoAtual 
-       
-      };
-await addDoc(collection(_db_r, collectionPath), dadosParaSalvar);
+                nota: _notaRedacaoAtual
+            };
+            await addDoc(collection(_db_r, collectionPath), dadosParaSalvar);
             showNotification("Redação salva com sucesso!");
             fecharModal('modal-redacao');
             carregarRedacoesSalvas_v2();
- } catch (erro) { handleFirestoreError(erro, "Salvar Redação"); }
+        } catch (erro) {
+            handleFirestoreError(erro, "Salvar Redação");
+        }
     }
+
     async function carregarRedacoesSalvas_v2() {
         const container = document.getElementById("lista-redacoes-salvas-v2");
- if(!container) return;
+        if (!container) return;
         const collectionPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes`;
         const q = query(collection(_db_r, collectionPath), orderBy("data", "desc"));
- try {
+        try {
             const querySnapshot = await getDocs(q);
- container.innerHTML = "";
-            if(querySnapshot.empty) { container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`; return;
- }
+            container.innerHTML = "";
+            if (querySnapshot.empty) {
+                container.innerHTML = `<p class="text-gray-500">Nenhuma redação salva.</p>`;
+                return;
+            }
             querySnapshot.forEach((doc) => {
-                const redacao = { id: doc.id, ...doc.data() };
+                const redacao = {
+                    id: doc.id,
+                    ...doc.data()
+                };
                 const div = document.createElement("div");
                 div.className = "p-4 bg-white rounded-lg shadow-sm flex justify-between items-center gap-2";
-                
-   
-              let notaHtml = '';
+                let notaHtml = '';
                 if (typeof redacao.nota === 'number') {
                     notaHtml = `<p class="font-bold text-blue-600 text-lg">${redacao.nota}</p>`;
                 }
-
                 div.innerHTML = `
-    
-                 <div class="flex-grow">
+                    <div class="flex-grow">
                         <h4 class="font-semibold text-gray-800">${redacao.tema}</h4>
                         <p class="text-sm text-gray-500">Salva em: 
-${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p>
+                        ${redacao.data ? new Date(redacao.data.seconds * 1000).toLocaleDateString() : 'Data indisponível'}</p>
                     </div>
- 
                     ${notaHtml}
                     <div class="flex items-center gap-2">
                         <button class="ver-redacao-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">Ver</button>
-                        <button 
- class="exportar-pdf-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16">
-                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 1.5v2a1 1 
- 0 0 0 1 1h2l-3-3z"/>
-                                <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.877.37-.198.815-.145 1.132.059.281.19.487.453.605.772a.7.7 0 0 1-.42.835l-.143.07a.5.5 0 0 0-.29.002l-.126-.06a.236.236 0 0 0-.115-.166c-.138-.068-.29-.082-.451-.015a.25.25 0 0 0-.158.25c.006.1.03.19.054.282.023.09.05.17.08.242.043.103.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.016-.239.004-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 
- 0-.158.25c.006.095.03.18.054.262.023.08.05.15.08.212.043.104.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.015-.239.003-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 0-.158.25z"/>
-                            </svg>
+                        <button class="exportar-pdf-btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-sm transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 1.5v2a1 1 0 0 0 1 1h2l-3-3z"/><path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.877.37-.198.815-.145 1.132.059.281.19.487.453.605.772a.7.7 0 0 1-.42.835l-.143.07a.5.5 0 0 0-.29.002l-.126-.06a.236.236 0 0 0-.115-.166c-.138-.068-.29-.082-.451-.015a.25.25 0 0 0-.158.25c.006.1.03.19.054.282.023.09.05.17.08.242.043.103.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.016-.239.004-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 0-.158.25c.006.095.03.18.054.262.023.08.05.15.08.212.043.104.09.213.134.326.043.112.084.22.12.318.04.1.07.19.096.27.016.05.028.09.032.128a.5.5 0 0 1-.456.44c-.118.015-.239.003-.356-.04a1.72 1.72 0 0 0-.533-.22 1.3 1.3 0 0 1-.482-.258.41.41 0 0 1-.142-.282.5.5 0 0 1 .456-.44l.143-.07a.5.5 0 0 0 .29-.002l.126.06a.236.236 0 0 0 .115.166c.158-.076.351-.076.51-.045a.25.25 0 0 0-.158.25z"/></svg>
                         </button>
-                  
-       <button class="excluir-redacao-btn bg-red-100 text-red-700 px-3 py-1 rounded-md hover:bg-red-200 text-sm transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 
- .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 
- 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                            </svg>
+                        <button class="excluir-redacao-btn bg-red-100 text-red-700 px-3 py-1 rounded-md hover:bg-red-200 text-sm transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg>
                         </button>
                     </div>`;
- div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
+                div.querySelector('.ver-redacao-btn').addEventListener('click', () => {
                     document.getElementById('ver-titulo-redacao').textContent = redacao.tema;
                     document.getElementById('ver-texto-redacao').textContent = redacao.texto;
                     abrirModal('modal-ver-redacao');
                 });
- div.querySelector('.excluir-redacao-btn').addEventListener('click', () => {
+                div.querySelector('.excluir-redacao-btn').addEventListener('click', () => {
                     excluirRedacao_v2(redacao.id);
                 });
- div.querySelector('.exportar-pdf-btn').addEventListener('click', () => {
+                div.querySelector('.exportar-pdf-btn').addEventListener('click', () => {
                     exportarRedacaoPDF(redacao);
                 });
- container.appendChild(div);
-});
-        } catch(error) { handleFirestoreError(error, "Carregar Redações Salvas"); }
+                container.appendChild(div);
+            });
+        } catch (error) {
+            handleFirestoreError(error, "Carregar Redações Salvas");
+        }
     }
     
     async function excluirRedacao_v2(redacaoId) {
         if (!confirm("Tem certeza que deseja excluir esta redação? Esta ação não pode ser desfeita.")) {
             return;
- }
+        }
         try {
             const docPath = `artifacts/${_appId_r}/users/${_userId_r}/redacoes/${redacaoId}`;
- await deleteDoc(doc(_db_r, docPath));
+            await deleteDoc(doc(_db_r, docPath));
             showNotification("Redação excluída com sucesso.");
-            carregarRedacoesSalvas_v2(); 
+            carregarRedacoesSalvas_v2();
         } catch (error) {
             handleFirestoreError(error, "Excluir Redação");
- }
+        }
     }
 
     function exportarRedacaoPDF(redacao) {
         showNotification("Gerando PDF da redação...");
- const { jsPDF } = window.jspdf;
+        const {
+            jsPDF
+        } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-
         const tema = redacao.tema;
- const texto = redacao.texto;
+        const texto = redacao.texto;
         const nota = typeof redacao.nota === 'number' ? `${redacao.nota} / 100` : "Não corrigida";
- const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
+        const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
         const nomeCiclo = document.getElementById('ciclo-nome-input').value || "Ciclo não definido";
- const margemEsquerda = 20;
+        const margemEsquerda = 20;
         const margemDireita = 20;
         const margemSuperior = 20;
         const larguraPagina = 210;
- const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
+        const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
         let y = margemSuperior;
- // Título Principal
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
         const linhasTitulo = pdf.splitTextToSize(tema, larguraUtil);
- pdf.text(linhasTitulo, larguraPagina / 2, y, { align: 'center' });
+        pdf.text(linhasTitulo, larguraPagina / 2, y, {
+            align: 'center'
+        });
         y += (linhasTitulo.length * 7) + 5;
- // Metadados
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10);
         pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda, y);
         y += 5;
- pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda, y);
+        pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda, y);
         y += 5;
         pdf.text(`Nota: ${nota}`, margemEsquerda, y);
         y += 7;
- // Linha Separadora
         pdf.setLineWidth(0.5);
         pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
         y += 10;
- // Corpo do Texto
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
- const larguraTextoComFolga = larguraUtil - 5;
+        const larguraTextoComFolga = larguraUtil - 5;
         const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
- pdf.text(linhas, margemEsquerda, y, { align: 'left' });
-        
+        pdf.text(linhas, margemEsquerda, y, {
+            align: 'left'
+        });
         pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
- }
+    }
 
     function corrigirRedacao_v2() {
         const texto = document.getElementById("texto-redacao").value.trim();
- if (!texto) { showNotification("Digite o texto antes de corrigir.", "error"); return;
- }
-        let nota = 100; let observacoes = [];
- if (texto.length < 500) { nota -= 20; observacoes.push("O texto está um pouco curto.");
- }
-        if (!/portanto|conclui-se|logo|enfim/i.test(texto)) { nota -= 15; observacoes.push("Reforce a conclusão com conectivos.");
- }
-        if (texto.split(' ').length < 150) { nota -= 20;
- observacoes.push("Texto com menos de 150 palavras."); }
-        if (nota > 90) { observacoes.push("Excelente estrutura!");
- }
+        if (!texto) {
+            showNotification("Digite o texto antes de corrigir.", "error");
+            return;
+        }
+        let nota = 100;
+        let observacoes = [];
+        if (texto.length < 500) {
+            nota -= 20;
+            observacoes.push("O texto está um pouco curto.");
+        }
+        if (!/portanto|conclui-se|logo|enfim/i.test(texto)) {
+            nota -= 15;
+            observacoes.push("Reforce a conclusão com conectivos.");
+        }
+        if (texto.split(' ').length < 150) {
+            nota -= 20;
+            observacoes.push("Texto com menos de 150 palavras.");
+        }
+        if (nota > 90) {
+            observacoes.push("Excelente estrutura!");
+        }
         if (nota < 0) nota = 0;
-
         _notaRedacaoAtual = nota;
- document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
- document.getElementById("btn-imprimir").style.display = "inline-block";
+        document.getElementById("resultado-correcao").innerHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg border"><h3 class="text-lg font-semibold mb-2 text-gray-800">Correção (IA Simples)</h3><p class="text-2xl font-bold text-blue-600">${nota}<span class="text-base font-normal text-gray-500">/100</span></p><ul class="list-disc ml-5 mt-3 text-gray-600 space-y-1">${observacoes.map(obs => `<li>${obs}</li>`).join("")}</ul></div>`;
+        document.getElementById("btn-imprimir").style.display = "inline-block";
     }
+
     function imprimirRedacao_v2() {
-        const { jsPDF } = window.jspdf;
- const pdf = new jsPDF();
-        pdf.setFontSize(16); pdf.text(`Tema: ${_temaRedacaoAtual}`, 10, 10);
+        const {
+            jsPDF
+        } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.setFontSize(16);
+        pdf.text(`Tema: ${_temaRedacaoAtual}`, 10, 10);
         pdf.setFontSize(12);
         pdf.text(pdf.splitTextToSize(document.getElementById("texto-redacao").value, 180), 10, 20);
         pdf.save(`redacao-${_temaRedacaoAtual.replace(/\s/g, '_')}.pdf`);
         showNotification("Gerando PDF...");
- }
+    }
 
     // =========================
     // RESTANTE DOS MÓDULOS
     // =========================
-    
     async function carregarDisciplinas(config) {
-      const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
- const snapshot = await getDocs(q);
-      const seletor = document.getElementById("seletorDisciplina");
-      if (seletor) {
-        seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
- }
-     
-      if (snapshot.empty) {
-          const msg = '<option value="">Cadastre disciplinas no Edital</option>';
- if (seletor) seletor.innerHTML = msg;
-      } else {
-          snapshot.forEach(doc => {
-              const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
-              if (seletor) seletor.innerHTML += optionHTML;
-          });
- }
-      await carregarDisciplinasNoCronograma(config);
-      
-      const seletorDisciplinaEl = document.getElementById('seletorDisciplina');
- if (seletorDisciplinaEl) {
-        seletorDisciplinaEl.addEventListener('change', () => carregarAssuntos(config));
- }
+        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
+        const snapshot = await getDocs(q);
+        const seletor = document.getElementById("seletorDisciplina");
+        if (seletor) {
+            seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+        }
+        if (snapshot.empty) {
+            const msg = '<option value="">Cadastre disciplinas no Edital</option>';
+            if (seletor) seletor.innerHTML = msg;
+        } else {
+            snapshot.forEach(doc => {
+                const optionHTML = `<option value="${doc.id}">${doc.data().nome}</option>`;
+                if (seletor) seletor.innerHTML += optionHTML;
+            });
+        }
+        await carregarDisciplinasNoCronograma(config);
+        const seletorDisciplinaEl = document.getElementById('seletorDisciplina');
+        if (seletorDisciplinaEl) {
+            seletorDisciplinaEl.addEventListener('change', () => carregarAssuntos(config));
+        }
     }
-    
-    async function carregarDisciplinasNoCronograma(config) {
-      const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
- const snapshot = await getDocs(q);
-      const seletorCronograma = document.getElementById("materia-cronograma");
-      seletorCronograma.innerHTML = '<option value="">-- Escolha uma matéria --</option>';
- if (snapshot.empty) {
-          seletorCronograma.innerHTML = '<option value="">Cadastre disciplinas no Edital</option>';
- } else {
-        snapshot.forEach(doc => {
-            seletorCronograma.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
-        });
- }
-    }
-    
-    async function carregarAssuntos(config) {
-      const idDisciplina = document.getElementById("seletorDisciplina").value;
- const container = document.getElementById("listaAssuntos");
-      if(!container) return;
-      container.innerHTML = "";
-      if (!idDisciplina) return;
-      
-      const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, idDisciplina));
- if (!disciplinaDoc.exists()) return;
-      const assuntos = disciplinaDoc.data().assuntos || {};
-      
-      if (Object.keys(assuntos).length === 0) {
-        container.innerHTML = "<p class='text-slate-500 text-center'>Nenhum assunto cadastrado.<br>Adicione na aba 'Edital'.</p>";
- return;
-      }
 
-      for (const assuntoId in assuntos) {
-        const a = assuntos[assuntoId];
- container.innerHTML += `<div class="border p-3 rounded-lg"><h4 class="font-bold text-lg">${a.nome}</h4><p class="text-sm text-gray-600 my-2">${a.resumo ||
- 'Sem resumo.'}</p><button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button></div>`;
- }
-      document.querySelectorAll('.btn-praticar-assunto').forEach(btn => btn.addEventListener('click', (e) => iniciarSimulado(config, e.currentTarget.dataset.disciplinaId, e.currentTarget.dataset.assuntoNome, null, 'pratica')));
- }
+    async function carregarDisciplinasNoCronograma(config) {
+        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
+        const snapshot = await getDocs(q);
+        const seletorCronograma = document.getElementById("materia-cronograma");
+        seletorCronograma.innerHTML = '<option value="">-- Escolha uma matéria --</option>';
+        if (snapshot.empty) {
+            seletorCronograma.innerHTML = '<option value="">Cadastre disciplinas no Edital</option>';
+        } else {
+            snapshot.forEach(doc => {
+                seletorCronograma.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
+            });
+        }
+    }
+
+    async function carregarAssuntos(config) {
+        const idDisciplina = document.getElementById("seletorDisciplina").value;
+        const container = document.getElementById("listaAssuntos");
+        if (!container) return;
+        container.innerHTML = "";
+        if (!idDisciplina) return;
+        const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, idDisciplina));
+        if (!disciplinaDoc.exists()) return;
+        const assuntos = disciplinaDoc.data().assuntos || {};
+        if (Object.keys(assuntos).length === 0) {
+            container.innerHTML = "<p class='text-slate-500 text-center'>Nenhum assunto cadastrado.<br>Adicione na aba 'Edital'.</p>";
+            return;
+        }
+        for (const assuntoId in assuntos) {
+            const a = assuntos[assuntoId];
+            container.innerHTML += `<div class="border p-3 rounded-lg"><h4 class="font-bold text-lg">${a.nome}</h4><p class="text-sm text-gray-600 my-2">${a.resumo || 'Sem resumo.'}</p><button data-disciplina-id="${idDisciplina}" data-assunto-nome="${a.nome}" class="btn-praticar-assunto w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">Praticar por assunto</button></div>`;
+        }
+        document.querySelectorAll('.btn-praticar-assunto').forEach(btn => btn.addEventListener('click', (e) => iniciarSimulado(config, e.currentTarget.dataset.disciplinaId, e.currentTarget.dataset.assuntoNome, null, 'pratica')));
+    }
 
     async function carregarEdital(config) {
-        const { db, appId, userId } = config;
- const container = document.getElementById('edital-disciplinas-container');
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const container = document.getElementById('edital-disciplinas-container');
         container.innerHTML = "<p class='text-slate-500 text-center'>A carregar edital...</p>";
-
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
- const snapshot = await getDocs(q);
-
+        const snapshot = await getDocs(q);
         if (snapshot.empty) {
             container.innerHTML = "<p class='text-slate-500 text-center'>Nenhuma disciplina cadastrada ainda. Adicione uma acima para começar.</p>";
- return;
+            return;
         }
-
         container.innerHTML = '';
- snapshot.forEach(doc => {
-            const disciplina = { id: doc.id, ...doc.data() };
-            
+        snapshot.forEach(doc => {
+            const disciplina = {
+                id: doc.id,
+                ...doc.data()
+            };
             const disciplinaCard = document.createElement('div');
             disciplinaCard.className = 'border p-4 rounded-lg bg-white';
-            
             let assuntosHTML = '<ul class="list-disc ml-5 mt-2 space-y-1 text-gray-700">';
-   
- 
-         if (disciplina.assuntos && Object.keys(disciplina.assuntos).length > 0) {
+            if (disciplina.assuntos && Object.keys(disciplina.assuntos).length > 0) {
                 for (const assuntoId in disciplina.assuntos) {
                     assuntosHTML += `
                         <li class="flex justify-between items-center">
-               
- 
-             <span>${disciplina.assuntos[assuntoId].nome}</span>
+                            <span>${disciplina.assuntos[assuntoId].nome}</span>
                             <button data-disciplina-id="${disciplina.id}" data-assunto-id="${assuntoId}" class="excluir-assunto-btn text-red-400 hover:text-red-600 font-bold text-lg leading-none">&times;</button>
                         </li>`;
                 }
-           
- 
- } else {
+            } else {
                 assuntosHTML += '<li class="text-gray-400 list-none">Nenhum assunto cadastrado.</li>';
- }
+            }
             assuntosHTML += '</ul>';
- disciplinaCard.innerHTML = `
+            disciplinaCard.innerHTML = `
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-lg text-blue-700">${disciplina.nome}</h3>
                     <button data-id="${disciplina.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
                 </div>
-         
- 
-       ${assuntosHTML}
+                ${assuntosHTML}
                 <div class="flex gap-2 mt-4 pt-4 border-t">
                     <input type="text" placeholder="Novo assunto" class="w-full novo-assunto-input">
                     <button data-id="${disciplina.id}" class="btn-cadastrar-assunto bg-green-500 text-white font-semibold px-4 py-1 rounded hover:bg-green-600 whitespace-nowrap">Adicionar Assunto</button>
-                
- 
-</div>
+                </div>
             `;
             container.appendChild(disciplinaCard);
         });
- container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => btn.addEventListener('click', (e) => handleExcluirDisciplina(config, e.currentTarget.dataset.id)));
+        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => btn.addEventListener('click', (e) => handleExcluirDisciplina(config, e.currentTarget.dataset.id)));
         container.querySelectorAll('.btn-cadastrar-assunto').forEach(btn => btn.addEventListener('click', (e) => {
             const disciplinaId = e.currentTarget.dataset.id;
             const input = e.currentTarget.previousElementSibling;
             handleCadastrarAssunto(config, disciplinaId, input);
         }));
- container.querySelectorAll('.excluir-assunto-btn').forEach(btn => btn.addEventListener('click', (e) => {
-            const { disciplinaId, assuntoId } = e.currentTarget.dataset;
+        container.querySelectorAll('.excluir-assunto-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            const {
+                disciplinaId,
+                assuntoId
+            } = e.currentTarget.dataset;
             handleExcluirAssunto(config, disciplinaId, assuntoId);
         }));
- }
-    
+    }
+
     async function handleCadastrarDisciplina(config) {
         const nomeInput = document.getElementById('nova-disciplina-nome-edital');
- const nomeDisciplina = nomeInput.value.trim();
-
+        const nomeDisciplina = nomeInput.value.trim();
         if (!nomeDisciplina) {
             showNotification("Por favor, digite o nome da disciplina.", "error");
- return;
+            return;
         }
-
         try {
             const disciplinasRef = collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`);
- const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
+            const q = query(disciplinasRef, where("nome", "==", nomeDisciplina));
             const querySnapshot = await getDocs(q);
- if (!querySnapshot.empty) {
+            if (!querySnapshot.empty) {
                 showNotification(`A disciplina "${nomeDisciplina}" já existe.`, "error");
- return;
+                return;
             }
-
             await addDoc(disciplinasRef, {
                 nome: nomeDisciplina,
-                assuntos: {} 
+                assuntos: {}
             });
- showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
+            showNotification(`Disciplina "${nomeDisciplina}" cadastrada com sucesso!`, "success");
             nomeInput.value = '';
-
             await carregarEdital(config);
             await carregarDisciplinas(config);
             await carregarPrioridades(config, []);
- } catch (error) {
+        } catch (error) {
             handleFirestoreError(error, "Cadastrar Nova Disciplina");
- }
+        }
     }
-    
+
     async function handleCadastrarAssunto(config, disciplinaId, inputElement) {
         const nomeAssunto = inputElement.value.trim();
- if (!nomeAssunto) {
+        if (!nomeAssunto) {
             showNotification("Digite o nome do assunto.", "error");
- return;
+            return;
         }
-
         const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
         const newAssuntoId = `assunto_${Date.now()}`;
- try {
+        try {
             await updateDoc(docRef, {
-                [`assuntos.${newAssuntoId}`]: { nome: nomeAssunto }
+                [`assuntos.${newAssuntoId}`]: {
+                    nome: nomeAssunto
+                }
             });
- showNotification("Assunto adicionado!", "success");
+            showNotification("Assunto adicionado!", "success");
             inputElement.value = '';
             await carregarEdital(config);
         } catch (error) {
             handleFirestoreError(error, "Adicionar Assunto");
- }
+        }
     }
 
     async function handleExcluirAssunto(config, disciplinaId, assuntoId) {
         const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
- try {
+        try {
             await updateDoc(docRef, {
                 [`assuntos.${assuntoId}`]: deleteField()
             });
- showNotification("Assunto excluído.", "success");
+            showNotification("Assunto excluído.", "success");
             await carregarEdital(config);
         } catch (error) {
             handleFirestoreError(error, "Excluir Assunto");
- }
+        }
     }
-    
+
     async function handleMateriaChangeCronograma(event, config) {
         const disciplinaId = event.target.value;
- const assuntoContainer = document.getElementById('assunto-cronograma-container');
+        const assuntoContainer = document.getElementById('assunto-cronograma-container');
         const assuntoSelect = document.getElementById('assunto-cronograma');
-
         if (!disciplinaId) {
             assuntoContainer.classList.add('hidden');
- assuntoSelect.innerHTML = '';
+            assuntoSelect.innerHTML = '';
             return;
         }
-
         const disciplinaDoc = await getDoc(doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId));
- if (disciplinaDoc.exists()) {
+        if (disciplinaDoc.exists()) {
             const assuntos = disciplinaDoc.data().assuntos || {};
- assuntoSelect.innerHTML = '<option value="">-- Escolha um assunto --</option>';
-            if(Object.keys(assuntos).length === 0){
+            assuntoSelect.innerHTML = '<option value="">-- Escolha um assunto --</option>';
+            if (Object.keys(assuntos).length === 0) {
                 assuntoSelect.innerHTML = '<option value="">Nenhum assunto cadastrado</option>';
- } else {
+            } else {
                 for (const id in assuntos) {
                     assuntoSelect.innerHTML += `<option value="${assuntos[id].nome}">${assuntos[id].nome}</option>`;
- }
+                }
             }
             assuntoContainer.classList.remove('hidden');
- }
+        }
     }
 
-    async function baixarEditalPDF() { alert("Funcionalidade de PDF do edital dinâmico em desenvolvimento.");
- }
-    
+    async function baixarEditalPDF() {
+        alert("Funcionalidade de PDF do edital dinâmico em desenvolvimento.");
+    }
+
     async function carregarPerfil(config) {
-        const { db, appId, userId } = config;
- const container = document.getElementById('perfil-usuario');
-        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); if(userDoc.exists()) { const data = userDoc.data();
- container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`; }
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const container = document.getElementById('perfil-usuario');
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData'));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            container.innerHTML = `<p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta de Acertos:</strong> ${data.metaAcertos || 80}%</p>`;
+        }
         carregarHistoricoCiclos(config);
- }
-    
+    }
+
     async function handleEncerrarCiclo(config) {
-        const { db, appId, userId } = config;
- const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim() || 'Ciclo sem nome';
-        
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const nomeCiclo = document.getElementById('ciclo-nome-input').value.trim() || 'Ciclo sem nome';
         const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`));
         const registrosSnapshot = await getDocs(qTempo);
- let totalMinutosCiclo = 0;
+        let totalMinutosCiclo = 0;
         registrosSnapshot.forEach(r => totalMinutosCiclo += r.data().minutos);
-
         const historicoRef = collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`);
- await addDoc(historicoRef, {
+        await addDoc(historicoRef, {
             nome: nomeCiclo,
             dataConclusao: serverTimestamp(),
             totalHoras: (totalMinutosCiclo / 60).toFixed(1)
         });
- const batch = writeBatch(db);
+        const batch = writeBatch(db);
         registrosSnapshot.forEach(doc => {
             batch.delete(doc.ref);
         });
- await batch.commit();
-
+        await batch.commit();
         document.getElementById('ciclo-nome-input').value = `Novo Ciclo`;
         document.getElementById('meta-geral-horas').value = '';
         showNotification("Ciclo encerrado e arquivado com sucesso!", "success");
-        
         await carregarProgressoDisciplinas(config);
         await carregarPerfil(config);
- }
+    }
 
     async function carregarHistoricoCiclos(config) {
-        const { db, appId, userId } = config;
- const container = document.getElementById('historico-ciclos-container');
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const container = document.getElementById('historico-ciclos-container');
         container.innerHTML = "<p>Carregando histórico...</p>";
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/historico_ciclos`), orderBy("dataConclusao", "desc"));
         const snapshot = await getDocs(q);
- if (snapshot.empty) {
+        if (snapshot.empty) {
             container.innerHTML = "<p class='text-slate-500'>Nenhum ciclo concluído ainda.</p>";
- return;
+            return;
         }
-        
         container.innerHTML = snapshot.docs.map(doc => {
             const ciclo = doc.data();
             const data = ciclo.dataConclusao ? new Date(ciclo.dataConclusao.seconds * 1000).toLocaleDateString() : 'Data indisponível';
             return `
                 <div class="border-b pb-2">
-          
- 
-                <p class="font-semibold">${ciclo.nome}</p>
+                    <p class="font-semibold">${ciclo.nome}</p>
                     <p class="text-sm text-gray-600">Concluído em: ${data} - Total de ${ciclo.totalHoras} horas</p>
                 </div>
             `;
         }).join('');
- }
-
+    }
 
     async function baixarRelatorioPDF(config) {
         alert("Gerando Relatório PDF...");
- const { db, appId, userId } = config;
-        const { jsPDF } = window.jspdf;
- const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData')); 
-        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`)); 
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const {
+            jsPDF
+        } = window.jspdf;
+        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/perfil`, 'userData'));
+        const qTempo = query(collection(db, `artifacts/${appId}/users/${userId}/registro_tempo`));
         const qTreinos = query(collection(db, `artifacts/${appId}/users/${userId}/historico_treinos`));
- const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
-        let totalMinutos = 0; tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
- let totalAcertos = 0, totalQuestoes = 0; treinosSnap.forEach(doc => { totalAcertos += doc.data().acertos || 0; totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0); });
- const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
- const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
- const hiddenContainer = document.createElement('div'); hiddenContainer.style.position = 'absolute'; hiddenContainer.style.left = '-9999px'; hiddenContainer.innerHTML = reportHTML; document.body.appendChild(hiddenContainer);
- html2canvas(hiddenContainer).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF(); pdf.addImage(imgData, 'PNG', 0, 0); pdf.save("relatorio.pdf"); document.body.removeChild(hiddenContainer); });
- }
-    
-    async function carregarMedalhas(config) { const container = document.getElementById('listaMedalhas');
- container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`; }
-    
+        const [userSnap, tempoSnap, treinosSnap] = await Promise.all([userDoc, getDocs(qTempo), getDocs(qTreinos)]);
+        let totalMinutos = 0;
+        tempoSnap.forEach(doc => totalMinutos += doc.data().minutos);
+        let totalAcertos = 0,
+            totalQuestoes = 0;
+        treinosSnap.forEach(doc => {
+            totalAcertos += doc.data().acertos || 0;
+            totalQuestoes += (doc.data().acertos || 0) + (doc.data().erros || 0);
+        });
+        const percentualGeral = totalQuestoes > 0 ? (totalAcertos / totalQuestoes * 100).toFixed(1) : 0;
+        const reportHTML = `<div style="font-family: Arial; padding: 20px; width: 600px;"><h1 style="text-align: center;">Relatório de Desempenho</h1><p><strong>Usuário:</strong> ${auth.currentUser.email}</p><p><strong>Meta:</strong> ${metaAcertosGlobal}%</p><p><strong>Tempo Total:</strong> ${(totalMinutos / 60).toFixed(1)}h</p><p><strong>Acertos:</strong> ${percentualGeral}%</p></div>`;
+        const hiddenContainer = document.createElement('div');
+        hiddenContainer.style.position = 'absolute';
+        hiddenContainer.style.left = '-9999px';
+        hiddenContainer.innerHTML = reportHTML;
+        document.body.appendChild(hiddenContainer);
+        html2canvas(hiddenContainer).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF();
+            pdf.addImage(imgData, 'PNG', 0, 0);
+            pdf.save("relatorio.pdf");
+            document.body.removeChild(hiddenContainer);
+        });
+    }
+
+    async function carregarMedalhas(config) {
+        const container = document.getElementById('listaMedalhas');
+        container.innerHTML = `<div class="text-center border p-2 rounded"><span class="text-3xl">🏅</span><p>Regularidade</p></div>`;
+    }
+
     async function carregarRanking(config) {
-        const { db, appId, userId } = config;
- const container = document.getElementById('ranking-geral-container'); container.innerHTML = "<p>Carregando...</p>";
-        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); 
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const container = document.getElementById('ranking-geral-container');
+        container.innerHTML = "<p>Carregando...</p>";
+        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`));
         const ranking = [];
- for(const userDoc of usersSnapshot.docs) {
+        for (const userDoc of usersSnapshot.docs) {
             const publicData = userDoc.data();
- const uid = userDoc.id;
-            
+            const uid = userDoc.id;
             let pontuacao = Math.floor(Math.random() * 5000);
- ranking.push({
+            ranking.push({
                 uid: uid,
                 nome: publicData.nome || `Aluno-${uid.substring(0, 6)}`,
                 pontuacao: pontuacao
             });
- }
-        
+        }
         ranking.sort((a, b) => b.pontuacao - a.pontuacao);
- container.innerHTML = ranking.map((user, index) => `<div class="flex justify-between p-2 rounded ${user.uid === userId ? 'bg-blue-100' : ''}"><p>${index + 1}. ${user.nome}</p><p>${user.pontuacao.toLocaleString()} pts</p></div>`).join('');
- }
+        container.innerHTML = ranking.map((user, index) => `<div class="flex justify-between p-2 rounded ${user.uid === userId ? 'bg-blue-100' : ''}"><p>${index + 1}. ${user.nome}</p><p>${user.pontuacao.toLocaleString()} pts</p></div>`).join('');
+    }
 
     async function carregarDesafios(config) {
-        const { db, appId, userId } = config;
- const container = document.getElementById('desafios-container'); container.innerHTML = "<p>Carregando...</p>";
-        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`)); let usersHTML = "";
- usersSnapshot.forEach(doc => { if (doc.id !== userId) { const user = doc.data(); usersHTML += `<div class="flex justify-between p-3 border rounded"><p>${user.nome || doc.id}</p><button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white px-3 py-1">Desafiar</button></div>`; } });
- container.innerHTML = usersHTML;
-        document.querySelectorAll('.btn-desafiar').forEach(btn => { btn.addEventListener('click', async (e) => { const oponenteNome = e.currentTarget.dataset.oponenteNome; alert(`Desafio contra ${oponenteNome}!`); const q = query(collection(db, `artifacts/${appId}/public/data/questoes`)); const snapshot = await getDocs(q); let todasQuestoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); todasQuestoes.sort(() => 0.5 - Math.random()); await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio'); }); });
- }
-    
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const container = document.getElementById('desafios-container');
+        container.innerHTML = "<p>Carregando...</p>";
+        const usersSnapshot = await getDocs(collection(db, `artifacts/${appId}/public/data/usuarios`));
+        let usersHTML = "";
+        usersSnapshot.forEach(doc => {
+            if (doc.id !== userId) {
+                const user = doc.data();
+                usersHTML += `<div class="flex justify-between p-3 border rounded"><p>${user.nome || doc.id}</p><button data-oponente-id="${doc.id}" data-oponente-nome="${user.nome || doc.id}" class="btn-desafiar bg-red-500 text-white px-3 py-1">Desafiar</button></div>`;
+            }
+        });
+        container.innerHTML = usersHTML;
+        document.querySelectorAll('.btn-desafiar').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const oponenteNome = e.currentTarget.dataset.oponenteNome;
+                alert(`Desafio contra ${oponenteNome}!`);
+                const q = query(collection(db, `artifacts/${appId}/public/data/questoes`));
+                const snapshot = await getDocs(q);
+                let todasQuestoes = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                todasQuestoes.sort(() => 0.5 - Math.random());
+                await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio');
+            });
+        });
+    }
+
     async function handleExcluirDisciplina(config, disciplinaId) {
         try {
             const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
- await deleteDoc(docRef);
-            
+            await deleteDoc(docRef);
             showNotification("Disciplina excluída com sucesso!", "success");
-
             await carregarEdital(config);
             await carregarDisciplinas(config);
-            
             const userDocRef = doc(db, `artifacts/${appId}/users/${config.userId}/perfil`, 'userData');
- const userDoc = await getDoc(userDocRef);
+            const userDoc = await getDoc(userDocRef);
             const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
             await carregarPrioridades(config, prioridadesSalvas);
             await carregarProgressoDisciplinas(config);
- } catch (error) {
+        } catch (error) {
             handleFirestoreError(error, "Excluir Disciplina");
- }
+        }
     }
-    
+
     async function carregarPrioridades(config, prioridadesSalvas = []) {
-        const { db, appId, userId } = config;
- const container = document.getElementById('lista-prioridades');
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const container = document.getElementById('lista-prioridades');
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
- let disciplinas = snapshot.docs.map(doc => ({ id: doc.id, nome: doc.data().nome }));
- if (snapshot.empty) {
+        let disciplinas = snapshot.docs.map(doc => ({
+            id: doc.id,
+            nome: doc.data().nome
+        }));
+        if (snapshot.empty) {
             container.innerHTML = '<p class="text-slate-500 text-center">Nenhuma disciplina cadastrada.</p>';
- return;
+            return;
         }
-
-        disciplinas.sort((a, b) => { const indexA = prioridadesSalvas.indexOf(a.id); const indexB = prioridadesSalvas.indexOf(b.id); if (indexA > -1 && indexB > -1) return indexA - indexB; if (indexA > -1) return -1; if (indexB > -1) return 1; return 0; });
- container.innerHTML = disciplinas.map(d => `
+        disciplinas.sort((a, b) => {
+            const indexA = prioridadesSalvas.indexOf(a.id);
+            const indexB = prioridadesSalvas.indexOf(b.id);
+            if (indexA > -1 && indexB > -1) return indexA - indexB;
+            if (indexA > -1) return -1;
+            if (indexB > -1) return 1;
+            return 0;
+        });
+        container.innerHTML = disciplinas.map(d => `
             <div class="priority-item p-2 border rounded bg-gray-50 flex justify-between items-center" draggable="true" data-id="${d.id}">
                 <span>${d.nome}</span>
                 <button data-id="${d.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
             </div>
         `).join('');
- container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => {
+        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const disciplinaId = e.currentTarget.dataset.id;
                 handleExcluirDisciplina(config, disciplinaId);
             });
         });
- const draggables = container.querySelectorAll('.priority-item');
-        draggables.forEach(draggable => { draggable.addEventListener('dragstart', () => draggable.classList.add('dragging')); draggable.addEventListener('dragend', () => draggable.classList.remove('dragging')); });
- container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const dragging = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(dragging); } else { container.insertBefore(dragging, afterElement); } });
- }
-    
+        const draggables = container.querySelectorAll('.priority-item');
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', () => draggable.classList.add('dragging'));
+            draggable.addEventListener('dragend', () => draggable.classList.remove('dragging'));
+        });
+        container.addEventListener('dragover', e => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(container, e.clientY);
+            const dragging = document.querySelector('.dragging');
+            if (afterElement == null) {
+                container.appendChild(dragging);
+            } else {
+                container.insertBefore(dragging, afterElement);
+            }
+        });
+    }
+
     async function carregarProgressoDisciplinas(config) {
-        const { db, appId, userId } = config;
- const container = document.getElementById("progressoDisciplinas");
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const container = document.getElementById("progressoDisciplinas");
         container.innerHTML = "<p class='text-slate-500'>A carregar...</p>";
         const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${config.userId}/perfil`, 'userData'));
- const metasPorDisciplina = userDoc.exists() ?
- userDoc.data().metasPorDisciplina || {} : {};
+        const metasPorDisciplina = userDoc.exists() ?
+            userDoc.data().metasPorDisciplina || {} : {};
         const qTempo = query(collection(db, `artifacts/${appId}/users/${config.userId}/registro_tempo`), where("usuarioId", "==", userId));
- const registrosSnapshot = await getDocs(qTempo);
+        const registrosSnapshot = await getDocs(qTempo);
         const tempoPorDisciplina = {};
-        registrosSnapshot.forEach(r => { const data = r.data(); tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos; });
- const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${config.userId}/disciplinas`), orderBy("nome")));
+        registrosSnapshot.forEach(r => {
+            const data = r.data();
+            tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos;
+        });
+        const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${config.userId}/disciplinas`), orderBy("nome")));
         container.innerHTML = "";
-        if (disciplinasSnapshot.empty) { container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>"; return;
- }
-        disciplinasSnapshot.forEach(docSnap => { const d = docSnap.data(); const idDisciplina = docSnap.id; const metaHoras = metasPorDisciplina[idDisciplina] || 0; const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0; const horasEstudadas = minutosEstudados / 60; const percentual = metaHoras > 0 ? Math.min((horasEstudadas / metaHoras) * 100, 100) : 0; container.innerHTML += `<div class="mb-4"><p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p><div class="w-full bg-gray-200 rounded-full h-4 mt-1"><div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div></div></div>`; });
- }
-    
+        if (disciplinasSnapshot.empty) {
+            container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>";
+            return;
+        }
+        disciplinasSnapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            const idDisciplina = docSnap.id;
+            const metaHoras = metasPorDisciplina[idDisciplina] || 0;
+            const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0;
+            const horasEstudadas = minutosEstudados / 60;
+            const percentual = metaHoras > 0 ? Math.min((horasEstudadas / metaHoras) * 100, 100) : 0;
+            container.innerHTML += `<div class="mb-4"><p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p><div class="w-full bg-gray-200 rounded-full h-4 mt-1"><div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div></div></div>`;
+        });
+    }
+
     async function carregarEvolucaoQuestoes(config) {
         const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/historico_questoes`), where("usuarioId", "==", config.userId));
- const snapshot = await getDocs(q);
-        let hoje = 0, semana = 0, mes = 0, total = 0;
- const agora = new Date();
+        const snapshot = await getDocs(q);
+        let hoje = 0,
+            semana = 0,
+            mes = 0,
+            total = 0;
+        const agora = new Date();
         const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-        const inicioSemana = new Date(agora); inicioSemana.setDate(agora.getDate() - agora.getDay());
- const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-        snapshot.forEach(doc => { const dataResp = doc.data().dataResposta; if (dataResp && dataResp.seconds) { const data = new Date(dataResp.seconds * 1000); if(!isNaN(data.getTime())) { total++; if (data >= inicioHoje) hoje++; if (data >= inicioSemana) semana++; if (data >= inicioMes) mes++; } } });
- document.getElementById("evolucaoDiaria").textContent = hoje; document.getElementById("evolucaoSemanal").textContent = semana; document.getElementById("evolucaoMensal").textContent = mes; document.getElementById("evolucaoTotal").textContent = total;
-        const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d"); if (graficoPizza) graficoPizza.destroy();
- graficoPizza = new Chart(ctx, { type: 'pie', data: { labels: ['Hoje', 'Esta Semana', 'Este Mês'], datasets: [{ data: [hoje, semana-hoje, mes-semana], backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB'] }] } });
- }
+        const inicioSemana = new Date(agora);
+        inicioSemana.setDate(agora.getDate() - agora.getDay());
+        const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+        snapshot.forEach(doc => {
+            const dataResp = doc.data().dataResposta;
+            if (dataResp && dataResp.seconds) {
+                const data = new Date(dataResp.seconds * 1000);
+                if (!isNaN(data.getTime())) {
+                    total++;
+                    if (data >= inicioHoje) hoje++;
+                    if (data >= inicioSemana) semana++;
+                    if (data >= inicioMes) mes++;
+                }
+            }
+        });
+        document.getElementById("evolucaoDiaria").textContent = hoje;
+        document.getElementById("evolucaoSemanal").textContent = semana;
+        document.getElementById("evolucaoMensal").textContent = mes;
+        document.getElementById("evolucaoTotal").textContent = total;
+        const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d");
+        if (graficoPizza) graficoPizza.destroy();
+        graficoPizza = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Hoje', 'Esta Semana', 'Este Mês'],
+                datasets: [{
+                    data: [hoje, semana - hoje, mes - semana],
+                    backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB']
+                }]
+            }
+        });
+    }
 
     async function carregarRevisoes(config) {
         const container = document.getElementById("listaRevisoes");
- container.innerHTML = "<p>A carregar...</p>";
+        container.innerHTML = "<p>A carregar...</p>";
         const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/revisoes`), where("usuarioId", "==", config.userId));
         const snapshot = await getDocs(q);
- if (snapshot.empty) { container.innerHTML = "<p>Nenhuma revisão encontrada.</p>"; return; }
+        if (snapshot.empty) {
+            container.innerHTML = "<p>Nenhuma revisão encontrada.</p>";
+            return;
+        }
         const agora = new Date();
- let revisoesPendentesHTML = ""; let revisoesPendentesCount = 0;
-        snapshot.forEach(doc => { const r = doc.data(); if (r.status !== 'pendente') return; const revisoesAgendadas = r.revisoesAgendadas || []; revisoesAgendadas.forEach(dataStr => { const dataRevisao = new Date(dataStr); if (dataRevisao <= agora) { revisoesPendentesCount++; revisoesPendentesHTML += `<div class="border p-2 rounded mb-2 bg-yellow-100"><p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p><p class="text-sm">Revisão: ${dataRevisao.toLocaleDateString()}</p></div>`; } }); });
- if (revisoesPendentesCount === 0) { container.innerHTML = "<p>Nenhuma revisão pendente.</p>"; } else { container.innerHTML = revisoesPendentesHTML;
- }
+        let revisoesPendentesHTML = "";
+        let revisoesPendentesCount = 0;
+        snapshot.forEach(doc => {
+            const r = doc.data();
+            if (r.status !== 'pendente') return;
+            const revisoesAgendadas = r.revisoesAgendadas || [];
+            revisoesAgendadas.forEach(dataStr => {
+                const dataRevisao = new Date(dataStr);
+                if (dataRevisao <= agora) {
+                    revisoesPendentesCount++;
+                    revisoesPendentesHTML += `<div class="border p-2 rounded mb-2 bg-yellow-100"><p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p><p class="text-sm">Revisão: ${dataRevisao.toLocaleDateString()}</p></div>`;
+                }
+            });
+        });
+        if (revisoesPendentesCount === 0) {
+            container.innerHTML = "<p>Nenhuma revisão pendente.</p>";
+        } else {
+            container.innerHTML = revisoesPendentesHTML;
+        }
     }
-    
-    async function carregarDesempenhoPorModo(config) {
-        const { db, appId, userId } = config;
- const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
-        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
- const snapshot = await getDocs(q);
-        const dados = { simulado: { acertos: 0, erros: 0 }, pratica: { acertos: 0, erros: 0 } };
- snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio && dados[treino.modo]) { dados[treino.modo].acertos += treino.acertos || 0; dados[treino.modo].erros += treino.erros || 0; } });
- const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d'); if(graficoDesempenhoModos) graficoDesempenhoModos.destroy();
-        graficoDesempenhoModos = new Chart(ctx, { type: 'bar', data: { labels: ['Simulado', 'Prática'], datasets: [{ label: 'Acertos', data: [dados.simulado.acertos, dados.pratica.acertos], backgroundColor: 'rgba(75, 192, 192, 0.6)' }, { label: 'Erros', data: [dados.simulado.erros, dados.pratica.erros], backgroundColor: 'rgba(255, 99, 132, 0.6)' }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Desempenho por Modo' } } } });
- }
-    
-    async function carregarEvolucaoCronologicaPorModo(config) {
-        const { db, appId, userId } = config;
- const periodo = document.getElementById('filtroPeriodoDesempenho').value; const dataInicio = getDateRange(periodo).toDate();
-        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
- const snapshot = await getDocs(q);
-        const dadosPorData = {}; snapshot.forEach(doc => { const treino = doc.data(); const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0); if (dataTreino >= dataInicio) { const data = dataTreino.toISOString().split('T')[0]; if (!dadosPorData[data]) dadosPorData[data] = { acertos: 0, total: 0 }; dadosPorData[data].acertos += treino.acertos; dadosPorData[data].total += (treino.acertos + treino.erros); } });
- const labels = Object.keys(dadosPorData).sort(); const dataPoints = labels.map(label => { const dia = dadosPorData[label]; return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0; });
- const ctx = document.getElementById('graficoLinhaModos').getContext('2d'); if(graficoLinhaModos) graficoLinhaModos.destroy();
-        graficoLinhaModos = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: '% de Acertos', data: dataPoints, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.1 }] }, options: { responsive: true, plugins: { title: { display: true, text: 'Evolução de Acertos' } } } });
- }
 
-    function toggleLinhaMeta() { if (!graficoLinhaModos) return;
- const metaDataset = { label: `Meta (${metaAcertosGlobal}%)`, data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal), borderColor: 'rgba(255, 99, 132, 1)', borderDash: [5, 5], fill: false, pointRadius: 0 };
- const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta')); if (metaIndex > -1) { graficoLinhaModos.data.datasets.splice(metaIndex, 1); } else { graficoLinhaModos.data.datasets.push(metaDataset); } graficoLinhaModos.update();
- }
+    async function carregarDesempenhoPorModo(config) {
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
+        const dataInicio = getDateRange(periodo).toDate();
+        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
+        const snapshot = await getDocs(q);
+        const dados = {
+            simulado: {
+                acertos: 0,
+                erros: 0
+            },
+            pratica: {
+                acertos: 0,
+                erros: 0
+            }
+        };
+        snapshot.forEach(doc => {
+            const treino = doc.data();
+            const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0);
+            if (dataTreino >= dataInicio && dados[treino.modo]) {
+                dados[treino.modo].acertos += treino.acertos || 0;
+                dados[treino.modo].erros += treino.erros || 0;
+            }
+        });
+        const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d');
+        if (graficoDesempenhoModos) graficoDesempenhoModos.destroy();
+        graficoDesempenhoModos = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Simulado', 'Prática'],
+                datasets: [{
+                    label: 'Acertos',
+                    data: [dados.simulado.acertos, dados.pratica.acertos],
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }, {
+                    label: 'Erros',
+                    data: [dados.simulado.erros, dados.pratica.erros],
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Desempenho por Modo'
+                    }
+                }
+            }
+        });
+    }
+
+    async function carregarEvolucaoCronologicaPorModo(config) {
+        const {
+            db,
+            appId,
+            userId
+        } = config;
+        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
+        const dataInicio = getDateRange(periodo).toDate();
+        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
+        const snapshot = await getDocs(q);
+        const dadosPorData = {};
+        snapshot.forEach(doc => {
+            const treino = doc.data();
+            const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0);
+            if (dataTreino >= dataInicio) {
+                const data = dataTreino.toISOString().split('T')[0];
+                if (!dadosPorData[data]) dadosPorData[data] = {
+                    acertos: 0,
+                    total: 0
+                };
+                dadosPorData[data].acertos += treino.acertos;
+                dadosPorData[data].total += (treino.acertos + treino.erros);
+            }
+        });
+        const labels = Object.keys(dadosPorData).sort();
+        const dataPoints = labels.map(label => {
+            const dia = dadosPorData[label];
+            return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0;
+        });
+        const ctx = document.getElementById('graficoLinhaModos').getContext('2d');
+        if (graficoLinhaModos) graficoLinhaModos.destroy();
+        graficoLinhaModos = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '% de Acertos',
+                    data: dataPoints,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Evolução de Acertos'
+                    }
+                }
+            }
+        });
+    }
+
+    function toggleLinhaMeta() {
+        if (!graficoLinhaModos) return;
+        const metaDataset = {
+            label: `Meta (${metaAcertosGlobal}%)`,
+            data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal),
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0
+        };
+        const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta'));
+        if (metaIndex > -1) {
+            graficoLinhaModos.data.datasets.splice(metaIndex, 1);
+        } else {
+            graficoLinhaModos.data.datasets.push(metaDataset);
+        }
+        graficoLinhaModos.update();
+    }
     
     async function carregarSimulados(config) {
         const { appId } = config;
