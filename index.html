@@ -281,6 +281,7 @@ class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid
         <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid 
  
 grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
+        
         <div id="tab-content-edital" class="tab-content hidden">
           <div class="card">
             <div class="flex justify-between items-center mb-4">
@@ -289,26 +290,22 @@ grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text
             </div>
 
             <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">1.
- Cadastrar Nova Disciplina</h3>
+              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">1. Cadastrar Nova Disciplina</h3>
               <div class="flex flex-col sm:flex-row gap-2 mt-4">
                 <input type="text" id="nova-disciplina-nome-edital" placeholder="Ex: Direito Constitucional" class="w-full">
                 <button id="btn-cadastrar-disciplina-edital" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap">Adicionar Disciplina</button>
               </div>
             </div>
      
- 
- 
-
-                 <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">2.
- Gerenciar Disciplinas e Assuntos</h3>
+            <div class="card bg-gray-50 mt-4">
+              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">2. Gerenciar Disciplinas e Assuntos</h3>
               <div id="edital-disciplinas-container" class="mt-4 space-y-4">
                   <p class="text-slate-500 text-center">Nenhuma disciplina cadastrada ainda.</p>
               </div>
             </div>
           </div>
         </div>
+
         <div id="tab-content-perfil" class="tab-content hidden"><div class="card"><div 
  
 class="flex justify-between items-center"><h2 class="m-0">Meu Perfil</h2><button id="btn-download-relatorio" class="bg-teal-500 text-white font-semibold">Baixar Relatório PDF</button></div><div id="perfil-usuario" class="space-y-2 mt-4"></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">🏅 Minhas Medalhas</h3><div id="listaMedalhas" class="flex flex-wrap gap-4 mt-2"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📚 Histórico de Ciclos</h3><div id="historico-ciclos-container" class="space-y-3"></div></div><div class="mt-6"><h3 class="text-xl font-semibold text-blue-800 border-b pb-2 mb-2">📝 Minhas Redações</h3><div id="lista-redacoes-salvas-perfil" class="space-y-2"></div></div></div></div>
@@ -1756,7 +1753,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
             pdf.save("relatorio.pdf");
             document.body.removeChild(hiddenContainer);
         });
- }
+    }
 
     async function exportarEditalVerticalizadoPDF(config) {
         const { db, appId, userId } = config;
@@ -1787,7 +1784,6 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         const pdf = new jsPDF('p', 'mm', 'a4');
         const margemEsquerda = 20;
         const larguraPagina = pdf.internal.pageSize.getWidth();
-        const larguraUtil = larguraPagina - (margemEsquerda * 2);
         let y = 20; // Posição vertical inicial
 
         // Cabeçalho
