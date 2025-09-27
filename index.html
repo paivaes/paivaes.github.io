@@ -742,10 +742,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         });
         document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
     }
-    // ... CÓDIGO RESTANTE ...
-    // NOTE: Funções como carregarRedacoesSalvas_v2, carregarEdital, etc. viriam aqui.
-    // O código será colado integralmente.
-    
+
     async function toggleSessaoDeEstudo(config) {
         const btn = document.getElementById('btn-toggle-sessao');
         const isRunning = timerInterval != null;
@@ -1294,7 +1291,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         const larguraTextoComFolga = larguraUtil - 5;
         const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
         pdf.text(linhas, margemEsquerda, y, {
-            align: 'left'
+            align: 'justify'
         });
         pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
     }
