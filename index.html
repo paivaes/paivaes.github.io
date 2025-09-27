@@ -375,8 +375,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         const container = document.getElementById('notification-container');
         if (!container) return;
         const notif = document.createElement('div');
-        notif.className = `p-4 text-white ${type === 'error' ?
- 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
+        notif.className = `p-4 text-white ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} rounded-lg shadow-md fade-in`;
         notif.textContent = message;
         container.appendChild(notif);
         setTimeout(() => {
@@ -408,11 +407,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
     }
 
     async function atualizarPerfilPublico(config) {
-        const {
-            db,
-            appId,
-            userId
-        } = config;
+        const { db, appId, userId } = config;
         const user = auth.currentUser;
         if (!user) return;
         const publicProfileRef = doc(db, `artifacts/${appId}/public/data/usuarios`, userId);
@@ -1253,28 +1248,28 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
 
     function exportarRedacaoPDF(redacao) {
         showNotification("Gerando PDF da redação...");
-        const { jsPDF } = window.jspdf;
+        const {
+            jsPDF
+        } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-
         const tema = redacao.tema;
         const texto = redacao.texto;
         const nota = typeof redacao.nota === 'number' ? `${redacao.nota} / 100` : "Não corrigida";
         const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
         const nomeCiclo = document.getElementById('ciclo-nome-input').value || "Ciclo não definido";
-        
         const margemEsquerda = 20; // 2cm
-        const margemDireita = 20;  // 2cm
-        const margemSuperior = 30; // 3cm - ALTERADO
+        const margemDireita = 30; // 3cm - ALTERADO
+        const margemSuperior = 30; // 3cm
         const larguraPagina = 210;
         const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
         let y = margemSuperior;
-        
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
         const linhasTitulo = pdf.splitTextToSize(tema, larguraUtil);
-        pdf.text(linhasTitulo, larguraPagina / 2, y, { align: 'center' });
+        pdf.text(linhasTitulo, larguraPagina / 2, y, {
+            align: 'center'
+        });
         y += (linhasTitulo.length * 7) + 5;
-        
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10);
         pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda, y);
@@ -1283,17 +1278,16 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         y += 5;
         pdf.text(`Nota: ${nota}`, margemEsquerda, y);
         y += 7;
-        
         pdf.setLineWidth(0.5);
         pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
         y += 10;
-        
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
         const larguraTextoComFolga = larguraUtil - 5;
         const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
-        pdf.text(linhas, margemEsquerda, y, { align: 'justify' }); // ALTERADO PARA JUSTIFICADO
-        
+        pdf.text(linhas, margemEsquerda, y, {
+            align: 'justify'
+        });
         pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
     }
 
