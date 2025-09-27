@@ -260,23 +260,19 @@ class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid
 grid-cols-2 lg:grid-cols-4 gap-4 text-center mb-4"><div><p class="font-bold text-2xl" id="evolucaoDiaria">0</p><p class="text-sm text-slate-500">Hoje</p></div><div><p class="font-bold text-2xl" id="evolucaoSemanal">0</p><p class="text-sm text-slate-500">Semana</p></div><div><p class="font-bold text-2xl" id="evolucaoMensal">0</p><p class="text-sm text-slate-500">Mês</p></div><div><p class="font-bold text-2xl" id="evolucaoTotal">0</p><p class="text-sm text-slate-500">Total</p></div></div><canvas id="graficoEvolucaoPizza" height="200"></canvas></div></div><div><div class="card"><h2 class="m-0">Histórico de Desempenho</h2><div class="flex flex-col sm:flex-row gap-4 items-center mb-4"><div class="w-full sm:w-auto flex-grow"><label for="filtroPeriodoDesempenho" class="block font-semibold mb-1">Período:</label><select id="filtroPeriodoDesempenho" class="w-full"><option value="semana">Última semana</option><option value="mes">Último mês</option><option value="total" selected>Todo histórico</option></select></div><div class="w-full sm:w-auto pt-0 sm:pt-7"><button id="btnCompararMeta" class="w-full bg-green-500 text-white font-semibold">Comparar com Meta</button></div></div><div class="mb-6"><canvas id="graficoDesempenhoModos" height="200"></canvas></div><div><canvas id="graficoLinhaModos" height="200"></canvas></div></div></div></div></div>
         <div id="tab-content-edital" class="tab-content hidden">
           <div class="card">
-          
- 
-  <h2 class="m-0">Gerenciar Edital</h2>
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="m-0">Gerenciar Edital</h2>
+              <button id="btn-exportar-edital-pdf" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700">Exportar Edital Verticalizado (PDF)</button>
+            </div>
             <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">1.
- Cadastrar Nova Disciplina</h3>
+              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">1. Cadastrar Nova Disciplina</h3>
               <div class="flex flex-col sm:flex-row gap-2 mt-4">
                 <input type="text" id="nova-disciplina-nome-edital" placeholder="Ex: Direito Constitucional" class="w-full">
                 <button id="btn-cadastrar-disciplina-edital" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700 whitespace-nowrap">Adicionar Disciplina</button>
               </div>
             </div>
-     
- 
-
-                 <div class="card bg-gray-50 mt-4">
-              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">2.
- Gerenciar Disciplinas e Assuntos</h3>
+            <div class="card bg-gray-50 mt-4">
+              <h3 class="text-lg font-semibold text-gray-800 border-0 m-0 p-0">2. Gerenciar Disciplinas e Assuntos</h3>
               <div id="edital-disciplinas-container" class="mt-4 space-y-4">
                   <p class="text-slate-500 text-center">Nenhuma disciplina cadastrada ainda.</p>
               </div>
@@ -736,6 +732,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
             }
         });
         document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
+        document.getElementById('btn-exportar-edital-pdf').addEventListener('click', () => baixarEditalPDF(config));
     }
 
     async function toggleSessaoDeEstudo(config) {
@@ -1544,8 +1541,60 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         }
     }
 
-    async function baixarEditalPDF() {
-        alert("Funcionalidade de PDF do edital dinâmico em desenvolvimento.");
+    async function baixarEditalPDF(config) {
+        showNotification("Gerando Edital em PDF...");
+        const { db, appId, userId } = config;
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            showNotification("Nenhuma disciplina cadastrada no edital para exportar.", "error");
+            return;
+        }
+
+        let y = 20;
+        const pageHeight = 297;
+        const bottomMargin = 20;
+
+        pdf.setFontSize(18);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Edital Verticalizado", 105, y, { align: 'center' });
+        y += 15;
+
+        for (const doc of snapshot.docs) {
+            const disciplina = doc.data();
+
+            if (y > pageHeight - bottomMargin) {
+                pdf.addPage();
+                y = 20;
+            }
+
+            pdf.setFontSize(14);
+            pdf.setFont("helvetica", "bold");
+            pdf.text(disciplina.nome, 20, y);
+            y += 10;
+
+            const assuntos = disciplina.assuntos || {};
+            if (Object.keys(assuntos).length > 0) {
+                for (const assuntoId in assuntos) {
+                    if (y > pageHeight - bottomMargin) {
+                        pdf.addPage();
+                        y = 20;
+                    }
+                    const nomeAssunto = assuntos[assuntoId].nome;
+                    pdf.setFontSize(12);
+                    pdf.setFont("helvetica", "normal");
+                    pdf.text(`- ${nomeAssunto}`, 25, y);
+                    y += 7;
+                }
+            }
+            y += 5;
+        }
+        
+        pdf.save("edital_verticalizado.pdf");
     }
 
     async function carregarPerfil(config) {
@@ -1716,317 +1765,6 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
                 await iniciarSimulado(config, null, `Desafio vs ${oponenteNome}`, todasQuestoes.slice(0, 5), 'desafio');
             });
         });
-    }
-
-    async function handleExcluirDisciplina(config, disciplinaId) {
-        try {
-            const docRef = doc(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`, disciplinaId);
-            await deleteDoc(docRef);
-            showNotification("Disciplina excluída com sucesso!", "success");
-            await carregarEdital(config);
-            await carregarDisciplinas(config);
-            const userDocRef = doc(db, `artifacts/${appId}/users/${config.userId}/perfil`, 'userData');
-            const userDoc = await getDoc(userDocRef);
-            const prioridadesSalvas = userDoc.exists() ? userDoc.data().prioridadeDisciplinas || [] : [];
-            await carregarPrioridades(config, prioridadesSalvas);
-            await carregarProgressoDisciplinas(config);
-        } catch (error) {
-            handleFirestoreError(error, "Excluir Disciplina");
-        }
-    }
-
-    async function carregarPrioridades(config, prioridadesSalvas = []) {
-        const {
-            db,
-            appId,
-            userId
-        } = config;
-        const container = document.getElementById('lista-prioridades');
-        const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
-        const snapshot = await getDocs(q);
-        let disciplinas = snapshot.docs.map(doc => ({
-            id: doc.id,
-            nome: doc.data().nome
-        }));
-        if (snapshot.empty) {
-            container.innerHTML = '<p class="text-slate-500 text-center">Nenhuma disciplina cadastrada.</p>';
-            return;
-        }
-        disciplinas.sort((a, b) => {
-            const indexA = prioridadesSalvas.indexOf(a.id);
-            const indexB = prioridadesSalvas.indexOf(b.id);
-            if (indexA > -1 && indexB > -1) return indexA - indexB;
-            if (indexA > -1) return -1;
-            if (indexB > -1) return 1;
-            return 0;
-        });
-        container.innerHTML = disciplinas.map(d => `
-            <div class="priority-item p-2 border rounded bg-gray-50 flex justify-between items-center" draggable="true" data-id="${d.id}">
-                <span>${d.nome}</span>
-                <button data-id="${d.id}" class="excluir-disciplina-btn text-red-400 hover:text-red-600 font-bold text-2xl leading-none px-2 rounded-full hover:bg-red-100 transition-colors">&times;</button>
-            </div>
-        `).join('');
-        container.querySelectorAll('.excluir-disciplina-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const disciplinaId = e.currentTarget.dataset.id;
-                handleExcluirDisciplina(config, disciplinaId);
-            });
-        });
-        const draggables = container.querySelectorAll('.priority-item');
-        draggables.forEach(draggable => {
-            draggable.addEventListener('dragstart', () => draggable.classList.add('dragging'));
-            draggable.addEventListener('dragend', () => draggable.classList.remove('dragging'));
-        });
-        container.addEventListener('dragover', e => {
-            e.preventDefault();
-            const afterElement = getDragAfterElement(container, e.clientY);
-            const dragging = document.querySelector('.dragging');
-            if (afterElement == null) {
-                container.appendChild(dragging);
-            } else {
-                container.insertBefore(dragging, afterElement);
-            }
-        });
-    }
-
-    async function carregarProgressoDisciplinas(config) {
-        const {
-            db,
-            appId,
-            userId
-        } = config;
-        const container = document.getElementById("progressoDisciplinas");
-        container.innerHTML = "<p class='text-slate-500'>A carregar...</p>";
-        const userDoc = await getDoc(doc(db, `artifacts/${appId}/users/${config.userId}/perfil`, 'userData'));
-        const metasPorDisciplina = userDoc.exists() ?
-            userDoc.data().metasPorDisciplina || {} : {};
-        const qTempo = query(collection(db, `artifacts/${appId}/users/${config.userId}/registro_tempo`), where("usuarioId", "==", userId));
-        const registrosSnapshot = await getDocs(qTempo);
-        const tempoPorDisciplina = {};
-        registrosSnapshot.forEach(r => {
-            const data = r.data();
-            tempoPorDisciplina[data.disciplinaId] = (tempoPorDisciplina[data.disciplinaId] || 0) + data.minutos;
-        });
-        const disciplinasSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/users/${config.userId}/disciplinas`), orderBy("nome")));
-        container.innerHTML = "";
-        if (disciplinasSnapshot.empty) {
-            container.innerHTML = "<p>Nenhuma disciplina encontrada.</p>";
-            return;
-        }
-        disciplinasSnapshot.forEach(docSnap => {
-            const d = docSnap.data();
-            const idDisciplina = docSnap.id;
-            const metaHoras = metasPorDisciplina[idDisciplina] || 0;
-            const minutosEstudados = tempoPorDisciplina[idDisciplina] || 0;
-            const horasEstudadas = minutosEstudados / 60;
-            const percentual = metaHoras > 0 ? Math.min((horasEstudadas / metaHoras) * 100, 100) : 0;
-            container.innerHTML += `<div class="mb-4"><p class="font-semibold">${d.nome} – ${horasEstudadas.toFixed(1)}h / ${metaHoras.toFixed(1)}h</p><div class="w-full bg-gray-200 rounded-full h-4 mt-1"><div class="bg-green-500 h-4 rounded-full" style="width: ${percentual}%;"></div></div></div>`;
-        });
-    }
-
-    async function carregarEvolucaoQuestoes(config) {
-        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/historico_questoes`), where("usuarioId", "==", config.userId));
-        const snapshot = await getDocs(q);
-        let hoje = 0,
-            semana = 0,
-            mes = 0,
-            total = 0;
-        const agora = new Date();
-        const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-        const inicioSemana = new Date(agora);
-        inicioSemana.setDate(agora.getDate() - agora.getDay());
-        const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-        snapshot.forEach(doc => {
-            const dataResp = doc.data().dataResposta;
-            if (dataResp && dataResp.seconds) {
-                const data = new Date(dataResp.seconds * 1000);
-                if (!isNaN(data.getTime())) {
-                    total++;
-                    if (data >= inicioHoje) hoje++;
-                    if (data >= inicioSemana) semana++;
-                    if (data >= inicioMes) mes++;
-                }
-            }
-        });
-        document.getElementById("evolucaoDiaria").textContent = hoje;
-        document.getElementById("evolucaoSemanal").textContent = semana;
-        document.getElementById("evolucaoMensal").textContent = mes;
-        document.getElementById("evolucaoTotal").textContent = total;
-        const ctx = document.getElementById("graficoEvolucaoPizza").getContext("2d");
-        if (graficoPizza) graficoPizza.destroy();
-        graficoPizza = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Hoje', 'Esta Semana', 'Este Mês'],
-                datasets: [{
-                    data: [hoje, semana - hoje, mes - semana],
-                    backgroundColor: ['#4BC0C0', '#FFCE56', '#36A2EB']
-                }]
-            }
-        });
-    }
-
-    async function carregarRevisoes(config) {
-        const container = document.getElementById("listaRevisoes");
-        container.innerHTML = "<p>A carregar...</p>";
-        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/revisoes`), where("usuarioId", "==", config.userId));
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) {
-            container.innerHTML = "<p>Nenhuma revisão encontrada.</p>";
-            return;
-        }
-        const agora = new Date();
-        let revisoesPendentesHTML = "";
-        let revisoesPendentesCount = 0;
-        snapshot.forEach(doc => {
-            const r = doc.data();
-            if (r.status !== 'pendente') return;
-            const revisoesAgendadas = r.revisoesAgendadas || [];
-            revisoesAgendadas.forEach(dataStr => {
-                const dataRevisao = new Date(dataStr);
-                if (dataRevisao <= agora) {
-                    revisoesPendentesCount++;
-                    revisoesPendentesHTML += `<div class="border p-2 rounded mb-2 bg-yellow-100"><p><strong>${r.nomeDisciplina}</strong> - ${r.nomeAssunto}</p><p class="text-sm">Revisão: ${dataRevisao.toLocaleDateString()}</p></div>`;
-                }
-            });
-        });
-        if (revisoesPendentesCount === 0) {
-            container.innerHTML = "<p>Nenhuma revisão pendente.</p>";
-        } else {
-            container.innerHTML = revisoesPendentesHTML;
-        }
-    }
-
-    async function carregarDesempenhoPorModo(config) {
-        const {
-            db,
-            appId,
-            userId
-        } = config;
-        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
-        const dataInicio = getDateRange(periodo).toDate();
-        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
-        const snapshot = await getDocs(q);
-        const dados = {
-            simulado: {
-                acertos: 0,
-                erros: 0
-            },
-            pratica: {
-                acertos: 0,
-                erros: 0
-            }
-        };
-        snapshot.forEach(doc => {
-            const treino = doc.data();
-            const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0);
-            if (dataTreino >= dataInicio && dados[treino.modo]) {
-                dados[treino.modo].acertos += treino.acertos || 0;
-                dados[treino.modo].erros += treino.erros || 0;
-            }
-        });
-        const ctx = document.getElementById('graficoDesempenhoModos').getContext('2d');
-        if (graficoDesempenhoModos) graficoDesempenhoModos.destroy();
-        graficoDesempenhoModos = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Simulado', 'Prática'],
-                datasets: [{
-                    label: 'Acertos',
-                    data: [dados.simulado.acertos, dados.pratica.acertos],
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
-                }, {
-                    label: 'Erros',
-                    data: [dados.simulado.erros, dados.pratica.erros],
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Desempenho por Modo'
-                    }
-                }
-            }
-        });
-    }
-
-    async function carregarEvolucaoCronologicaPorModo(config) {
-        const {
-            db,
-            appId,
-            userId
-        } = config;
-        const periodo = document.getElementById('filtroPeriodoDesempenho').value;
-        const dataInicio = getDateRange(periodo).toDate();
-        const q = query(collection(db, `artifacts/${appId}/users/${config.userId}/historico_treinos`), where("usuarioId", "==", userId));
-        const snapshot = await getDocs(q);
-        const dadosPorData = {};
-        snapshot.forEach(doc => {
-            const treino = doc.data();
-            const dataTreino = treino.data ? new Date(treino.data.seconds * 1000) : new Date(0);
-            if (dataTreino >= dataInicio) {
-                const data = dataTreino.toISOString().split('T')[0];
-                if (!dadosPorData[data]) dadosPorData[data] = {
-                    acertos: 0,
-                    total: 0
-                };
-                dadosPorData[data].acertos += treino.acertos;
-                dadosPorData[data].total += (treino.acertos + treino.erros);
-            }
-        });
-        const labels = Object.keys(dadosPorData).sort();
-        const dataPoints = labels.map(label => {
-            const dia = dadosPorData[label];
-            return dia.total > 0 ? (dia.acertos / dia.total) * 100 : 0;
-        });
-        const ctx = document.getElementById('graficoLinhaModos').getContext('2d');
-        if (graficoLinhaModos) graficoLinhaModos.destroy();
-        graficoLinhaModos = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '% de Acertos',
-                    data: dataPoints,
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    fill: true,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Evolução de Acertos'
-                    }
-                }
-            }
-        });
-    }
-
-    function toggleLinhaMeta() {
-        if (!graficoLinhaModos) return;
-        const metaDataset = {
-            label: `Meta (${metaAcertosGlobal}%)`,
-            data: Array(graficoLinhaModos.data.labels.length).fill(metaAcertosGlobal),
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderDash: [5, 5],
-            fill: false,
-            pointRadius: 0
-        };
-        const metaIndex = graficoLinhaModos.data.datasets.findIndex(ds => ds.label.startsWith('Meta'));
-        if (metaIndex > -1) {
-            graficoLinhaModos.data.datasets.splice(metaIndex, 1);
-        } else {
-            graficoLinhaModos.data.datasets.push(metaDataset);
-        }
-        graficoLinhaModos.update();
     }
     
     async function carregarSimulados(config) {
