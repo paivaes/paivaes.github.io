@@ -1336,48 +1336,50 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
 
     function exportarRedacaoPDF(redacao) {
         showNotification("Gerando PDF da redação...");
- const { jsPDF } = window.jspdf;
+        const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
 
         const tema = redacao.tema;
- const texto = redacao.texto;
+        const texto = redacao.texto;
         const nota = typeof redacao.nota === 'number' ? `${redacao.nota} / 100` : "Não corrigida";
- const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
+        const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
         const nomeCiclo = document.getElementById('ciclo-nome-input').value || "Ciclo não definido";
- const margemEsquerda = 20;
-        const margemDireita = 40;
+        
+        const margemEsquerda = 20; // 2cm
+        const margemDireita = 20;  // 2cm
         const margemSuperior = 30;
         const larguraPagina = 210;
- const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
+        const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
         let y = margemSuperior;
- // Cabeçalho primeiro
+
+        // Cabeçalho primeiro
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10);
         pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda, y);
         y += 5;
- pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda, y);
+        pdf.text(`Ciclo de Estudo: ${nomeCiclo}`, margemEsquerda, y);
         y += 5;
         pdf.text(`Nota: ${nota}`, margemEsquerda, y);
         y += 10;
- // Título depois
+
+        // Título depois
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
         const linhasTitulo = pdf.splitTextToSize(tema, larguraUtil);
- pdf.text(linhasTitulo, margemEsquerda, y); // Alinhado à esquerda
+        pdf.text(linhasTitulo, margemEsquerda, y); // Alinhado à esquerda
         y += (linhasTitulo.length * 7) + 5;
- pdf.setLineWidth(0.5);
+        pdf.setLineWidth(0.5);
         pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
         y += 10;
         
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(12);
         const larguraTextoComFolga = larguraUtil - 5;
- const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
+        const linhas = pdf.splitTextToSize(texto, larguraTextoComFolga);
         pdf.text(linhas, margemEsquerda, y, { align: 'left' });
- // Alinhado à esquerda
         
         pdf.save(`redacao_${tema.substring(0, 20).replace(/\s+/g, '_')}.pdf`);
- }
+    }
 
     function corrigirRedacao_v2() {
         const texto = document.getElementById("texto-redacao").value.trim();
