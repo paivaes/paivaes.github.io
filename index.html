@@ -273,9 +273,40 @@ bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ri
             </div>
  
         </div>
-        <div id="tab-content-simulados" class="tab-content hidden"><div 
- 
-class="card"><h2 class="m-0">Simulados de Provas Anteriores</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div></div></div>
+
+        <div id="tab-content-simulados" class="tab-content hidden">
+    
+          <div class="card bg-blue-50 border border-blue-200">
+              <h2 class="m-0 border-blue-300 text-blue-900">Gerador de Simulados por IA (Estilo FGV)</h2>
+              <p class="text-sm text-slate-600 mb-4">Selecione a matéria e os assuntos para criar uma prova única com questões complexas e contextualizadas, no padrão da FGV.</p>
+      
+              <div id="gerador-ia-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div>
+                      <label for="ia-disciplina" class="block font-semibold mb-1">Disciplina:</label>
+                      <select id="ia-disciplina" class="w-full"></select>
+                  </div>
+                  <div>
+                      <label for="ia-assuntos" class="block font-semibold mb-1">Assuntos (separados por vírgula):</label>
+                      <input type="text" id="ia-assuntos" placeholder="Ex: Direitos Fundamentais, Controle de Constitucionalidade" class="w-full">
+                  </div>
+                  <div>
+                      <label for="ia-quantidade" class="block font-semibold mb-1">Nº de Questões:</label>
+                      <input type="number" id="ia-quantidade" value="5" min="1" max="20" class="w-full">
+                  </div>
+              </div>
+              <button id="btn-gerar-simulado-ia" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 mt-4">
+                  Gerar Simulado com IA
+              </button>
+              <div id="ia-loading" class="hidden text-center mt-4">
+                  <p class="font-semibold text-blue-800 animate-pulse">Aguarde, a IA está elaborando suas questões...</p>
+              </div>
+          </div>
+          <div class="card">
+              <h2 class="m-0">Simulados de Provas Anteriores</h2>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div><label for="filtro-banca" class="block font-semibold mb-1">Banca:</label><select id="filtro-banca" class="w-full"><option value="">Todas</option><option value="FGV">FGV</option></select></div><div><label for="filtro-cargo" class="block font-semibold mb-1">Cargo:</label><select id="filtro-cargo" class="w-full"><option value="">Todos</option><option value="Assistente Legislativo">Assistente Legislativo</option></select></div><div><label for="filtro-ano" class="block font-semibold mb-1">Ano:</label><select id="filtro-ano" class="w-full"><option value="">Todos</option><option value="2018">2018</option></select></div></div><div id="lista-simulados" class="space-y-3"><p class="text-slate-500">Carregando simulados...</p></div>
+          </div>
+        </div>
+
         <div id="tab-content-redacao" class="tab-content hidden"><div class="card"><main id="modulo-redacao-container"><section id="secao-redacao"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Temas Disponíveis</h2><div id="temas-redacao" class="grid grid-cols-1 md:grid-cols-2 gap-6"><p>Carregando temas...</p></div></section><section id="secao-redacoes-salvas" class="mt-12"><h2 class="text-2xl font-semibold mb-4 border-b pb-2">Minhas Redações Salvas</h2><div id="lista-redacoes-salvas-v2" class="space-y-4"><p class="text-gray-500">Carregando redações salvas...</p></div></section></main></div></div>
  
         <div id="tab-content-progresso" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="card"><h2 class="m-0">Evolução de Questões</h2><div class="grid 
@@ -745,40 +776,42 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
                 console.error(`Erro ao executar ${funcao.name}:`, error);
  }
         }
+
+        await carregarDisciplinasParaIA(config);
+
+        document.getElementById('btn-gerar-simulado-ia').addEventListener('click', () => handleGerarSimuladoIA(config));
         document.getElementById('btn-exportar-edital-pdf').addEventListener('click', () => exportarEditalVerticalizadoPDF(config));
         document.getElementById('btn-cadastrar-disciplina-edital').addEventListener('click', () => handleCadastrarDisciplina(config));
- document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
+        document.getElementById('btn-revisao-inteligente').addEventListener('click', () => iniciarRevisaoInteligente(config));
         document.getElementById('filtroPeriodoDesempenho').addEventListener('change', () => {
             carregarDesempenhoPorModo(config);
             carregarEvolucaoCronologicaPorModo(config);
         });
- document.getElementById('btnCompararMeta').addEventListener('click', () => toggleLinhaMeta());
+        document.getElementById('btnCompararMeta').addEventListener('click', () => toggleLinhaMeta());
         document.getElementById('btn-iniciar-pratica').addEventListener('click', () => {
             const idDisciplina = document.getElementById("seletorDisciplina").value;
             if (!idDisciplina) {
                 alert("Por favor, escolha uma disciplina.");
                 return;
             }
-            iniciarSimulado(config, idDisciplina, null, null, 
- 'pratica');
+            iniciarSimulado(config, idDisciplina, null, null, 'pratica');
         });
         document.getElementById('btn-download-relatorio').addEventListener('click', () => baixarRelatorioPDF(config));
         document.getElementById('btn-salvar-metas').addEventListener('click', () => salvarMetasEDistribuir(config));
- document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => fecharModal('modal-questoes'));
+        document.getElementById('btn-fechar-modal-questoes').addEventListener('click', () => fecharModal('modal-questoes'));
         document.getElementById('btn-encerrar-ciclo').addEventListener('click', () => handleEncerrarCiclo(config));
         document.getElementById('btn-toggle-sessao').addEventListener('click', () => toggleSessaoDeEstudo(config));
- document.getElementById('btn-confirmar-horas').addEventListener('click', () => {
+        document.getElementById('btn-confirmar-horas').addEventListener('click', () => {
             const horas = parseFloat(document.getElementById('modal-horas-input').value);
             if (horas > 0) {
                 updateTimerDisplayFromHours(horas);
                 document.getElementById('btn-toggle-sessao').disabled = false;
                 fecharModal('modal-horas');
             } else {
-  
-               showNotification("Por favor, insira um valor de horas válido.", "error");
+                showNotification("Por favor, insira um valor de horas válido.", "error");
             }
         });
- document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
+        document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
     }
 
     async function toggleSessaoDeEstudo(config) {
@@ -811,8 +844,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
 
                 if (segundosCorridos <= 0) {
                     clearInterval(timerInterval);
-                    timerInterval 
- = null;
+                    timerInterval = null;
                     btn.textContent = 'Iniciar Estudo';
                     btn.classList.remove('bg-red-600');
                     btn.classList.add('bg-green-600');
@@ -1345,14 +1377,13 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         const nomeUsuario = auth.currentUser ? auth.currentUser.email : "Usuário não identificado";
         const nomeCiclo = document.getElementById('ciclo-nome-input').value || "Ciclo não definido";
         
-        const margemEsquerda = 20; // 2cm
-        const margemDireita = 20;  // 2cm
+        const margemEsquerda = 20;
+        const margemDireita = 20;
         const margemSuperior = 30;
         const larguraPagina = 210;
         const larguraUtil = larguraPagina - margemEsquerda - margemDireita;
         let y = margemSuperior;
 
-        // Cabeçalho primeiro
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10);
         pdf.text(`Candidato(a): ${nomeUsuario}`, margemEsquerda, y);
@@ -1362,11 +1393,10 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         pdf.text(`Nota: ${nota}`, margemEsquerda, y);
         y += 10;
 
-        // Título depois
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
         const linhasTitulo = pdf.splitTextToSize(tema, larguraUtil);
-        pdf.text(linhasTitulo, margemEsquerda, y); // Alinhado à esquerda
+        pdf.text(linhasTitulo, margemEsquerda, y);
         y += (linhasTitulo.length * 7) + 5;
         pdf.setLineWidth(0.5);
         pdf.line(margemEsquerda, y, larguraPagina - margemDireita, y);
@@ -1458,6 +1488,97 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
                 seletorCronograma.innerHTML += `<option value="${doc.id}">${doc.data().nome}</option>`;
             });
  }
+    }
+    
+    async function carregarDisciplinasParaIA(config) {
+        const seletor = document.getElementById("ia-disciplina");
+        if (!seletor) return;
+
+        seletor.innerHTML = '<option value="">-- Escolha uma disciplina --</option>';
+        const q = query(collection(db, `artifacts/${config.appId}/users/${config.userId}/disciplinas`), orderBy("nome"));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            seletor.innerHTML = '<option value="">Cadastre disciplinas no Edital</option>';
+        } else {
+            snapshot.forEach(doc => {
+                seletor.innerHTML += `<option value="${doc.data().nome}">${doc.data().nome}</option>`;
+            });
+        }
+    }
+
+    async function handleGerarSimuladoIA(config) {
+        const disciplina = document.getElementById('ia-disciplina').value;
+        const assuntos = document.getElementById('ia-assuntos').value;
+        const quantidade = document.getElementById('ia-quantidade').value;
+        const loadingDiv = document.getElementById('ia-loading');
+        const generateBtn = document.getElementById('btn-gerar-simulado-ia');
+
+        if (!disciplina || !assuntos || !quantidade) {
+            showNotification("Por favor, preencha todos os campos para gerar o simulado.", "error");
+            return;
+        }
+
+        loadingDiv.classList.remove('hidden');
+        generateBtn.disabled = true;
+
+        const prompt = `
+            Você é um especialista sênior em concursos públicos brasileiros, com vasta experiência na elaboração de questões no estilo da banca FGV.
+            Sua tarefa é criar ${quantidade} questões de múltipla escolha sobre a disciplina "${disciplina}", com foco específico nos seguintes assuntos: "${assuntos}".
+            As questões devem seguir rigorosamente o padrão FGV:
+            1.  **Enunciados Longos e Contextualizados:** Crie um estudo de caso, uma situação hipotética ou um cenário complexo. Evite perguntas diretas.
+            2.  **Exigência de Interpretação:** A resposta não deve ser óbvia ou puramente baseada em memorização. O candidato precisa interpretar o cenário e aplicar o conhecimento.
+            3.  **Alternativas Plausíveis:** Todas as alternativas devem parecer corretas à primeira vista. Use "pegadinhas" sutis, termos técnicos precisos e explore exceções à regra.
+            4.  **Formato de Saída:** Sua resposta DEVE ser um objeto JSON válido, contendo uma única chave chamada "questoes". O valor dessa chave deve ser um array de objetos, onde cada objeto representa uma questão e possui a seguinte estrutura:
+                {
+                  "enunciado": "O texto completo do estudo de caso e da pergunta.",
+                  "alternativas": [
+                    { "texto": "Texto da alternativa A", "correta": false },
+                    { "texto": "Texto da alternativa B", "correta": true },
+                    { "texto": "Texto da alternativa C", "correta": false },
+                    { "texto": "Texto da alternativa D", "correta": false },
+                    { "texto": "Texto da alternativa E", "correta": false }
+                  ],
+                  "justificativa": "Uma breve explicação do porquê a alternativa correta está certa e as outras erradas."
+                }
+            
+            Certifique-se de que APENAS UMA alternativa por questão tenha o campo "correta" como true. Não inclua sua resposta em blocos de código markdown. Responda apenas com o JSON.
+        `;
+
+        try {
+            // SIMULAÇÃO DE RESPOSTA DA IA (substitua pela chamada real da sua API)
+            const mockApiResponse = {
+                "questoes": [
+                    {
+                        "enunciado": "A prefeitura de Porto Velho (RO) publicou um novo decreto que restringe a circulação de veículos de carga em determinada avenida, visando melhorar o fluxo do trânsito. A associação de transportadoras, sentindo-se prejudicada, alega que o ato é inconstitucional por ferir o direito de ir e vir e a livre iniciativa. Com base na repartição de competências e nos direitos fundamentais, o ato do município é:",
+                        "alternativas": [
+                            { "texto": "A) Inconstitucional, pois a competência para legislar sobre trânsito e transporte é privativa da União.", "correta": false },
+                            { "texto": "B) Constitucional, pois compete aos Municípios legislar sobre assuntos de interesse local, como o trânsito urbano.", "correta": true },
+                            { "texto": "C) Inconstitucional, pois viola o direito de propriedade das transportadoras ao limitar o uso de seus caminhões.", "correta": false },
+                            { "texto": "D) Constitucional, mas depende de autorização prévia da Câmara de Vereadores para ter validade.", "correta": false },
+                            { "texto": "E) Legal, mas não constitucional, pois se baseia no Código de Trânsito Brasileiro e não diretamente na Constituição.", "correta": false }
+                        ],
+                        "justificativa": "A competência para legislar sobre trânsito é concorrente, mas a organização do trânsito em âmbito local é de competência municipal (Art. 30, I e V, CF), tornando o ato constitucional."
+                    }
+                ]
+            };
+            
+            const questoesGeradas = mockApiResponse.questoes;
+
+            if (!questoesGeradas || questoesGeradas.length === 0) {
+                throw new Error("A IA não retornou questões válidas.");
+            }
+
+            const nomeSimulado = `Simulado IA: ${disciplina}`;
+            iniciarSimulado(config, null, nomeSimulado, questoesGeradas, 'simulado');
+
+        } catch (error) {
+            console.error("Erro ao gerar simulado com IA:", error);
+            showNotification("Houve um erro ao contatar a IA. Tente novamente.", "error");
+        } finally {
+            loadingDiv.classList.add('hidden');
+            generateBtn.disabled = false;
+        }
     }
 
     async function carregarAssuntos(config) {
@@ -1754,7 +1875,6 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         const { db, appId, userId } = config;
         const { jsPDF } = window.jspdf;
 
-        // 1. Coletar informações do cabeçalho do usuário
         const nomeConcurso = document.getElementById('ciclo-nome-input').value || "Não definido";
         const nomeCargo = prompt("Digite o nome do cargo:", "Analista Legislativo");
         const dataProva = prompt("Digite a data da prova (ex: DD/MM/AAAA):", "");
@@ -1766,7 +1886,6 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         
         showNotification("Gerando seu edital em PDF...");
 
-        // 2. Buscar as disciplinas e assuntos no Firestore
         const q = query(collection(db, `artifacts/${appId}/users/${userId}/disciplinas`), orderBy("nome"));
         const snapshot = await getDocs(q);
 
@@ -1775,13 +1894,11 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
             return;
         }
 
-        // 3. Montar o PDF
         const pdf = new jsPDF('p', 'mm', 'a4');
         const margemEsquerda = 20;
         const larguraPagina = pdf.internal.pageSize.getWidth();
-        let y = 20; // Posição vertical inicial
+        let y = 20;
 
-        // Cabeçalho
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
         pdf.text("Edital Verticalizado", larguraPagina / 2, y, { align: 'center' });
@@ -1795,14 +1912,12 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
         y += 5;
         pdf.text(`Data da Prova: ${dataProva}`, margemEsquerda, y);
         y += 10;
-        pdf.line(margemEsquerda, y, larguraPagina - margemEsquerda, y); // Linha separadora
+        pdf.line(margemEsquerda, y, larguraPagina - margemEsquerda, y);
         y += 10;
 
-        // Corpo do Edital
         for (const doc of snapshot.docs) {
             const disciplina = doc.data();
 
-            // Adiciona nova página se não houver espaço suficiente
             if (y > 260) {
                 pdf.addPage();
                 y = 20;
@@ -1823,7 +1938,7 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
                         y = 20;
                     }
                     const assunto = assuntos[assuntoId];
-                    pdf.rect(margemEsquerda, y - 2.5, 3, 3); // Checkbox
+                    pdf.rect(margemEsquerda, y - 2.5, 3, 3);
                     pdf.text(assunto.nome, margemEsquerda + 5, y);
                     y += 7;
                 }
@@ -1833,10 +1948,9 @@ py-2 rounded-md hover:bg-yellow-600 transition">Corrigir (IA)</button><button id
                  pdf.text("Nenhum assunto cadastrado.", margemEsquerda + 5, y);
                  y += 7;
             }
-            y += 5; // Espaço extra entre as disciplinas
+            y += 5;
         }
 
-        // 4. Salvar o PDF
         pdf.save(`Edital_Verticalizado_${nomeConcurso.replace(/\s+/g, '_')}.pdf`);
     }
 
