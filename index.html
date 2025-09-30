@@ -933,6 +933,11 @@
     // FUNÇÃO PARA GERAR SIMULADO COM IA
     // =========================
     async function handleGerarSimuladoIA(config) {
+		const user = auth.currentUser;
+		if (!user) {
+        showNotification("Por favor, faça login para usar o gerador de simulados com IA.", "error");
+        return;
+		}
         const disciplina = document.getElementById('ia-disciplina').value.trim();
         const assuntos = document.getElementById('ia-assuntos').value.trim();
         const quantidade = document.getElementById('ia-quantidade').value;
