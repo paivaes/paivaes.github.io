@@ -925,19 +925,21 @@
         });
         document.getElementById('btn-cancelar-horas').addEventListener('click', () => fecharModal('modal-horas'));
         
-        // NOVO: Adicionar event listener para o botão de gerar simulado IA
+        // ✅ ADICIONAR event listener para o botão de gerar simulado IA
         document.getElementById('btn-gerar-simulado-ia').addEventListener('click', () => handleGerarSimuladoIA(config));
     }
 
     // =========================
-    // FUNÇÃO PARA GERAR SIMULADO COM IA
+    // FUNÇÃO PARA GERAR SIMULADO COM IA (ATUALIZADA)
     // =========================
     async function handleGerarSimuladoIA(config) {
-		const user = auth.currentUser;
-		if (!user) {
-        showNotification("Por favor, faça login para usar o gerador de simulados com IA.", "error");
-        return;
-		}
+        // ✅ VERIFICAÇÃO DE AUTENTICAÇÃO
+        const user = auth.currentUser;
+        if (!user) {
+            showNotification("Por favor, faça login para usar o gerador de simulados com IA.", "error");
+            return;
+        }
+
         const disciplina = document.getElementById('ia-disciplina').value.trim();
         const assuntos = document.getElementById('ia-assuntos').value.trim();
         const quantidade = document.getElementById('ia-quantidade').value;
@@ -984,7 +986,7 @@ REGRAS IMPORTANTES:
 `;
 
         try {
-            // Chama a Cloud Function
+            // ✅ CHAMADA SEGURA PARA CLOUD FUNCTION
             const functions = getFunctions(app);
             const generateSimulado = httpsCallable(functions, 'generateSimulado');
 
@@ -992,8 +994,6 @@ REGRAS IMPORTANTES:
             const data = result.data;
 
             let responseText = data.candidates[0].content.parts[0].text;
-            
-            // Limpa a resposta removendo markdown
             responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
 
             const responseObject = JSON.parse(responseText);
@@ -1006,7 +1006,6 @@ REGRAS IMPORTANTES:
             const nomeSimulado = `Simulado IA: ${disciplina} - ${assuntos}`;
             showNotification(`Simulado gerado com sucesso! ${questoesGeradas.length} questões criadas.`, "success");
             
-            // Inicia o simulado com as questões geradas
             iniciarSimulado(config, null, nomeSimulado, questoesGeradas, 'simulado');
 
         } catch (error) {
@@ -1381,7 +1380,7 @@ REGRAS IMPORTANTES:
                     entendimento: "A proposta pede uma análise sobre os grupos sociais que não são 'vistos' ou reconhecidos pela sociedade e pelo Estado, e quais os impactos desse apagamento.",
                     argumentos: [
                         { titulo: "Causas da Invisibilidade", texto: "Discutir que a invisibilidade é um projeto social e histórico, fruto do preconceito estrutural (racismo, aporofobia), da negligência estatal e da representação estereotipada pela mídia." },
-                        { titulo: "Consequências da Invisibilidade", texto: "Detalhar os efeitos práticos desse apagamento: negação de direitos básicos, marginalização, perpetuação da pobrece, violência e o impacto na saúde mental desses indivíduos." }
+                        { titulo: "Consequências da Invisibilidade", texto: "Detalhar os efeitos práticos desse apagamento: negação de direitos básicos, marginalização, perpetuação da pobreza, violência e o impacto na saúde mental desses indivíduos." }
                     ],
                     exemplos: [
                         "População em situação de rua, povos indígenas, comunidades quilombolas, catadores de recicláveis.",
@@ -1994,7 +1993,7 @@ REGRAS IMPORTANTES:
             nome: doc.data().nome
         }));
         if (snapshot.empty) {
-            container.innerHTML = '<p class="text-slate-500 text-center">Nenhuma disciplina cadastrada.</p>';
+            container.innerHTML = '<p class="text-slate-500 text-center'>Nenhuma disciplina cadastrada.</p>';
             return;
         }
         disciplinas.sort((a, b) => {
