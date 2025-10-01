@@ -1,3 +1,5 @@
+[file name]: index.txt
+[file content begin]
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -930,7 +932,7 @@
     }
 
     // =========================
-    // FUNÇÃO PARA GERAR SIMULADO COM IA (ATUALIZADA)
+    // FUNÇÃO PARA GERAR SIMULADO COM IA (CORRIGIDA)
     // =========================
     async function handleGerarSimuladoIA(config) {
         // ✅ VERIFICAÇÃO DE AUTENTICAÇÃO
@@ -954,9 +956,7 @@
         loadingDiv.classList.remove('hidden');
         generateBtn.disabled = true;
 
-        const prompt = `
-Gere um simulado de concurso público com ${quantidade} questões de múltipla escolha sobre ${disciplina}, 
-focando nos seguintes assuntos: ${assuntos}.
+        const prompt = `Gere um simulado de concurso público com ${quantidade} questões de múltipla escolha sobre ${disciplina}, focando nos seguintes assuntos: ${assuntos}.
 
 FORMATO DE RESPOSTA EXATO (apenas JSON, sem markdown):
 
@@ -982,8 +982,7 @@ REGRAS IMPORTANTES:
 - Resposta correta deve ser A, B, C, D ou E
 - Linguagem formal e técnica adequada para concurso
 - Dificuldade variada (fácil, médio, difícil)
-- Baseado em legislação e doutrina atualizada
-`;
+- Baseado em legislação e doutrina atualizada`;
 
         try {
             // ✅ CHAMADA SEGURA PARA CLOUD FUNCTION
@@ -2315,3 +2314,4 @@ REGRAS IMPORTANTES:
   </script>
 </body>
 </html>
+[file content end]
