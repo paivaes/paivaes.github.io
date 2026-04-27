@@ -1822,8 +1822,6 @@ carregarDashboard() {
                             <div id="display-cronometro" class="text-5xl font-mono font-bold ${this.cronometro.rodando ? 'text-green-500' : 'text-blue-600'} mb-2 tracking-wider">
                                 ${this.formatarTempo(this.cronometro.tempo)}
                             </div>
-                            <div id="tempo-hoje" class="text-sm text-gray-500 font-medium">
-                                </div>
                         </div>
 
                         <div class="flex gap-3 justify-center mb-6">
@@ -1843,14 +1841,13 @@ carregarDashboard() {
                                 <i class="fas fa-undo mr-1"></i>Zerar
                             </button>
                             
-                            <button id="btn-fechar-timer" class="text-blue-600 hover:text-blue-800 text-sm font-semibold p-2 bg-blue-50 rounded-lg px-4">
+                            <button onclick="AplicacaoPrincipal.fecharModal()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold p-2 bg-blue-50 rounded-lg px-4">
                                 Fechar (Continua rodando)
                             </button>
                         </div>
                     </div>
                 `);
 
-                // Mantém o assunto selecionado se o relógio já estiver rodando
                 if (this.cronometro.assuntoAtivo) {
                     const select = document.getElementById('select-assunto-cronometro');
                     if (select) select.value = this.cronometro.assuntoAtivo;
@@ -1858,13 +1855,6 @@ carregarDashboard() {
 
                 this.configurarCronometro();
                 this.atualizarTempoDisplay();
-
-                // 👇 A LIGAÇÃO DIRETA NO JAVASCRIPT 👇
-                // Garante 100% que o botão fechar vai funcionar quando clicado
-                const btnFecharTimer = document.getElementById('btn-fechar-timer');
-                if (btnFecharTimer) {
-                    btnFecharTimer.onclick = () => this.fecharModal();
-                }
             },
 	    
 	    gerarOpcoesAssuntos() {
