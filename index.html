@@ -1155,7 +1155,7 @@
                             </h3>
                             ${!questao ? `
                             <button type="button" onclick="AplicacaoPrincipal.gerarQuestaoIA()" id="btn-ia-questao" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200 transition-colors">
-                                ✨ Gerar com IA
+                                ✨ Gerar Estudo Reverso
                             </button>
                             ` : ''}
                         </div>
@@ -1245,33 +1245,75 @@
             },
 	    async gerarQuestaoIA() {
                 const disciplina = document.getElementById('questao-disciplina').value;
-                const tema = prompt("Qual o tema ou assunto específico para a questão?"); // Você pode trocar por um input se preferir
+                const tema = prompt("Qual o tema específico para o Estudo Reverso?");
                 
                 if (!disciplina || !tema) {
-                    this.mostrarNotificacao('Selecione a disciplina e informe o tema para gerar.', 'error');
+                    this.mostrarNotificacao('Selecione a disciplina e informe o tema.', 'error');
                     return;
                 }
 
                 const btn = document.getElementById('btn-ia-questao');
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Gerando...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Gerando Estudo Reverso...';
                 btn.disabled = true;
 
                 try {
-                    const questaoGerada = await AIAssistant.gerarQuestao(disciplina, tema);
+                    // Chama a nova inteligência de Estudo Reverso
+                    const resultado = await AIAssistant.gerarEstudoReverso(disciplina, tema);
                     
-                    document.getElementById('questao-enunciado').value = questaoGerada.enunciado;
-                    document.getElementById('questao-comentario').value = questaoGerada.comentario;
-                    
-                    questaoGerada.alternativas.forEach((alt, index) => {
-                        document.getElementById(`alternativa-${index}`).value = alt;
+                    // Salva as 3 questões silenciosamente no banco de dados
+                    resultado.questoes.forEach(q => {
+                        const novaQuestao = {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                            disciplina: disciplina,
+                            enunciado: q.enunciado,
+                            alternativas: q.alternativas,
+                            resposta: q.resposta,
+                            comentario: q.comentario,
+                            status: 'pendente',
+                            data: new Date().toISOString()
+                        };
+                        this.dados.questoes.push(novaQuestao);
                     });
+
+                    this.salvarDadosUsuario();
                     
-                    document.querySelector(`input[name="questao-resposta"][value="${questaoGerada.resposta}"]`).checked = true;
+                    // Fecha a janelinha de criar questão
+                    this.fecharModal();
+                    this.carregarQuestoes(); // Atualiza a tabela ao fundo
                     
-                    this.mostrarNotificacao('Questão técnica gerada com sucesso!', 'success');
+                    // Mostra o resumo na tela como uma aula expressa!
+                    this.mostrarModal(`
+                        <div class="p-8 max-w-3xl">
+                            <div class="flex items-center mb-6">
+                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-brain text-2xl text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold gradient-text">Estudo Reverso Concluído</h3>
+                                    <p class="text-sm text-gray-500">Teoria expressa + Exercícios</p>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl mb-6 shadow-sm">
+                                <h4 class="font-bold text-blue-800 mb-2 uppercase text-sm tracking-wider">Resumo Focado em Provas: ${tema}</h4>
+                                <p class="text-gray-800 leading-relaxed font-serif">${resultado.resumo.replace(/\n/g, '<br>')}</p>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
+                                <i class="fas fa-tasks text-3xl text-green-500 mb-3"></i>
+                                <h4 class="font-semibold text-gray-800">Seu banco de questões foi atualizado!</h4>
+                                <p class="text-gray-600 mb-4 text-sm">A inteligência artificial adicionou <strong>${resultado.questoes.length} questões de nível alto</strong> sobre este assunto para você praticar agora mesmo.</p>
+                                
+                                <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-success px-8 py-3 w-full sm:w-auto shadow-md">
+                                    <i class="fas fa-check-circle mr-2"></i>Entendi, vamos resolver!
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                    
+                    this.mostrarNotificacao('Pacote de Estudo Reverso gerado!', 'success');
                 } catch (error) {
-                    this.mostrarNotificacao(error.message || 'Erro ao gerar questão.', 'error');
-                } finally {
+                    this.mostrarNotificacao(error.message || 'Erro ao gerar o estudo reverso.', 'error');
                     btn.innerHTML = '✨ Gerar com IA';
                     btn.disabled = false;
                 }
