@@ -4197,9 +4197,11 @@ salvarTarefaRapida(dataString) {
 
             mostrarModal(conteudo) {
                 const modal = document.createElement('div');
+                // 👇 AQUI ESTÁ A CORREÇÃO: O ID que faltava para os botões "Fechar" funcionarem!
+                modal.id = 'modal-overlay'; 
                 modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
                 
-                // Detecta automaticamente o tamanho ideal para evitar aquele "espaço em branco gigante"
+                // Detecta automaticamente o tamanho ideal
                 let tamanho = 'max-w-2xl'; // Padrão
                 if (conteudo.includes('max-w-sm')) tamanho = 'max-w-sm';
                 else if (conteudo.includes('max-w-md')) tamanho = 'max-w-md';
@@ -4213,16 +4215,12 @@ salvarTarefaRapida(dataString) {
                 `;
                 
                 modal.addEventListener('click', (e) => {
-                    // Clicar no fundo escuro fecha a janela
+                    // Clicar no fundo escuro fecha a janela usando a função oficial
                     if (e.target === modal) {
-                        document.body.removeChild(modal);
-                        
-                        // A MÁGICA: Garante que o relógio flutuante apareça ao clicar fora!
-                        if (typeof this.verificarTimerFlutuante === 'function') {
-                            setTimeout(() => this.verificarTimerFlutuante(), 50);
-                        }
+                        this.fecharModal(); 
                     }
                 });
+                
                 document.body.appendChild(modal);
             },
 
