@@ -4207,8 +4207,11 @@ salvarTarefaRapida(dataString) {
                 const modal = document.getElementById(modalId || 'modal-overlay');
                 if (modal) {
                     modal.remove();
-                    // Pequeno atraso para o DOM processar a remoção antes de mostrar o player
-                    setTimeout(() => this.verificarTimerFlutuante(), 100);
+                }
+                
+                // Força o cronômetro flutuante a aparecer no Dashboard
+                if (typeof this.verificarTimerFlutuante === 'function') {
+                    this.verificarTimerFlutuante();
                 }
             },
 
