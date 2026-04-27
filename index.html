@@ -1419,13 +1419,23 @@
                                 
                                 <div class="flex items-center space-x-4">
                                     <div class="text-right">
-                                        <p class="font-semibold">${this.usuario.nome}</p>
-                                        <p class="text-sm text-gray-500">${this.usuario.email}</p>
+                                        <div class="font-semibold flex items-center justify-end gap-2">
+                                            ${this.usuario.nome}
+                                            ${this.usuario.cargo === 'admin' ? '<i class="fas fa-crown text-yellow-500 text-sm" title="Administrador"></i>' : ''}
+                                            ${this.usuario.cargo === 'monitor' ? '<i class="fas fa-user-shield text-green-500 text-sm" title="Monitor"></i>' : ''}
+                                        </div>
+                                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-0.5">
+                                            ${this.usuario.cargo === 'admin' ? 'Administrador' : this.usuario.cargo === 'monitor' ? 'Monitor' : 'Aluno'}
+                                        </p>
                                     </div>
                                     <div class="relative">
-                                        <button id="btn-menu-usuario" class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                                        <button id="btn-menu-usuario" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md transition-transform hover:scale-105
+                                            ${this.usuario.cargo === 'admin' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 ring-2 ring-yellow-200' : 
+                                              this.usuario.cargo === 'monitor' ? 'bg-gradient-to-r from-green-400 to-green-600 ring-2 ring-green-200' : 
+                                              'bg-gradient-to-r from-blue-600 to-purple-600'}">
                                             ${this.usuario.nome.charAt(0).toUpperCase()}
                                         </button>
+                                        
                                         <div id="menu-usuario" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden z-50">
                                             
                                             ${this.usuario.cargo === 'admin' ? `
