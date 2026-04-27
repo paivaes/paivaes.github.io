@@ -924,6 +924,19 @@
             },
             
             async fazerLogout() {
+                // 👇 LIMPEZA DO CRONÔMETRO (Desliga o motor e remove da tela) 👇
+                if (AplicacaoPrincipal && AplicacaoPrincipal.cronometro) {
+                    if (AplicacaoPrincipal.cronometro.intervalo) {
+                        clearInterval(AplicacaoPrincipal.cronometro.intervalo);
+                    }
+                    AplicacaoPrincipal.cronometro = { tempo: 0, rodando: false, assuntoAtivo: null, intervalo: null, tempoInicio: null };
+                }
+                const timerFlutuante = document.getElementById('floating-timer');
+                if (timerFlutuante) {
+                    timerFlutuante.remove();
+                }
+                // 👆 FIM DA LIMPEZA 👆
+
                 await auth.signOut();
                 this.usuarioLogado = null;
                 
@@ -936,6 +949,7 @@
                     appWrapper.innerHTML = '';
                     loginSystem.classList.remove('hidden');
                     loginSystem.classList.remove('fade-out');
+                
                     loginSystem.classList.add('fade-in');
                     
                     document.getElementById('login-email').value = '';
