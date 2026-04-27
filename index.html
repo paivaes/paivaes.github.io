@@ -2048,7 +2048,6 @@ carregarDashboard() {
                     const assuntoSelect = document.getElementById('select-assunto-cronometro');
                     const assuntoId = assuntoSelect ? assuntoSelect.value : null;
                     
-                    // Se não escolheu assunto agora, nem já tinha um ativo, bloqueia
                     if (!assuntoId && !this.cronometro.assuntoAtivo) {
                         this.mostrarNotificacao('Selecione um assunto para começar a estudar', 'error');
                         return;
@@ -2068,7 +2067,7 @@ carregarDashboard() {
                         this.salvarEstadoCronometro(); // Salva na memória a cada segundo
                     }, 1000);
                     
-                    this.iniciarSessaoEstudo(); // Re-renderiza para atualizar os botões
+                    this.atualizarBotoesCronometro(); // 👈 A CORREÇÃO: Atualização cirúrgica
                     this.mostrarNotificacao('Cronômetro iniciado! Bons estudos!', 'success');
                 }
             },
@@ -2078,7 +2077,7 @@ carregarDashboard() {
                     this.cronometro.rodando = false;
                     clearInterval(this.cronometro.intervalo);
                     this.salvarEstadoCronometro();
-                    this.iniciarSessaoEstudo(); // Atualiza botões
+                    this.atualizarBotoesCronometro(); // 👈 A CORREÇÃO: Atualização cirúrgica
                     this.mostrarNotificacao('Cronômetro pausado', 'info');
                 }
             },
@@ -2086,13 +2085,11 @@ carregarDashboard() {
             pararCronometro() {
                 if (this.cronometro.tempo > 0) {
                     if (confirm('Deseja encerrar e salvar este tempo no histórico?')) {
-                        // Conecta com a sua função original que salva no Banco de Dados
-                        if (typeof this.finalizarSessaoEstudo === 'function') {
-                            this.finalizarSessaoEstudo();
-                        } else {
-                            this.mostrarNotificacao('Tempo salvo (simulação)!', 'success');
-                            this.limparCronometroTotalmente();
+                        if (typeof this.salvarTempoEstudo === 'function') {
+                            this.salvarTempoEstudo(); // Salva as horas na disciplina certa!
+                            this.mostrarNotificacao('Tempo salvo no histórico com sucesso!', 'success');
                         }
+                        this.limparCronometroTotalmente();
                     }
                 } else {
                     this.limparCronometroTotalmente();
@@ -2107,6 +2104,7 @@ carregarDashboard() {
                     }
                     this.atualizarTempoDisplay();
                     this.salvarEstadoCronometro();
+                    this.atualizarBotoesCronometro(); // 👈 A CORREÇÃO
                 }
             },
 
@@ -2119,8 +2117,13 @@ carregarDashboard() {
                 if (this.usuario && this.usuario.id) {
                     localStorage.removeItem(`cronometro_${this.usuario.id}`);
                 }
+                
                 this.atualizarTempoDisplay();
-                this.iniciarSessaoEstudo();
+                this.atualizarBotoesCronometro(); // 👈 A CORREÇÃO
+                
+                // Reseta a caixa de seleção para o padrão
+                const select = document.getElementById('select-assunto-cronometro');
+                if (select) select.value = '';
             },
 
             salvarTempoEstudo() {
