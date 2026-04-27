@@ -1029,13 +1029,13 @@
                 }
             },
 
-            async gerarEstudoReverso(disciplina, tema) {
+            async gerarEstudoReverso(disciplina, tema, quantidade) {
                 const instrucao = `Você é um professor especialista em concursos públicos.
                 O aluno quer fazer "Estudo Reverso" (aprender a teoria através de questões).
                 
                 REGRAS ESTRITAS:
-                1. Escreva um BREVE RESUMO (1 a 2 parágrafos) focado exclusivamente nas "pegadinhas" e no que é mais cobrado pelas bancas (FGV/Cebraspe) sobre este tema.
-                2. Crie 3 questões inéditas de múltipla escolha (5 alternativas).
+                1. Escreva um BREVE RESUMO do assunto (1 a 2 parágrafos) focado exclusivamente nas "pegadinhas" e no que é mais cobrado pelas bancas (FGV/Cebraspe).
+                2. Crie EXATAMENTE ${quantidade} questões inéditas de múltipla escolha (5 alternativas).
                 3. A dificuldade das questões deve ser alta, exigindo raciocínio.
                 
                 Retorne EXATAMENTE este formato JSON:
@@ -1043,27 +1043,15 @@
                     "resumo": "Texto do resumo focado em provas...",
                     "questoes": [
                         {
-                            "enunciado": "texto do enunciado da questão 1",
+                            "enunciado": "texto do enunciado da questão",
                             "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
                             "resposta": 0, 
                             "comentario": "Explicação técnica detalhada justificando a correta e o erro das demais."
-                        },
-                        {
-                            "enunciado": "texto do enunciado da questão 2",
-                            "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
-                            "resposta": 1, 
-                            "comentario": "Explicação técnica detalhada."
-                        },
-                        {
-                            "enunciado": "texto do enunciado da questão 3",
-                            "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
-                            "resposta": 2, 
-                            "comentario": "Explicação técnica detalhada."
                         }
                     ]
-                }`;
+                } (Garanta que a matriz "questoes" tenha exatamente ${quantidade} itens)`;
 
-                return await this.callGemini(`Gere um estudo reverso sobre a disciplina '${disciplina}', abordando o tema: '${tema}'.`, instrucao);
+                return await this.callGemini(`Gere um estudo reverso com ${quantidade} questões sobre a disciplina '${disciplina}', abordando o tema: '${tema}'.`, instrucao);
             },
 
             async gerarResumo(disciplina, tema) {
@@ -1252,15 +1240,21 @@
                     return;
                 }
 
+                // Pergunta quantas questões o aluno quer
+                let quantidade = prompt("Quantas questões deseja gerar? (Digite um número, ex: 3, 5, 10)", "3");
+                quantidade = parseInt(quantidade);
+                if (isNaN(quantidade) || quantidade < 1 || quantidade > 20) {
+                    quantidade = 3; // Padrão se o utilizador não digitar um número válido
+                }
+
                 const btn = document.getElementById('btn-ia-questao');
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Gerando Estudo Reverso...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Gerando...';
                 btn.disabled = true;
 
                 try {
-                    // Chama a nova inteligência de Estudo Reverso
-                    const resultado = await AIAssistant.gerarEstudoReverso(disciplina, tema);
+                    // Chama a IA com a quantidade escolhida
+                    const resultado = await AIAssistant.gerarEstudoReverso(disciplina, tema, quantidade);
                     
-                    // Salva as 3 questões silenciosamente no banco de dados
                     resultado.questoes.forEach(q => {
                         const novaQuestao = {
                             id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -1269,19 +1263,16 @@
                             alternativas: q.alternativas,
                             resposta: q.resposta,
                             comentario: q.comentario,
-                            status: 'pendente',
+                            status: 'pendente', // Nasce fechada!
                             data: new Date().toISOString()
                         };
                         this.dados.questoes.push(novaQuestao);
                     });
 
                     this.salvarDadosUsuario();
-                    
-                    // Fecha a janelinha de criar questão
                     this.fecharModal();
-                    this.carregarQuestoes(); // Atualiza a tabela ao fundo
+                    this.carregarQuestoes(); 
                     
-                    // Mostra o resumo na tela como uma aula expressa!
                     this.mostrarModal(`
                         <div class="p-8 max-w-3xl">
                             <div class="flex items-center mb-6">
@@ -1290,7 +1281,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-2xl font-bold gradient-text">Estudo Reverso Concluído</h3>
-                                    <p class="text-sm text-gray-500">Teoria expressa + Exercícios</p>
+                                    <p class="text-sm text-gray-500">Resumo + ${quantidade} Exercícios</p>
                                 </div>
                             </div>
                             
@@ -1301,20 +1292,21 @@
                             
                             <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
                                 <i class="fas fa-tasks text-3xl text-green-500 mb-3"></i>
-                                <h4 class="font-semibold text-gray-800">Seu banco de questões foi atualizado!</h4>
-                                <p class="text-gray-600 mb-4 text-sm">A inteligência artificial adicionou <strong>${resultado.questoes.length} questões de nível alto</strong> sobre este assunto para você praticar agora mesmo.</p>
+                                <h4 class="font-semibold text-gray-800">Seu simulador foi atualizado!</h4>
+                                <p class="text-gray-600 mb-4 text-sm">Foram geradas <strong>${resultado.questoes.length} questões inéditas</strong> no seu banco para resolver agora.</p>
                                 
                                 <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-success px-8 py-3 w-full sm:w-auto shadow-md">
-                                    <i class="fas fa-check-circle mr-2"></i>Entendi, vamos resolver!
+                                    <i class="fas fa-check-circle mr-2"></i>Ir para as questões!
                                 </button>
                             </div>
                         </div>
                     `);
                     
-                    this.mostrarNotificacao('Pacote de Estudo Reverso gerado!', 'success');
+                    this.mostrarNotificacao('Pacote gerado com sucesso!', 'success');
                 } catch (error) {
                     this.mostrarNotificacao(error.message || 'Erro ao gerar o estudo reverso.', 'error');
-                    btn.innerHTML = '✨ Gerar com IA';
+                } finally {
+                    btn.innerHTML = '✨ Gerar Estudo Reverso';
                     btn.disabled = false;
                 }
             },
@@ -4074,12 +4066,11 @@ salvarTarefaRapida(dataString) {
                     <div class="fade-in">
                         <div class="flex justify-between items-center mb-8">
                             <h2 class="text-3xl font-bold gradient-text">Banco de Questões</h2>
-                            <button onclick="AplicacaoPrincipal.mostrarModalNovaQuestao()" class="btn-success">
+                            <button onclick="AplicacaoPrincipal.mostrarModalNovaQuestao()" class="btn-success shadow-md">
                                 <i class="fas fa-plus mr-2"></i>Nova Questão
                             </button>
                         </div>
 
-                        <!-- Estatísticas -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                             <div class="glass-card rounded-xl p-4 text-center">
                                 <div class="text-2xl font-bold text-blue-600">${this.dados.questoes.length}</div>
@@ -4100,72 +4091,111 @@ salvarTarefaRapida(dataString) {
                         </div>
 
                         <div class="glass-card rounded-xl p-6">
-                            <div class="space-y-4">
-                                ${this.dados.questoes.map(questao => `
-                                    <div class="questao-item ${questao.status === 'correta' ? 'questao-correta' : 'questao-errada'} glass-card rounded-lg p-4">
-                                        <div class="flex justify-between items-start mb-3">
+                            <div class="space-y-6">
+                                ${this.dados.questoes.map(questao => {
+                                    const isResolvida = questao.status !== 'pendente';
+                                    const corBorda = questao.status === 'correta' ? '#10B981' : (questao.status === 'errada' ? '#EF4444' : '#3B82F6');
+                                    
+                                    return `
+                                    <div class="glass-card rounded-xl p-6 shadow-sm relative overflow-hidden" style="border-left: 5px solid ${corBorda};">
+                                        
+                                        <div class="flex justify-between items-start mb-4">
                                             <div>
-                                                <h4 class="font-semibold">${questao.enunciado}</h4>
-                                                <div class="flex items-center mt-1">
-                                                    <span class="badge mr-2" style="background-color: ${this.obterCorDisciplina(questao.disciplina)}; color: white;">
-                                                        ${questao.disciplina}
-                                                    </span>
-                                                    <span class="text-sm text-gray-500">
-                                                        ${new Date(questao.data).toLocaleDateString('pt-BR')}
-                                                    </span>
+                                                <div class="flex items-center mb-3">
+                                                    <span class="badge text-white mr-2" style="background-color: ${this.obterCorDisciplina(questao.disciplina)};">${questao.disciplina}</span>
+                                                    ${isResolvida ? 
+                                                        `<span class="badge ${questao.status === 'correta' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                                            <i class="fas ${questao.status === 'correta' ? 'fa-check' : 'fa-times'} mr-1"></i>${questao.status === 'correta' ? 'Acertou' : 'Errou'}
+                                                        </span>` : 
+                                                        `<span class="badge bg-blue-50 text-blue-600 border border-blue-200"><i class="fas fa-clock mr-1"></i>Pendente</span>`
+                                                    }
                                                 </div>
+                                                <h4 class="font-semibold text-lg text-gray-800 leading-relaxed">${questao.enunciado.replace(/\n/g, '<br>')}</h4>
                                             </div>
-                                            <div class="action-buttons">
-                                                <button onclick="AplicacaoPrincipal.editarQuestao('${questao.id}')" class="btn-acao bg-blue-100 text-blue-600">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button onclick="AplicacaoPrincipal.excluirQuestao('${questao.id}')" class="btn-acao bg-red-100 text-red-600">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
+                                            <div class="flex gap-2">
+                                                <button onclick="AplicacaoPrincipal.editarQuestao('${questao.id}')" class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 flex justify-center items-center"><i class="fas fa-edit"></i></button>
+                                                <button onclick="AplicacaoPrincipal.excluirQuestao('${questao.id}')" class="w-8 h-8 rounded bg-red-50 hover:bg-red-100 text-red-500 flex justify-center items-center"><i class="fas fa-trash"></i></button>
                                             </div>
                                         </div>
                                         
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                            <div>
-                                                <strong>Alternativas:</strong>
-                                                <div class="mt-1 space-y-1">
-                                                    ${questao.alternativas.map((alt, index) => `
-                                                        <div class="flex items-center">
-                                                            <span class="w-6 h-6 flex items-center justify-center rounded-full border mr-2 
-                                                                ${questao.resposta === index ? 'bg-green-500 text-white border-green-500' : 'border-gray-300'}">
-                                                                ${String.fromCharCode(65 + index)}
-                                                            </span>
-                                                            <span class="${questao.resposta === index ? 'font-semibold' : ''}">${alt}</span>
-                                                        </div>
-                                                    `).join('')}
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <strong>Resposta:</strong>
-                                                <p class="mt-1">${String.fromCharCode(65 + questao.resposta)}</p>
+                                        <div class="mt-4 space-y-2 pl-2">
+                                            ${questao.alternativas.map((alt, index) => {
+                                                const isCorreta = questao.resposta === index;
+                                                let estiloLabel = 'bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer';
                                                 
-                                                <strong class="mt-2 block">Comentário:</strong>
-                                                <p class="mt-1 text-sm">${questao.comentario || 'Sem comentários'}</p>
-                                            </div>
+                                                if (isResolvida) {
+                                                    if (isCorreta) estiloLabel = 'bg-green-50 border-green-500 text-green-900 font-medium shadow-sm';
+                                                    else estiloLabel = 'bg-gray-50 border-gray-100 text-gray-400 opacity-60';
+                                                }
+                                                
+                                                return `
+                                                <label class="flex items-start p-3 border rounded-lg transition-all ${estiloLabel}">
+                                                    <input type="radio" name="resp-${questao.id}" value="${index}" class="mt-1 mr-3 w-4 h-4 text-blue-600" ${isResolvida ? 'disabled' : ''}>
+                                                    <span class="leading-relaxed"><strong>${String.fromCharCode(65 + index)})</strong> ${alt}</span>
+                                                </label>
+                                                `;
+                                            }).join('')}
+                                        </div>
+
+                                        <div class="mt-5 border-t border-gray-100 pt-4">
+                                            ${!isResolvida ? `
+                                                <button onclick="AplicacaoPrincipal.responderQuestao('${questao.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105">
+                                                    <i class="fas fa-check-double mr-2"></i>Confirmar Resposta
+                                                </button>
+                                            ` : `
+                                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                                    <strong class="text-gray-700 flex items-center mb-2">
+                                                        <i class="fas fa-chalkboard-teacher mr-2 text-purple-500"></i>Comentário do Professor:
+                                                    </strong>
+                                                    <p class="text-gray-600 text-sm leading-relaxed">${questao.comentario ? questao.comentario.replace(/\n/g, '<br>') : 'Sem comentários registrados.'}</p>
+                                                    <div class="mt-3 text-right">
+                                                        <button onclick="AplicacaoPrincipal.redefinirQuestao('${questao.id}')" class="text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
+                                                            <i class="fas fa-redo mr-1"></i>Tentar novamente
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            `}
                                         </div>
                                     </div>
-                                `).join('')}
+                                    `;
+                                }).join('')}
                             </div>
-
-                            ${this.dados.questoes.length === 0 ? `
-                                <div class="text-center py-12">
-                                    <i class="fas fa-question-circle text-6xl text-gray-300 mb-4"></i>
-                                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Nenhuma questão registrada</h3>
-                                    <p class="text-gray-500 mb-6">Comece registrando suas primeiras questões</p>
-                                    <button onclick="AplicacaoPrincipal.mostrarModalNovaQuestao()" class="btn-success">
-                                        <i class="fas fa-plus mr-2"></i>Registrar Primeira Questão
-                                    </button>
-                                </div>
-                            ` : ''}
                         </div>
                     </div>
                 `;
+            },
+
+            // 👇 COLE ESTAS DUAS FUNÇÕES LOGO ABAIXO DA carregarQuestoes 👇
+            responderQuestao(id) {
+                const selecionado = document.querySelector(`input[name="resp-${id}"]:checked`);
+                if (!selecionado) {
+                    this.mostrarNotificacao('Por favor, marque uma alternativa antes de confirmar.', 'warning');
+                    return;
+                }
+                
+                const questao = this.dados.questoes.find(q => q.id === id);
+                if (questao) {
+                    const acertou = parseInt(selecionado.value) === questao.resposta;
+                    questao.status = acertou ? 'correta' : 'errada';
+                    
+                    this.salvarDadosUsuario();
+                    this.carregarQuestoes();
+                    
+                    if (acertou) {
+                        this.mostrarNotificacao('Gabarito exato! Parabéns!', 'success');
+                    } else {
+                        this.mostrarNotificacao('Alternativa incorreta. Leia o comentário para entender o erro.', 'error');
+                    }
+                }
+            },
+
+            redefinirQuestao(id) {
+                const questao = this.dados.questoes.find(q => q.id === id);
+                if (questao) {
+                    questao.status = 'pendente';
+                    this.salvarDadosUsuario();
+                    this.carregarQuestoes();
+                }
             },
 
             carregarRedacoes() {
