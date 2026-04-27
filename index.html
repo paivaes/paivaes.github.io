@@ -1029,23 +1029,41 @@
                 }
             },
 
-            async gerarQuestao(disciplina, tema) {
-                const instrucao = `Você é um examinador sênior de concursos públicos (nível FGV/Cebraspe). 
-                Crie UMA questão inédita de múltipla escolha (5 alternativas). 
-                REGRAS ESTRITAS: 
-                1. Dificuldade técnica máxima. 
-                2. NENHUMA dica ou facilitador no enunciado. 
-                3. As respostas devem exigir raciocínio profundo ou conhecimento específico da lei/teoria.
-                4. A alternativa correta deve ser distribuída aleatoriamente (evite colocar sempre na letra A).
+            async gerarEstudoReverso(disciplina, tema) {
+                const instrucao = `Você é um professor especialista em concursos públicos.
+                O aluno quer fazer "Estudo Reverso" (aprender a teoria através de questões).
+                
+                REGRAS ESTRITAS:
+                1. Escreva um BREVE RESUMO (1 a 2 parágrafos) focado exclusivamente nas "pegadinhas" e no que é mais cobrado pelas bancas (FGV/Cebraspe) sobre este tema.
+                2. Crie 3 questões inéditas de múltipla escolha (5 alternativas).
+                3. A dificuldade das questões deve ser alta, exigindo raciocínio.
+                
                 Retorne EXATAMENTE este formato JSON:
                 {
-                    "enunciado": "texto do enunciado",
-                    "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
-                    "resposta": 0, 
-                    "comentario": "Explicação técnica detalhada justificando a correta e o erro das demais."
+                    "resumo": "Texto do resumo focado em provas...",
+                    "questoes": [
+                        {
+                            "enunciado": "texto do enunciado da questão 1",
+                            "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
+                            "resposta": 0, 
+                            "comentario": "Explicação técnica detalhada justificando a correta e o erro das demais."
+                        },
+                        {
+                            "enunciado": "texto do enunciado da questão 2",
+                            "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
+                            "resposta": 1, 
+                            "comentario": "Explicação técnica detalhada."
+                        },
+                        {
+                            "enunciado": "texto do enunciado da questão 3",
+                            "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
+                            "resposta": 2, 
+                            "comentario": "Explicação técnica detalhada."
+                        }
+                    ]
                 }`;
 
-                return await this.callGemini(`Crie uma questão sobre a disciplina '${disciplina}', abordando o tema: '${tema}'.`, instrucao);
+                return await this.callGemini(`Gere um estudo reverso sobre a disciplina '${disciplina}', abordando o tema: '${tema}'.`, instrucao);
             },
 
             async gerarResumo(disciplina, tema) {
