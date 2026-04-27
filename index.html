@@ -2013,20 +2013,24 @@ carregarDashboard() {
                 const btnParar = document.getElementById('btn-parar-cronometro');
                 const btnReiniciar = document.getElementById('btn-reiniciar-cronometro');
 
+                // Usamos .onclick para evitar cliques duplicados quando a janela abre várias vezes
                 if (btnIniciar) {
-                    btnIniciar.addEventListener('click', () => this.iniciarCronometro());
-                    btnPausar.addEventListener('click', () => this.pausarCronometro());
-                    btnParar.addEventListener('click', () => this.pararCronometro());
-                    btnReiniciar.addEventListener('click', () => this.reiniciarCronometro());
+                    btnIniciar.onclick = () => this.iniciarCronometro();
+                    btnPausar.onclick = () => this.pausarCronometro();
+                    btnParar.onclick = () => this.pararCronometro();
+                    btnReiniciar.onclick = () => this.reiniciarCronometro();
                 }
             },
 
             salvarEstadoCronometro() {
-                localStorage.setItem(`cronometro_${this.usuario.id}`, JSON.stringify({
-                    tempo: this.cronometro.tempo,
-                    assuntoAtivo: this.cronometro.assuntoAtivo,
-                    timestampAtualizacao: Date.now()
-                }));
+                // Guarda o estado para não perder em caso de F5
+                if (this.usuario && this.usuario.id) {
+                    localStorage.setItem(`cronometro_${this.usuario.id}`, JSON.stringify({
+                        tempo: this.cronometro.tempo,
+                        assuntoAtivo: this.cronometro.assuntoAtivo,
+                        timestampAtualizacao: Date.now()
+                    }));
+                }
             },
 
             iniciarCronometro() {
@@ -2034,22 +2038,27 @@ carregarDashboard() {
                     const assuntoSelect = document.getElementById('select-assunto-cronometro');
                     const assuntoId = assuntoSelect ? assuntoSelect.value : null;
                     
-                    if (!assuntoId) {
+                    // Se não escolheu assunto agora, nem já tinha um ativo, bloqueia
+                    if (!assuntoId && !this.cronometro.assuntoAtivo) {
                         this.mostrarNotificacao('Selecione um assunto para começar a estudar', 'error');
                         return;
                     }
 
                     this.cronometro.rodando = true;
+                    // Proteção contra suspensão de abas do navegador
                     this.cronometro.tempoInicio = Date.now() - (this.cronometro.tempo * 1000);
-                    this.cronometro.assuntoAtivo = assuntoId;
+                    this.cronometro.assuntoAtivo = assuntoId || this.cronometro.assuntoAtivo;
+                    
+                    // Limpa intervalos fantasmas
+                    if (this.cronometro.intervalo) clearInterval(this.cronometro.intervalo);
                     
                     this.cronometro.intervalo = setInterval(() => {
                         this.cronometro.tempo = Math.floor((Date.now() - this.cronometro.tempoInicio) / 1000);
-                        this.atualizarDisplayCronometro();
-                        this.salvarEstadoCronometro(); // Salvando no LocalStorage a cada segundo
+                        this.atualizarTempoDisplay(); // Atualiza janela e relógio flutuante
+                        this.salvarEstadoCronometro(); // Salva na memória a cada segundo
                     }, 1000);
                     
-                    this.atualizarBotoesCronometro();
+                    this.iniciarSessaoEstudo(); // Re-renderiza para atualizar os botões
                     this.mostrarNotificacao('Cronômetro iniciado! Bons estudos!', 'success');
                 }
             },
@@ -2058,31 +2067,50 @@ carregarDashboard() {
                 if (this.cronometro.rodando) {
                     this.cronometro.rodando = false;
                     clearInterval(this.cronometro.intervalo);
-                    this.atualizarBotoesCronometro();
+                    this.salvarEstadoCronometro();
+                    this.iniciarSessaoEstudo(); // Atualiza botões
                     this.mostrarNotificacao('Cronômetro pausado', 'info');
                 }
             },
 
             pararCronometro() {
                 if (this.cronometro.tempo > 0) {
-                    this.salvarTempoEstudo();
-                    this.mostrarNotificacao(`Tempo de estudo registrado: ${this.formatarTempo(this.cronometro.tempo)}`, 'success');
+                    if (confirm('Deseja encerrar e salvar este tempo no histórico?')) {
+                        // Conecta com a sua função original que salva no Banco de Dados
+                        if (typeof this.finalizarSessaoEstudo === 'function') {
+                            this.finalizarSessaoEstudo();
+                        } else {
+                            this.mostrarNotificacao('Tempo salvo (simulação)!', 'success');
+                            this.limparCronometroTotalmente();
+                        }
+                    }
+                } else {
+                    this.limparCronometroTotalmente();
                 }
-                
-                this.cronometro.rodando = false;
-                this.cronometro.tempo = 0;
-                this.cronometro.assuntoAtivo = null;
-                clearInterval(this.cronometro.intervalo);
-                this.atualizarDisplayCronometro();
-                this.atualizarBotoesCronometro();
             },
 
             reiniciarCronometro() {
-                this.cronometro.tempo = 0;
-                this.atualizarDisplayCronometro();
-                if (this.cronometro.rodando) {
-                    this.cronometro.tempoInicio = Date.now();
+                if (confirm('Zerar o tempo atual?')) {
+                    this.cronometro.tempo = 0;
+                    if (this.cronometro.rodando) {
+                        this.cronometro.tempoInicio = Date.now();
+                    }
+                    this.atualizarTempoDisplay();
+                    this.salvarEstadoCronometro();
                 }
+            },
+
+            // Função extra para garantir que limpa tudo corretamente ao parar
+            limparCronometroTotalmente() {
+                this.cronometro.rodando = false;
+                this.cronometro.tempo = 0;
+                this.cronometro.assuntoAtivo = null;
+                if (this.cronometro.intervalo) clearInterval(this.cronometro.intervalo);
+                if (this.usuario && this.usuario.id) {
+                    localStorage.removeItem(`cronometro_${this.usuario.id}`);
+                }
+                this.atualizarTempoDisplay();
+                this.iniciarSessaoEstudo();
             },
 
             salvarTempoEstudo() {
@@ -2167,58 +2195,59 @@ carregarDashboard() {
             },
 
             atualizarTempoDisplay() {
-                const display = document.getElementById('display-cronometro');
                 const tempoFormatado = this.formatarTempo(this.cronometro.tempo);
                 
-                if (display) {
-                    display.textContent = tempoFormatado;
-                }
+                // Atualiza o relógio da Janela (se aberta)
+                const display = document.getElementById('display-cronometro');
+                if (display) display.textContent = tempoFormatado;
                 
-                // Atualiza o relógio do Mini-Player Flutuante
+                // Atualiza o relógio do Mini-Player (se visível)
                 const floatingDisplay = document.getElementById('floating-time');
-                if (floatingDisplay) {
-                    floatingDisplay.textContent = tempoFormatado;
-                }
+                if (floatingDisplay) floatingDisplay.textContent = tempoFormatado;
 
+                // Crucial: Re-avalia a visibilidade do player a cada batida
                 this.verificarTimerFlutuante();
             },
 
             verificarTimerFlutuante() {
                 let floatingTimer = document.getElementById('floating-timer');
-                
+                const modalAberto = document.getElementById('modal-overlay');
+                const temAtividade = this.cronometro.rodando || this.cronometro.tempo > 0;
+
+                // Se não tem atividade ou se a janela grande está aberta, esconde o mini-player
+                if (!temAtividade || modalAberto) {
+                    if (floatingTimer) floatingTimer.style.display = 'none';
+                    return;
+                }
+
+                // Se não existe o elemento do mini-player, cria agora
                 if (!floatingTimer) {
                     floatingTimer = document.createElement('div');
                     floatingTimer.id = 'floating-timer';
                     floatingTimer.onclick = () => this.iniciarSessaoEstudo();
-                    floatingTimer.innerHTML = `
-                        <div class="relative">
-                            <i class="fas fa-stopwatch text-3xl text-gray-700"></i>
-                            <span id="floating-pulse" class="absolute top-0 right-0 h-3 w-3">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                            </span>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider truncate max-w-[150px]" id="floating-assunto">Estudando</p>
-                            <p class="text-2xl font-mono font-bold text-gray-800" id="floating-time">00:00:00</p>
-                        </div>
-                    `;
                     document.body.appendChild(floatingTimer);
                 }
 
-                const modalAberto = !!document.getElementById('modal-overlay');
-                const temTempoOuRodando = this.cronometro.rodando || this.cronometro.tempo > 0;
-
-                if (temTempoOuRodando && !modalAberto) {
-                    floatingTimer.style.display = 'flex';
-                    document.getElementById('floating-assunto').textContent = this.cronometro.assuntoAtivo || 'Estudando...';
-                    
-                    const isRodando = this.cronometro.rodando;
-                    document.getElementById('floating-pulse').style.display = isRodando ? 'flex' : 'none';
-                    floatingTimer.className = `fixed bottom-8 right-8 bg-white rounded-2xl shadow-2xl border-l-4 p-4 z-[9999] cursor-pointer transform transition hover:scale-105 flex items-center gap-4 ${isRodando ? 'border-green-500' : 'border-yellow-500'}`;
-                } else {
-                    floatingTimer.style.display = 'none';
-                }
+                // Renderiza o conteúdo e garante que esteja visível
+                floatingTimer.style.display = 'flex';
+                const isRodando = this.cronometro.rodando;
+                
+                floatingTimer.className = `fixed bottom-8 right-8 bg-white rounded-2xl shadow-2xl border-l-4 p-4 z-[9999] cursor-pointer flex items-center gap-4 transition-all hover:scale-105 ${isRodando ? 'border-green-500' : 'border-yellow-500'}`;
+                
+                floatingTimer.innerHTML = `
+                    <div class="relative">
+                        <i class="fas fa-stopwatch text-3xl text-gray-700"></i>
+                        ${isRodando ? `
+                        <span class="absolute top-0 right-0 h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>` : ''}
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter truncate max-w-[120px]">${this.cronometro.assuntoAtivo || 'Estudo'}</p>
+                        <p class="text-xl font-mono font-bold text-gray-800" id="floating-time">${this.formatarTempo(this.cronometro.tempo)}</p>
+                    </div>
+                `;
             },
 
             atualizarDisplayCronometro() {
@@ -4188,11 +4217,8 @@ salvarTarefaRapida(dataString) {
                 const modal = document.getElementById(modalId || 'modal-overlay');
                 if (modal) {
                     modal.remove();
-                }
-                
-                // Verifica se deve mostrar o cronômetro flutuante ao fechar qualquer modal
-                if (typeof this.verificarTimerFlutuante === 'function') {
-                    setTimeout(() => this.verificarTimerFlutuante(), 50);
+                    // Pequeno atraso para o DOM processar a remoção antes de mostrar o player
+                    setTimeout(() => this.verificarTimerFlutuante(), 100);
                 }
             },
 
