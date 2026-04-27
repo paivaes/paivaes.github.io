@@ -2138,33 +2138,50 @@ carregarDashboard() {
                 return opcoes;
             },
 
+            // Gera a lista de disciplinas e tópicos para o cronômetro
+            gerarOpcoesAssuntos() {
+                if (!this.dados || !this.dados.disciplinas || this.dados.disciplinas.length === 0) {
+                    return '<option value="" disabled>Nenhuma disciplina cadastrada ainda</option>';
+                }
+
+                let html = '';
+                this.dados.disciplinas.forEach(disc => {
+                    if (disc.assuntos && disc.assuntos.length > 0) {
+                        html += `<optgroup label="📚 ${disc.nome}">`;
+                        disc.assuntos.forEach(assunto => {
+                            html += `<option value="${disc.nome} - ${assunto.nome}">${assunto.nome}</option>`;
+                        });
+                        html += `</optgroup>`;
+                    } else {
+                        html += `<option value="${disc.nome}">${disc.nome} (Estudo Geral)</option>`;
+                    }
+                });
+                return html;
+            },
+
             atualizarTempoDisplay() {
                 const display = document.getElementById('display-cronometro');
                 const tempoFormatado = this.formatarTempo(this.cronometro.tempo);
                 
-                // 1. Atualiza o relógio gigante do Modal (se ele estiver aberto)
                 if (display) {
                     display.textContent = tempoFormatado;
                 }
                 
-                // 2. Atualiza o relógio do nosso novo Mini-Player Flutuante
+                // Atualiza o relógio do Mini-Player Flutuante
                 const floatingDisplay = document.getElementById('floating-time');
                 if (floatingDisplay) {
                     floatingDisplay.textContent = tempoFormatado;
                 }
 
-                // 3. Garante que o flutuante apareça ou suma na hora certa
                 this.verificarTimerFlutuante();
             },
 
             verificarTimerFlutuante() {
                 let floatingTimer = document.getElementById('floating-timer');
                 
-                // Cria a caixinha do Mini-Player se ela ainda não existir no site
                 if (!floatingTimer) {
                     floatingTimer = document.createElement('div');
                     floatingTimer.id = 'floating-timer';
-                    // Se clicar na caixinha, ela abre o Painel Grande de volta
                     floatingTimer.onclick = () => this.iniciarSessaoEstudo();
                     floatingTimer.innerHTML = `
                         <div class="relative">
@@ -2182,16 +2199,13 @@ carregarDashboard() {
                     document.body.appendChild(floatingTimer);
                 }
 
-                // Verifica as regras para mostrar a caixinha
-                const modalAberto = !!document.getElementById('modal-overlay'); // Tem alguma tela grande aberta?
+                const modalAberto = !!document.getElementById('modal-overlay');
                 const temTempoOuRodando = this.cronometro.rodando || this.cronometro.tempo > 0;
 
-                // A MÁGICA: Só mostra se tiver um cronômetro ativo E a tela grande estiver fechada
-		if (temTempoOuRodando && !modalAberto) {
+                if (temTempoOuRodando && !modalAberto) {
                     floatingTimer.style.display = 'flex';
                     document.getElementById('floating-assunto').textContent = this.cronometro.assuntoAtivo || 'Estudando...';
                     
-                    // Design dinâmico: Verde piscando (Rodando) ou Amarelo estático (Pausado)
                     const isRodando = this.cronometro.rodando;
                     document.getElementById('floating-pulse').style.display = isRodando ? 'flex' : 'none';
                     floatingTimer.className = `fixed bottom-8 right-8 bg-white rounded-2xl shadow-2xl border-l-4 p-4 z-[9999] cursor-pointer transform transition hover:scale-105 flex items-center gap-4 ${isRodando ? 'border-green-500' : 'border-yellow-500'}`;
@@ -4169,8 +4183,7 @@ salvarTarefaRapida(dataString) {
                     modal.remove();
                 }
                 
-                // 👇 A MÁGICA ACONTECE AQUI 👇
-                // Quando qualquer janela fecha, o sistema avalia se precisa colocar o Timer no canto da tela!
+                // Verifica se deve mostrar o cronômetro flutuante ao fechar qualquer modal
                 if (typeof this.verificarTimerFlutuante === 'function') {
                     setTimeout(() => this.verificarTimerFlutuante(), 50);
                 }
