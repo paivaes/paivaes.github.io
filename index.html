@@ -1842,22 +1842,29 @@ carregarDashboard() {
                             <button id="btn-reiniciar-cronometro" class="text-gray-500 hover:text-gray-700 text-sm font-semibold p-2">
                                 <i class="fas fa-undo mr-1"></i>Zerar
                             </button>
-                            <button onclick="AplicacaoPrincipal.fecharModal()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold p-2 bg-blue-50 rounded-lg px-4">
+                            
+                            <button id="btn-fechar-timer" class="text-blue-600 hover:text-blue-800 text-sm font-semibold p-2 bg-blue-50 rounded-lg px-4">
                                 Fechar (Continua rodando)
                             </button>
                         </div>
                     </div>
                 `);
 
-                // Se o relógio já estiver rodando em segundo plano, ele mantém o assunto selecionado na tela
+                // Mantém o assunto selecionado se o relógio já estiver rodando
                 if (this.cronometro.assuntoAtivo) {
                     const select = document.getElementById('select-assunto-cronometro');
                     if (select) select.value = this.cronometro.assuntoAtivo;
                 }
 
-                // Religa os botões ao "cérebro" do cronômetro
                 this.configurarCronometro();
                 this.atualizarTempoDisplay();
+
+                // 👇 A LIGAÇÃO DIRETA NO JAVASCRIPT 👇
+                // Garante 100% que o botão fechar vai funcionar quando clicado
+                const btnFecharTimer = document.getElementById('btn-fechar-timer');
+                if (btnFecharTimer) {
+                    btnFecharTimer.onclick = () => this.fecharModal();
+                }
             },
 	    
 	    gerarOpcoesAssuntos() {
