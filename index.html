@@ -1202,26 +1202,26 @@
                 }
                 
                 const respostaSelecionada = document.querySelector('input[name="questao-resposta"]:checked');
-                
                 if (!disciplina || !enunciado || alternativas.some(a => a === '') || !respostaSelecionada) {
                     this.mostrarNotificacao('Preencha a disciplina, o enunciado, todas as alternativas e marque a resposta correta.', 'error');
                     return;
                 }
 
                 const novaQuestao = {
-                    id: questaoId && questaoId !== 'null' ? questaoId : Date.now().toString(),
-                    disciplina,
-                    enunciado,
-                    alternativas,
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    disciplina: disciplina,
+                    assunto: 'Geral', // Questões criadas manualmente vão para o caderno "Geral"
+                    enunciado: enunciado,
+                    alternativas: alternativas,
                     resposta: parseInt(respostaSelecionada.value),
-                    comentario,
-                    status: 'pendente', // pendente, correta, errada
+                    comentario: comentario,
+                    status: 'pendente',
                     data: new Date().toISOString()
                 };
 
                 if (questaoId && questaoId !== 'null') {
                     const index = this.dados.questoes.findIndex(q => q.id === questaoId);
-                    this.dados.questoes[index] = novaQuestao;
+                    if (index !== -1) this.dados.questoes[index] = novaQuestao;
                 } else {
                     this.dados.questoes.push(novaQuestao);
                 }
@@ -1229,46 +1229,41 @@
                 this.salvarDadosUsuario();
                 this.fecharModal();
                 this.carregarQuestoes();
-                this.mostrarNotificacao('Questão técnica salva com sucesso!', 'success');
+                this.mostrarNotificacao('Questão manual salva com sucesso!', 'success');
             },
 	    async gerarQuestaoIA() {
                 const disciplina = document.getElementById('questao-disciplina').value;
                 const tema = prompt("Qual o tema específico para o Estudo Reverso?");
-                
                 if (!disciplina || !tema) {
                     this.mostrarNotificacao('Selecione a disciplina e informe o tema.', 'error');
                     return;
                 }
 
-                // Pergunta quantas questões o aluno quer
                 let quantidade = prompt("Quantas questões deseja gerar? (Digite um número, ex: 3, 5, 10)", "3");
                 quantidade = parseInt(quantidade);
                 if (isNaN(quantidade) || quantidade < 1 || quantidade > 20) {
-                    quantidade = 3; // Padrão se o utilizador não digitar um número válido
+                    quantidade = 3; 
                 }
 
                 const btn = document.getElementById('btn-ia-questao');
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Gerando...';
                 btn.disabled = true;
-
                 try {
-                    // Chama a IA com a quantidade escolhida
                     const resultado = await AIAssistant.gerarEstudoReverso(disciplina, tema, quantidade);
-                    
                     resultado.questoes.forEach(q => {
                         const novaQuestao = {
                             id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
                             disciplina: disciplina,
+                            assunto: tema, // 👈 AQUI ESTÁ O SEGREDO DO CADERNO!
                             enunciado: q.enunciado,
                             alternativas: q.alternativas,
                             resposta: q.resposta,
                             comentario: q.comentario,
-                            status: 'pendente', // Nasce fechada!
+                            status: 'pendente',
                             data: new Date().toISOString()
                         };
                         this.dados.questoes.push(novaQuestao);
                     });
-
                     this.salvarDadosUsuario();
                     this.fecharModal();
                     this.carregarQuestoes(); 
@@ -1293,15 +1288,13 @@
                             <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
                                 <i class="fas fa-tasks text-3xl text-green-500 mb-3"></i>
                                 <h4 class="font-semibold text-gray-800">Seu simulador foi atualizado!</h4>
-                                <p class="text-gray-600 mb-4 text-sm">Foram geradas <strong>${resultado.questoes.length} questões inéditas</strong> no seu banco para resolver agora.</p>
-                                
+                                <p class="text-gray-600 mb-4 text-sm">Foram geradas <strong>${resultado.questoes.length} questões inéditas</strong> no seu banco.</p>
                                 <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-success px-8 py-3 w-full sm:w-auto shadow-md">
                                     <i class="fas fa-check-circle mr-2"></i>Ir para as questões!
                                 </button>
                             </div>
                         </div>
                     `);
-                    
                     this.mostrarNotificacao('Pacote gerado com sucesso!', 'success');
                 } catch (error) {
                     this.mostrarNotificacao(error.message || 'Erro ao gerar o estudo reverso.', 'error');
@@ -4063,127 +4056,142 @@ salvarTarefaRapida(dataString) {
             carregarQuestoes() {
                 const conteudo = document.getElementById('conteudo-principal');
                 
-                // 1. O "Cérebro" do Agrupamento: Junta as questões por disciplina
-                const questoesPorDisciplina = {};
+                const cadernos = {};
                 if (this.dados.questoes) {
                     this.dados.questoes.forEach(q => {
                         const disc = q.disciplina || 'Sem Disciplina';
-                        if (!questoesPorDisciplina[disc]) {
-                            questoesPorDisciplina[disc] = [];
-                        }
-                        questoesPorDisciplina[disc].push(q);
+                        const assu = q.assunto || 'Geral / Outros';
+                        
+                        if (!cadernos[disc]) cadernos[disc] = {};
+                        if (!cadernos[disc][assu]) cadernos[disc][assu] = [];
+                        
+                        cadernos[disc][assu].push(q);
                     });
                 }
 
-                // 2. Coloca as disciplinas em ordem alfabética para ficar organizado
-                const disciplinasOrdenadas = Object.keys(questoesPorDisciplina).sort();
-
-                let htmlQuestoes = '';
+                const disciplinasOrdenadas = Object.keys(cadernos).sort();
+                let htmlFinal = '';
                 
                 if (this.dados.questoes.length === 0) {
-                    // Mensagem caso não tenha nenhuma questão
-                    htmlQuestoes = `
+                    htmlFinal = `
                         <div class="glass-card rounded-xl p-10 text-center">
-                            <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-gray-500">Nenhuma questão cadastrada ainda.</p>
-                            <p class="text-sm text-gray-400 mt-2">Clique em "Nova Questão" e use o Estudo Reverso para começar!</p>
-                        </div>
-                    `;
+                            <i class="fas fa-book-open text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">Seu banco de cadernos está vazio.</p>
+                            <p class="text-sm text-gray-400 mt-2">Gere um Estudo Reverso para começar!</p>
+                        </div>`;
                 } else {
-                    // 3. Monta o bloco de cada disciplina separadamente
-                    disciplinasOrdenadas.forEach(disciplina => {
-                        const questoes = questoesPorDisciplina[disciplina];
-                        const corDisc = this.obterCorDisciplina(disciplina);
-                        
-                        // Desenha o Cabeçalho da Disciplina
-                        htmlQuestoes += `
-                            <div class="mt-8 mb-4">
-                                <h3 class="text-xl font-bold text-gray-800 flex items-center border-b-2 pb-2" style="border-color: ${corDisc}40;">
-                                    <span class="w-3 h-8 rounded-md mr-3" style="background-color: ${corDisc};"></span>
-                                    ${disciplina}
-                                    <span class="text-sm font-normal bg-gray-100 text-gray-600 px-2 py-1 rounded-lg ml-3 shadow-inner border border-gray-200">${questoes.length} ${questoes.length === 1 ? 'questão' : 'questões'}</span>
+                    disciplinasOrdenadas.forEach(disc => {
+                        const corDisc = this.obterCorDisciplina(disc);
+                        const assuntosNoCaderno = cadernos[disc];
+                        const totalQuestoesDisc = Object.values(assuntosNoCaderno).flat().length;
+
+                        htmlFinal += `
+                            <div class="mt-10 mb-6">
+                                <h3 class="text-2xl font-extrabold text-gray-800 flex items-center">
+                                    <span class="w-2 h-8 rounded-full mr-3" style="background-color: ${corDisc};"></span>
+                                    ${disc}
+                                    <span class="ml-3 text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full border border-gray-200 uppercase tracking-tighter">
+                                        ${totalQuestoesDisc} itens
+                                    </span>
                                 </h3>
                             </div>
-                            <div class="space-y-6">
                         `;
-                        
-                        // Desenha as questões que pertencem a essa disciplina
-                        htmlQuestoes += questoes.map(questao => {
-                            const isResolvida = questao.status !== 'pendente';
-                            const corBorda = questao.status === 'correta' ? '#10B981' : (questao.status === 'errada' ? '#EF4444' : '#3B82F6');
-                            
-                            return `
-                            <div class="glass-card rounded-xl p-6 shadow-sm relative overflow-hidden" style="border-left: 5px solid ${corBorda};">
-                                
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <div class="flex items-center mb-3">
-                                            ${isResolvida ? 
-                                                `<span class="badge ${questao.status === 'correta' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                                    <i class="fas ${questao.status === 'correta' ? 'fa-check' : 'fa-times'} mr-1"></i>${questao.status === 'correta' ? 'Acertou' : 'Errou'}
-                                                </span>` : 
-                                                `<span class="badge bg-blue-50 text-blue-600 border border-blue-200"><i class="fas fa-clock mr-1"></i>Pendente</span>`
-                                            }
-                                        </div>
-                                        <h4 class="font-semibold text-lg text-gray-800 leading-relaxed">${questao.enunciado.replace(/\n/g, '<br>')}</h4>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button onclick="AplicacaoPrincipal.editarQuestao('${questao.id}')" class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 flex justify-center items-center transition-colors"><i class="fas fa-edit"></i></button>
-                                        <button onclick="AplicacaoPrincipal.excluirQuestao('${questao.id}')" class="w-8 h-8 rounded bg-red-50 hover:bg-red-100 text-red-500 flex justify-center items-center transition-colors"><i class="fas fa-trash"></i></button>
-                                    </div>
-                                </div>
-                                
-                                <div class="mt-4 space-y-2 pl-2">
-                                    ${questao.alternativas.map((alt, index) => {
-                                        const isCorreta = questao.resposta === index;
-                                        let estiloLabel = 'bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer';
-                                        
-                                        if (isResolvida) {
-                                            if (isCorreta) estiloLabel = 'bg-green-50 border-green-500 text-green-900 font-medium shadow-sm';
-                                            else estiloLabel = 'bg-gray-50 border-gray-100 text-gray-400 opacity-60';
-                                        }
-                                        
-                                        return `
-                                        <label class="flex items-start p-3 border rounded-lg transition-all ${estiloLabel}">
-                                            <input type="radio" name="resp-${questao.id}" value="${index}" class="mt-1 mr-3 w-4 h-4 text-blue-600" ${isResolvida ? 'disabled' : ''}>
-                                            <span class="leading-relaxed"><strong>${String.fromCharCode(65 + index)})</strong> ${alt}</span>
-                                        </label>
-                                        `;
-                                    }).join('')}
-                                </div>
 
-                                <div class="mt-5 border-t border-gray-100 pt-4">
-                                    ${!isResolvida ? `
-                                        <button onclick="AplicacaoPrincipal.responderQuestao('${questao.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105">
-                                            <i class="fas fa-check-double mr-2"></i>Confirmar Resposta
-                                        </button>
-                                    ` : `
-                                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                            <strong class="text-gray-700 flex items-center mb-2">
-                                                <i class="fas fa-chalkboard-teacher mr-2 text-purple-500"></i>Comentário do Professor:
-                                            </strong>
-                                            <p class="text-gray-600 text-sm leading-relaxed">${questao.comentario ? questao.comentario.replace(/\n/g, '<br>') : 'Sem comentários registrados.'}</p>
-                                            <div class="mt-3 text-right">
-                                                <button onclick="AplicacaoPrincipal.redefinirQuestao('${questao.id}')" class="text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
-                                                    <i class="fas fa-redo mr-1"></i>Tentar novamente
-                                                </button>
-                                            </div>
+                        const nomesAssuntos = Object.keys(assuntosNoCaderno).sort();
+                        nomesAssuntos.forEach(assu => {
+                            const questoes = assuntosNoCaderno[assu];
+                            
+                            htmlFinal += `
+                                <div class="ml-2 sm:ml-6 mb-10">
+                                    <div class="flex items-center mb-4 bg-white p-3 rounded-xl border-l-4 shadow-sm" style="border-color: ${corDisc};">
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3" style="background-color: ${corDisc}15;">
+                                            <i class="fas fa-scroll text-sm" style="color: ${corDisc};"></i>
                                         </div>
-                                    `}
+                                        <h4 class="font-bold text-gray-700 uppercase text-xs tracking-widest">${assu}</h4>
+                                        <div class="ml-auto flex items-center gap-2">
+                                            <span class="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                                                ${questoes.length} QUESTÕES
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-6">
+                                        ${questoes.map(questao => {
+                                            const isResolvida = questao.status !== 'pendente';
+                                            const corBorda = questao.status === 'correta' ? '#10B981' : (questao.status === 'errada' ? '#EF4444' : '#3B82F6');
+                                            
+                                            return `
+                                            <div class="glass-card rounded-xl p-6 shadow-sm relative overflow-hidden" style="border-left: 5px solid ${corBorda};">
+                                                <div class="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <div class="flex items-center mb-3">
+                                                            ${isResolvida ? 
+                                                                `<span class="badge ${questao.status === 'correta' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                                                    <i class="fas ${questao.status === 'correta' ? 'fa-check' : 'fa-times'} mr-1"></i>${questao.status === 'correta' ? 'Acertou' : 'Errou'}
+                                                                </span>` : 
+                                                                `<span class="badge bg-blue-50 text-blue-600 border border-blue-200"><i class="fas fa-clock mr-1"></i>Pendente</span>`
+                                                            }
+                                                        </div>
+                                                        <h4 class="font-semibold text-lg text-gray-800 leading-relaxed">${questao.enunciado.replace(/\n/g, '<br>')}</h4>
+                                                    </div>
+                                                    <div class="flex gap-2">
+                                                        <button onclick="AplicacaoPrincipal.editarQuestao('${questao.id}')" class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 flex justify-center items-center transition-colors"><i class="fas fa-edit"></i></button>
+                                                        <button onclick="AplicacaoPrincipal.excluirQuestao('${questao.id}')" class="w-8 h-8 rounded bg-red-50 hover:bg-red-100 text-red-500 flex justify-center items-center transition-colors"><i class="fas fa-trash"></i></button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mt-4 space-y-2 pl-2">
+                                                    ${questao.alternativas.map((alt, index) => {
+                                                        const isCorreta = questao.resposta === index;
+                                                        let estiloLabel = 'bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer';
+                                                        
+                                                        if (isResolvida) {
+                                                            if (isCorreta) estiloLabel = 'bg-green-50 border-green-500 text-green-900 font-medium shadow-sm';
+                                                            else estiloLabel = 'bg-gray-50 border-gray-100 text-gray-400 opacity-60';
+                                                        }
+                                                        
+                                                        return `
+                                                        <label class="flex items-start p-3 border rounded-lg transition-all ${estiloLabel}">
+                                                            <input type="radio" name="resp-${questao.id}" value="${index}" class="mt-1 mr-3 w-4 h-4 text-blue-600" ${isResolvida ? 'disabled' : ''}>
+                                                            <span class="leading-relaxed"><strong>${String.fromCharCode(65 + index)})</strong> ${alt}</span>
+                                                        </label>
+                                                        `;
+                                                    }).join('')}
+                                                </div>
+
+                                                <div class="mt-5 border-t border-gray-100 pt-4">
+                                                    ${!isResolvida ? `
+                                                        <button onclick="AplicacaoPrincipal.responderQuestao('${questao.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105">
+                                                            <i class="fas fa-check-double mr-2"></i>Confirmar Resposta
+                                                        </button>
+                                                    ` : `
+                                                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                                            <strong class="text-gray-700 flex items-center mb-2">
+                                                                <i class="fas fa-chalkboard-teacher mr-2 text-purple-500"></i>Comentário do Professor:
+                                                            </strong>
+                                                            <p class="text-gray-600 text-sm leading-relaxed">${questao.comentario ? questao.comentario.replace(/\n/g, '<br>') : 'Sem comentários registrados.'}</p>
+                                                            <div class="mt-3 text-right">
+                                                                <button onclick="AplicacaoPrincipal.redefinirQuestao('${questao.id}')" class="text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
+                                                                    <i class="fas fa-redo mr-1"></i>Tentar novamente
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    `}
+                                                </div>
+                                            </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
                                 </div>
-                            </div>
                             `;
-                        }).join('');
-                        
-                        htmlQuestoes += `</div>`; // Fecha a div das questões desta disciplina
+                        });
                     });
                 }
 
-                // 4. Desenha a Tela Inteira (Estatísticas + Questões Agrupadas)
                 conteudo.innerHTML = `
-                    <div class="fade-in">
+                    <div class="fade-in pb-20">
                         <div class="flex justify-between items-center mb-8">
-                            <h2 class="text-3xl font-bold gradient-text">Banco de Questões</h2>
+                            <h2 class="text-3xl font-bold gradient-text">Meus Cadernos</h2>
                             <button onclick="AplicacaoPrincipal.mostrarModalNovaQuestao()" class="btn-success shadow-md">
                                 <i class="fas fa-plus mr-2"></i>Nova Questão
                             </button>
@@ -4192,29 +4200,26 @@ salvarTarefaRapida(dataString) {
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                             <div class="glass-card rounded-xl p-4 text-center">
                                 <div class="text-2xl font-bold text-blue-600">${this.dados.questoes.length}</div>
-                                <div class="text-sm text-gray-600">Total</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">Total de Itens</div>
                             </div>
                             <div class="glass-card rounded-xl p-4 text-center">
                                 <div class="text-2xl font-bold text-green-600">${this.dados.questoes.filter(q => q.status === 'correta').length}</div>
-                                <div class="text-sm text-gray-600">Corretas</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">Gabaritadas</div>
                             </div>
                             <div class="glass-card rounded-xl p-4 text-center">
                                 <div class="text-2xl font-bold text-red-600">${this.dados.questoes.filter(q => q.status === 'errada').length}</div>
-                                <div class="text-sm text-gray-600">Erradas</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">A Revisar</div>
                             </div>
                             <div class="glass-card rounded-xl p-4 text-center">
                                 <div class="text-2xl font-bold text-purple-600">${this.calcularTaxaAcerto()}%</div>
-                                <div class="text-sm text-gray-600">Taxa de Acerto</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">Aproveitamento</div>
                             </div>
                         </div>
 
-                        <div class="pb-10">
-                            ${htmlQuestoes}
-                        </div>
+                        ${htmlFinal}
                     </div>
                 `;
             },
-
             // 👇 COLE ESTAS DUAS FUNÇÕES LOGO ABAIXO DA carregarQuestoes 👇
             responderQuestao(id) {
                 const selecionado = document.querySelector(`input[name="resp-${id}"]:checked`);
