@@ -4070,6 +4070,16 @@ salvarTarefaRapida(dataString) {
             carregarQuestoes() {
                 const conteudo = document.getElementById('conteudo-principal');
                 
+                // 👇 NOVIDADE 1: Memoriza quais sanfonas estão abertas antes de atualizar
+                const paineisAbertos = [];
+                if (conteudo) {
+                    conteudo.querySelectorAll('div[id^="disc-"], div[id^="assu-"]').forEach(el => {
+                        if (!el.classList.contains('hidden')) {
+                            paineisAbertos.push(el.id);
+                        }
+                    });
+                }
+
                 const cadernos = {};
                 if (this.dados.questoes) {
                     this.dados.questoes.forEach(q => {
@@ -4108,7 +4118,7 @@ salvarTarefaRapida(dataString) {
                         const conclusaoDisc = totalDisc > 0 ? Math.round((resolvidasDisc / totalDisc) * 100) : 0;
                         const aproveitamentoDisc = resolvidasDisc > 0 ? Math.round((corretasDisc / resolvidasDisc) * 100) : 0;
 
-                        // 1. MENU DROPDOWN DA DISCIPLINA (Agora com Gráficos)
+                        // 1. MENU DROPDOWN DA DISCIPLINA
                         htmlFinal += `
                             <div class="mt-6 mb-2">
                                 <div class="cursor-pointer select-none bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex items-center flex-wrap" 
@@ -4135,7 +4145,7 @@ salvarTarefaRapida(dataString) {
                         nomesAssuntos.forEach((assu, assuIndex) => {
                             const questoes = assuntosNoCaderno[assu];
                             
-                            // 🧮 Matemática de Cada Assunto Específico
+                            // 🧮 Matemática de Cada Assunto
                             const totalAssu = questoes.length;
                             const resolvidasAssu = questoes.filter(q => q.status !== 'pendente').length;
                             const corretasAssu = questoes.filter(q => q.status === 'correta').length;
@@ -4143,7 +4153,7 @@ salvarTarefaRapida(dataString) {
                             const conclusaoAssu = totalAssu > 0 ? Math.round((resolvidasAssu / totalAssu) * 100) : 0;
                             const aproveitamentoAssu = resolvidasAssu > 0 ? Math.round((corretasAssu / resolvidasAssu) * 100) : 0;
                             
-                            // 2. MENU DROPDOWN DO ASSUNTO (Agora com Gráficos)
+                            // 2. MENU DROPDOWN DO ASSUNTO
                             htmlFinal += `
                                 <div class="mb-4">
                                     <div class="flex items-center flex-wrap bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer select-none hover:bg-gray-100 transition-colors" 
@@ -4234,7 +4244,7 @@ salvarTarefaRapida(dataString) {
                             `;
                         });
 
-                        htmlFinal += `</div>`; // Fecha o container da Disciplina
+                        htmlFinal += `</div>`;
                     });
                 }
 
@@ -4271,6 +4281,18 @@ salvarTarefaRapida(dataString) {
                         </div>
                     </div>
                 `;
+
+                // 👇 NOVIDADE 2: Restaura o estado das sanfonas que estavam abertas
+                paineisAbertos.forEach(id => {
+                    const el = document.getElementById(id);
+                    const icone = document.getElementById('icon-' + id);
+                    
+                    if (el && icone) {
+                        el.classList.remove('hidden');
+                        icone.classList.remove('fa-chevron-right');
+                        icone.classList.add('fa-chevron-down');
+                    }
+                });
             },
 	    // 👇 NOVA FUNÇÃO: Controla o Abre/Fecha dos Menus Sanfona 👇
             toggleBloco(conteudoId, iconeId) {
