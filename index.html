@@ -4294,22 +4294,11 @@ salvarTarefaRapida(dataString) {
                         icone.classList.add('fa-chevron-down');
                     }
                 });
-            },
+            }, // <--- A carregarQuestoes acaba aqui!
 
-                // 👇 NOVIDADE 2: Restaura o estado das sanfonas que estavam abertas
-                paineisAbertos.forEach(id => {
-                    const el = document.getElementById(id);
-                    const icone = document.getElementById('icon-' + id);
-                    
-                    if (el && icone) {
-                        el.classList.remove('hidden');
-                        icone.classList.remove('fa-chevron-right');
-                        icone.classList.add('fa-chevron-down');
-                    }
-                });
-            },
-	    // 👇 NOVA FUNÇÃO: Controla o Abre/Fecha dos Menus Sanfona 👇
+            // 👇 NOVA FUNÇÃO: Controla o Abre/Fecha dos Menus Sanfona 👇
             toggleBloco(conteudoId, iconeId) {
+	    
                 const conteudo = document.getElementById(conteudoId);
                 const icone = document.getElementById(iconeId);
                 
