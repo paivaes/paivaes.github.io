@@ -1207,10 +1207,12 @@
                     return;
                 }
 
+                // 👇 AQUI ESTÁ A CORREÇÃO: Objeto limpo e bem formatado
                 const novaQuestao = {
                     id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    cadernoId: this.cadernoAtivo || 'geral', // VINCULA AO CONCURSO ATUAL
                     disciplina: disciplina,
-                    assunto: 'Geral', // Questões criadas manualmente vão para o caderno "Geral"
+                    assunto: 'Geral', 
                     enunciado: enunciado,
                     alternativas: alternativas,
                     resposta: parseInt(respostaSelecionada.value),
@@ -1253,8 +1255,9 @@
                     resultado.questoes.forEach(q => {
                         const novaQuestao = {
                             id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                            cadernoId: this.cadernoAtivo || 'geral', // 👈 VINCULA AO CONCURSO ATUAL
                             disciplina: disciplina,
-                            assunto: tema, // 👈 AQUI ESTÁ O SEGREDO DO CADERNO!
+                            assunto: tema, 
                             enunciado: q.enunciado,
                             alternativas: q.alternativas,
                             resposta: q.resposta,
@@ -4068,41 +4071,121 @@ salvarTarefaRapida(dataString) {
                 `;
             },
 
-            carregarQuestoes() {
+            // 👇 NOVAS FUNÇÕES PARA GERENCIAR CADERNOS POR CONCURSO 👇
+            mudarCadernoAtivo(id) {
+                this.cadernoAtivo = id;
+                this.carregarQuestoes();
+            },
+
+            mostrarModalNovoCaderno() {
+                this.mostrarModal(`
+                    <div class="p-6 max-w-sm mx-auto">
+                        <h3 class="text-2xl font-bold gradient-text mb-4">
+                            <i class="fas fa-folder-plus mr-2"></i>Novo Caderno
+                        </h3>
+                        <p class="text-sm text-gray-500 mb-6">Crie um caderno isolado para um edital específico (ex: ALE-RO 2026, Câmara, Prefeitura).</p>
+                        
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold mb-2 text-gray-700">Nome do Concurso/Caderno:</label>
+                            <input type="text" id="novo-caderno-nome" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Ex: ALE-RO 2026">
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="AplicacaoPrincipal.fecharModal()" class="flex-1 btn-secondary py-3">Cancelar</button>
+                            <button onclick="AplicacaoPrincipal.salvarNovoCaderno()" class="flex-1 btn-success py-3">Criar</button>
+                        </div>
+                    </div>
+                `);
+            },
+
+            salvarNovoCaderno() {
+                const nome = document.getElementById('novo-caderno-nome').value.trim();
+                if (!nome) {
+                    this.mostrarNotificacao('Digite um nome para o caderno.', 'error');
+                    return;
+                }
+
+                if (!this.dados.cadernosConcurso) this.dados.cadernosConcurso = [{id: 'geral', nome: 'Caderno Geral (Padrão)'}];
+
+                const novoCaderno = {
+                    id: 'cad_' + Date.now().toString(),
+                    nome: nome,
+                    dataCriacao: new Date().toISOString()
+                };
+
+                this.dados.cadernosConcurso.push(novoCaderno);
+                this.cadernoAtivo = novoCaderno.id; // Já muda a tela para o concurso novo!
+                
+                this.salvarDadosUsuario();
+                this.fecharModal();
+                this.carregarQuestoes();
+                this.mostrarNotificacao('Caderno criado com sucesso!', 'success');
+            },
+
+            excluirCadernoAtivo() {
+                if (this.cadernoAtivo === 'geral') {
+                    this.mostrarNotificacao('Não é possível excluir o Caderno Geral base.', 'warning');
+                    return;
+                }
+
+                const caderno = this.dados.cadernosConcurso.find(c => c.id === this.cadernoAtivo);
+                
+                if (confirm(`ATENÇÃO: Deseja realmente excluir o caderno "${caderno.nome}"?\n\nTODAS as questões vinculadas a este concurso serão apagadas definitivamente!`)) {
+                    
+                    // 1. Remove as questões que pertencem a este concurso
+                    this.dados.questoes = this.dados.questoes.filter(q => (q.cadernoId || 'geral') !== this.cadernoAtivo);
+                    
+                    // 2. Remove o caderno da lista
+                    this.dados.cadernosConcurso = this.dados.cadernosConcurso.filter(c => c.id !== this.cadernoAtivo);
+                    
+                    // 3. Volta a tela para o Caderno Geral
+                    this.cadernoAtivo = 'geral';
+                    
+                    this.salvarDadosUsuario();
+                    this.carregarQuestoes();
+                    this.mostrarNotificacao('Caderno e questões excluídos com sucesso.', 'success');
+                }
+            },
+
+	    carregarQuestoes() {
                 const conteudo = document.getElementById('conteudo-principal');
                 
-                // Memória das sanfonas abertas
+                // 👇 Inicialização de Segurança para Cadernos de Concurso
+                if (!this.dados.cadernosConcurso) {
+                    this.dados.cadernosConcurso = [{id: 'geral', nome: 'Caderno Geral (Padrão)'}];
+                }
+                if (!this.cadernoAtivo) this.cadernoAtivo = 'geral';
+                if (!this.dados.cadernosConcurso.find(c => c.id === this.cadernoAtivo)) this.cadernoAtivo = 'geral';
+
+                // 👇 Filtra TODAS as questões da tela apenas para o Concurso selecionado
+                const questoesFiltradas = this.dados.questoes.filter(q => (q.cadernoId || 'geral') === this.cadernoAtivo);
+
                 const paineisAbertos = [];
                 if (conteudo) {
                     conteudo.querySelectorAll('div[id^="disc-"], div[id^="assu-"]').forEach(el => {
-                        if (!el.classList.contains('hidden')) {
-                            paineisAbertos.push(el.id);
-                        }
+                        if (!el.classList.contains('hidden')) paineisAbertos.push(el.id);
                     });
                 }
 
+                // Agrupamento agora usa as "questoesFiltradas"
                 const cadernos = {};
-                if (this.dados.questoes) {
-                    this.dados.questoes.forEach(q => {
-                        const disc = q.disciplina || 'Sem Disciplina';
-                        const assu = q.assunto || 'Geral / Outros';
-                        
-                        if (!cadernos[disc]) cadernos[disc] = {};
-                        if (!cadernos[disc][assu]) cadernos[disc][assu] = [];
-                        
-                        cadernos[disc][assu].push(q);
-                    });
-                }
+                questoesFiltradas.forEach(q => {
+                    const disc = q.disciplina || 'Sem Disciplina';
+                    const assu = q.assunto || 'Geral / Outros';
+                    if (!cadernos[disc]) cadernos[disc] = {};
+                    if (!cadernos[disc][assu]) cadernos[disc][assu] = [];
+                    cadernos[disc][assu].push(q);
+                });
 
                 const disciplinasOrdenadas = Object.keys(cadernos).sort();
                 let htmlFinal = '';
                 
-                if (this.dados.questoes.length === 0) {
+                if (questoesFiltradas.length === 0) {
                     htmlFinal = `
                         <div class="glass-card rounded-xl p-10 text-center">
-                            <i class="fas fa-book-open text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-gray-500">Seu banco de cadernos está vazio.</p>
-                            <p class="text-sm text-gray-400 mt-2">Gere um Estudo Reverso para começar!</p>
+                            <i class="fas fa-folder-open text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">Este caderno de concurso está vazio.</p>
+                            <p class="text-sm text-gray-400 mt-2">Gere um Estudo Reverso para populá-lo!</p>
                         </div>`;
                 } else {
                     disciplinasOrdenadas.forEach((disc, discIndex) => {
@@ -4116,8 +4199,6 @@ salvarTarefaRapida(dataString) {
                         
                         const conclusaoDisc = totalDisc > 0 ? Math.round((resolvidasDisc / totalDisc) * 100) : 0;
                         const aproveitamentoDisc = resolvidasDisc > 0 ? Math.round((corretasDisc / resolvidasDisc) * 100) : 0;
-                        
-                        // 👇 Lógica da cor vermelha para erros na Disciplina
                         const corFundoAcertosDisc = resolvidasDisc > 0 ? '#EF4444' : '#e5e7eb';
 
                         htmlFinal += `
@@ -4137,22 +4218,18 @@ salvarTarefaRapida(dataString) {
                                     </div>
                                 </div>
                             </div>
-                            
                             <div id="disc-${discIndex}" class="hidden pl-2 sm:pl-8 pt-4 pb-6 border-l-2 ml-6 sm:ml-10 mb-4" style="border-color: ${corDisc}40;">
                         `;
 
                         const nomesAssuntos = Object.keys(assuntosNoCaderno).sort();
                         nomesAssuntos.forEach((assu, assuIndex) => {
                             const questoes = assuntosNoCaderno[assu];
-                            
                             const totalAssu = questoes.length;
                             const resolvidasAssu = questoes.filter(q => q.status !== 'pendente').length;
                             const corretasAssu = questoes.filter(q => q.status === 'correta').length;
                             
                             const conclusaoAssu = totalAssu > 0 ? Math.round((resolvidasAssu / totalAssu) * 100) : 0;
                             const aproveitamentoAssu = resolvidasAssu > 0 ? Math.round((corretasAssu / resolvidasAssu) * 100) : 0;
-                            
-                            // 👇 Lógica da cor vermelha para erros no Assunto
                             const corFundoAcertosAssu = resolvidasAssu > 0 ? '#EF4444' : '#e5e7eb';
 
                             htmlFinal += `
@@ -4164,7 +4241,6 @@ salvarTarefaRapida(dataString) {
                                             <i class="fas fa-scroll text-sm" style="color: ${corDisc};"></i>
                                         </div>
                                         <h4 class="font-bold text-gray-700 uppercase text-[10px] sm:text-xs tracking-widest flex-1 ml-2 truncate">${assu}</h4>
-                                        
                                         <div class="flex items-center ml-auto">
                                             <span class="hidden sm:inline-block mr-2 text-[9px] font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">
                                                 ${totalAssu} QTS
@@ -4203,12 +4279,10 @@ salvarTarefaRapida(dataString) {
                                                     ${questao.alternativas.map((alt, index) => {
                                                         const isCorreta = questao.resposta === index;
                                                         let estiloLabel = 'bg-gray-50 border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer';
-                                                        
                                                         if (isResolvida) {
                                                             if (isCorreta) estiloLabel = 'bg-green-50 border-green-500 text-green-900 font-medium shadow-sm';
                                                             else estiloLabel = 'bg-white border-gray-100 text-gray-400 opacity-60';
                                                         }
-                                                        
                                                         return `
                                                         <label class="flex items-start p-3 border rounded-lg transition-all ${estiloLabel}">
                                                             <input type="radio" name="resp-${questao.id}" value="${index}" class="mt-1 mr-3 w-4 h-4 text-blue-600" ${isResolvida ? 'disabled' : ''}>
@@ -4244,7 +4318,6 @@ salvarTarefaRapida(dataString) {
                                 </div>
                             `;
                         });
-
                         htmlFinal += `</div>`;
                     });
                 }
@@ -4252,28 +4325,56 @@ salvarTarefaRapida(dataString) {
                 conteudo.innerHTML = `
                     <div class="fade-in pb-20">
                         <div class="flex justify-between items-center mb-8">
-                            <h2 class="text-3xl font-bold gradient-text">Meus Cadernos</h2>
+                            <h2 class="text-3xl font-bold gradient-text">Banco de Questões</h2>
                             <button onclick="AplicacaoPrincipal.mostrarModalNovaQuestao()" class="btn-success shadow-md">
                                 <i class="fas fa-plus mr-2"></i>Nova Questão
                             </button>
                         </div>
 
+                        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+                            <div class="flex items-center gap-3 w-full sm:w-auto">
+                                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                    <i class="fas fa-folder-open text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Caderno de Concurso Ativo</label>
+                                    <select class="w-full sm:w-64 bg-transparent text-lg font-bold text-indigo-800 cursor-pointer focus:outline-none" onchange="AplicacaoPrincipal.mudarCadernoAtivo(this.value)">
+                                        ${this.dados.cadernosConcurso.map(c => `<option value="${c.id}" ${c.id === this.cadernoAtivo ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <button onclick="AplicacaoPrincipal.mostrarModalNovoCaderno()" class="flex-1 sm:flex-none btn-primary text-sm py-2">
+                                    <i class="fas fa-plus mr-1"></i>Novo
+                                </button>
+                                ${this.cadernoAtivo !== 'geral' ? `
+                                    <button onclick="AplicacaoPrincipal.excluirCadernoAtivo()" class="flex-1 sm:flex-none btn-danger text-sm py-2" title="Excluir este caderno">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <div class="glass-card rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-blue-600">${this.dados.questoes.length}</div>
-                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">Total de Itens</div>
+                            <div class="glass-card rounded-xl p-4 text-center border-b-4 border-blue-500">
+                                <div class="text-3xl font-bold text-blue-600">${questoesFiltradas.length}</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold mt-1">Total do Caderno</div>
                             </div>
-                            <div class="glass-card rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-green-600">${this.dados.questoes.filter(q => q.status === 'correta').length}</div>
-                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">Gabaritadas</div>
+                            <div class="glass-card rounded-xl p-4 text-center border-b-4 border-green-500">
+                                <div class="text-3xl font-bold text-green-600">${questoesFiltradas.filter(q => q.status === 'correta').length}</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold mt-1">Gabaritadas</div>
                             </div>
-                            <div class="glass-card rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-red-600">${this.dados.questoes.filter(q => q.status === 'errada').length}</div>
-                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">A Revisar</div>
+                            <div class="glass-card rounded-xl p-4 text-center border-b-4 border-red-500">
+                                <div class="text-3xl font-bold text-red-600">${questoesFiltradas.filter(q => q.status === 'errada').length}</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold mt-1">A Revisar</div>
                             </div>
-                            <div class="glass-card rounded-xl p-4 text-center">
-                                <div class="text-2xl font-bold text-purple-600">${this.calcularTaxaAcerto()}%</div>
-                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold">Aproveitamento</div>
+                            <div class="glass-card rounded-xl p-4 text-center border-b-4 border-purple-500">
+                                <div class="text-3xl font-bold text-purple-600">${
+                                    (questoesFiltradas.filter(q => q.status !== 'pendente').length > 0) 
+                                    ? Math.round((questoesFiltradas.filter(q => q.status === 'correta').length / questoesFiltradas.filter(q => q.status !== 'pendente').length) * 100) 
+                                    : 0
+                                }%</div>
+                                <div class="text-xs uppercase tracking-tighter text-gray-500 font-bold mt-1">Aproveitamento Real</div>
                             </div>
                         </div>
 
@@ -4287,18 +4388,16 @@ salvarTarefaRapida(dataString) {
                 paineisAbertos.forEach(id => {
                     const el = document.getElementById(id);
                     const icone = document.getElementById('icon-' + id);
-                    
                     if (el && icone) {
                         el.classList.remove('hidden');
                         icone.classList.remove('fa-chevron-right');
                         icone.classList.add('fa-chevron-down');
                     }
                 });
-            }, // <--- A carregarQuestoes acaba aqui!
+            }, // <--- A carregarQuestoes tem que acabar apenas UMA vez aqui!
 
             // 👇 NOVA FUNÇÃO: Controla o Abre/Fecha dos Menus Sanfona 👇
-            toggleBloco(conteudoId, iconeId) {
-	    
+            toggleBloco(conteudoId, iconeId) {	    
                 const conteudo = document.getElementById(conteudoId);
                 const icone = document.getElementById(iconeId);
                 
