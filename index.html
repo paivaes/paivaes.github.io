@@ -4054,11 +4054,12 @@ salvarTarefaRapida(dataString) {
             },
 
 	    // 👇 NOVA FUNÇÃO: Desenha os gráficos redondos em formato "Donut"
-            gerarMiniGraficoPizza(percentual, corHex, titulo) {
+            // 👇 FÁBRICA DE GRÁFICOS ATUALIZADA 👇
+            gerarMiniGraficoPizza(percentual, corHex, titulo, corFundoHex = '#e5e7eb') {
                 return `
                     <div class="flex flex-col items-center ml-3 sm:ml-4" title="${titulo}: ${percentual}%">
                         <div class="relative w-10 h-10 rounded-full flex items-center justify-center shadow-sm" 
-                             style="background: conic-gradient(${corHex} 0% ${percentual}%, #e5e7eb ${percentual}% 100%);">
+                             style="background: conic-gradient(${corHex} 0% ${percentual}%, ${corFundoHex} ${percentual}% 100%);">
                             <div class="absolute w-7 h-7 bg-white rounded-full"></div>
                             <span class="relative text-[9px] font-extrabold text-gray-700">${percentual}%</span>
                         </div>
@@ -4070,7 +4071,7 @@ salvarTarefaRapida(dataString) {
             carregarQuestoes() {
                 const conteudo = document.getElementById('conteudo-principal');
                 
-                // 👇 NOVIDADE 1: Memoriza quais sanfonas estão abertas antes de atualizar
+                // Memória das sanfonas abertas
                 const paineisAbertos = [];
                 if (conteudo) {
                     conteudo.querySelectorAll('div[id^="disc-"], div[id^="assu-"]').forEach(el => {
@@ -4104,12 +4105,10 @@ salvarTarefaRapida(dataString) {
                             <p class="text-sm text-gray-400 mt-2">Gere um Estudo Reverso para começar!</p>
                         </div>`;
                 } else {
-                    // LOOP DAS DISCIPLINAS
                     disciplinasOrdenadas.forEach((disc, discIndex) => {
                         const corDisc = this.obterCorDisciplina(disc);
                         const assuntosNoCaderno = cadernos[disc];
                         
-                        // 🧮 Matemática da Disciplina Inteira
                         const questoesDisc = Object.values(assuntosNoCaderno).flat();
                         const totalDisc = questoesDisc.length;
                         const resolvidasDisc = questoesDisc.filter(q => q.status !== 'pendente').length;
@@ -4117,8 +4116,10 @@ salvarTarefaRapida(dataString) {
                         
                         const conclusaoDisc = totalDisc > 0 ? Math.round((resolvidasDisc / totalDisc) * 100) : 0;
                         const aproveitamentoDisc = resolvidasDisc > 0 ? Math.round((corretasDisc / resolvidasDisc) * 100) : 0;
+                        
+                        // 👇 Lógica da cor vermelha para erros na Disciplina
+                        const corFundoAcertosDisc = resolvidasDisc > 0 ? '#EF4444' : '#e5e7eb';
 
-                        // 1. MENU DROPDOWN DA DISCIPLINA
                         htmlFinal += `
                             <div class="mt-6 mb-2">
                                 <div class="cursor-pointer select-none bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex items-center flex-wrap" 
@@ -4132,7 +4133,7 @@ salvarTarefaRapida(dataString) {
                                             ${totalDisc} itens
                                         </span>
                                         ${this.gerarMiniGraficoPizza(conclusaoDisc, '#3B82F6', 'Feitas')}
-                                        ${this.gerarMiniGraficoPizza(aproveitamentoDisc, '#10B981', 'Acertos')}
+                                        ${this.gerarMiniGraficoPizza(aproveitamentoDisc, '#10B981', 'Acertos', corFundoAcertosDisc)}
                                     </div>
                                 </div>
                             </div>
@@ -4140,12 +4141,10 @@ salvarTarefaRapida(dataString) {
                             <div id="disc-${discIndex}" class="hidden pl-2 sm:pl-8 pt-4 pb-6 border-l-2 ml-6 sm:ml-10 mb-4" style="border-color: ${corDisc}40;">
                         `;
 
-                        // LOOP DOS ASSUNTOS
                         const nomesAssuntos = Object.keys(assuntosNoCaderno).sort();
                         nomesAssuntos.forEach((assu, assuIndex) => {
                             const questoes = assuntosNoCaderno[assu];
                             
-                            // 🧮 Matemática de Cada Assunto
                             const totalAssu = questoes.length;
                             const resolvidasAssu = questoes.filter(q => q.status !== 'pendente').length;
                             const corretasAssu = questoes.filter(q => q.status === 'correta').length;
@@ -4153,7 +4152,9 @@ salvarTarefaRapida(dataString) {
                             const conclusaoAssu = totalAssu > 0 ? Math.round((resolvidasAssu / totalAssu) * 100) : 0;
                             const aproveitamentoAssu = resolvidasAssu > 0 ? Math.round((corretasAssu / resolvidasAssu) * 100) : 0;
                             
-                            // 2. MENU DROPDOWN DO ASSUNTO
+                            // 👇 Lógica da cor vermelha para erros no Assunto
+                            const corFundoAcertosAssu = resolvidasAssu > 0 ? '#EF4444' : '#e5e7eb';
+
                             htmlFinal += `
                                 <div class="mb-4">
                                     <div class="flex items-center flex-wrap bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer select-none hover:bg-gray-100 transition-colors" 
@@ -4169,7 +4170,7 @@ salvarTarefaRapida(dataString) {
                                                 ${totalAssu} QTS
                                             </span>
                                             ${this.gerarMiniGraficoPizza(conclusaoAssu, '#3B82F6', 'Feitas')}
-                                            ${this.gerarMiniGraficoPizza(aproveitamentoAssu, '#10B981', 'Acertos')}
+                                            ${this.gerarMiniGraficoPizza(aproveitamentoAssu, '#10B981', 'Acertos', corFundoAcertosAssu)}
                                         </div>
                                     </div>
 
@@ -4281,6 +4282,19 @@ salvarTarefaRapida(dataString) {
                         </div>
                     </div>
                 `;
+
+                // Restaura o estado das sanfonas que estavam abertas
+                paineisAbertos.forEach(id => {
+                    const el = document.getElementById(id);
+                    const icone = document.getElementById('icon-' + id);
+                    
+                    if (el && icone) {
+                        el.classList.remove('hidden');
+                        icone.classList.remove('fa-chevron-right');
+                        icone.classList.add('fa-chevron-down');
+                    }
+                });
+            },
 
                 // 👇 NOVIDADE 2: Restaura o estado das sanfonas que estavam abertas
                 paineisAbertos.forEach(id => {
