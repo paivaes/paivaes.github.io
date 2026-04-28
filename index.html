@@ -1331,43 +1331,50 @@
                 const resumo = resumoId ? this.dados.resumos.find(r => r.id === resumoId) : null;
                 
                 this.mostrarModal(`
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="p-6 max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
                             <h3 class="text-xl font-semibold">
-                                <i class="fas ${resumo ? 'fa-edit' : 'fa-plus-circle'} mr-2"></i>
+                                <i class="fas ${resumo ? 'fa-edit' : 'fa-plus-circle'} mr-2 text-orange-500"></i>
                                 ${resumo ? 'Editar Resumo' : 'Novo Resumo'}
                             </h3>
                             ${!resumo ? `
-                            <button type="button" onclick="AplicacaoPrincipal.gerarResumoIA()" id="btn-ia-resumo" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200 transition-colors">
-                                ✨ Gerar com IA
-                            </button>
+                                <button type="button" onclick="AplicacaoPrincipal.gerarResumoIA()" id="btn-ia-resumo" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200 transition-colors">
+                                    ✨ Gerar com IA
+                                </button>
                             ` : ''}
                         </div>
                         
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Título do Resumo:</label>
-                                <input type="text" id="resumo-titulo" class="w-full p-3 border rounded-xl" value="${resumo ? resumo.titulo : ''}" required>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold mb-2">Disciplina:</label>
+                                    <select id="resumo-disciplina" class="w-full p-3 border rounded-xl" required>
+                                        <option value="">Selecione a disciplina</option>
+                                        ${this.dados.disciplinas.map(d => `<option value="${d.nome}" ${resumo && resumo.disciplina === d.nome ? 'selected' : ''}>${d.nome}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold mb-2">Tópico (Assunto Maior):</label>
+                                    <input type="text" id="resumo-topico" class="w-full p-3 border rounded-xl" value="${resumo ? (resumo.topico || '') : ''}" placeholder="Ex: Atos Administrativos" required>
+                                </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold mb-2">Disciplina:</label>
-                                <select id="resumo-disciplina" class="w-full p-3 border rounded-xl" required>
-                                    <option value="">Selecione a disciplina</option>
-                                    ${this.dados.disciplinas.map(d => `<option value="${d.nome}" ${resumo && resumo.disciplina === d.nome ? 'selected' : ''}>${d.nome}</option>`).join('')}
-                                </select>
+                                <label class="block text-sm font-semibold mb-2">Título do Subtópico:</label>
+                                <input type="text" id="resumo-titulo" class="w-full p-3 border rounded-xl" value="${resumo ? resumo.titulo : ''}" placeholder="Ex: Requisitos do Ato" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold mb-2">Conteúdo:</label>
-                                <textarea id="resumo-conteudo" class="w-full p-3 border rounded-xl" rows="6" required>${resumo ? resumo.conteudo : ''}</textarea>
+                                <textarea id="resumo-conteudo" class="w-full p-3 border rounded-xl" rows="8" required>${resumo ? resumo.conteudo : ''}</textarea>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold mb-2">Tags (separadas por vírgula):</label>
-                                <input type="text" id="resumo-tags" class="w-full p-3 border rounded-xl" value="${resumo ? resumo.tags.join(', ') : ''}" placeholder="Ex: LDB, artigo 24, ensino médio">
+                                <label class="block text-sm font-semibold mb-2">Tags:</label>
+                                <input type="text" id="resumo-tags" class="w-full p-3 border rounded-xl" value="${resumo ? resumo.tags.join(', ') : ''}" placeholder="Ex: LDB, artigo 24">
                             </div>
                         </div>
                         
                         <div class="flex gap-4 mt-6">
-                            <button onclick="AplicacaoPrincipal.fecharModal()" class="flex-1 btn-secondary"><i class="fas fa-times mr-1"></i>Cancelar</button>
-                            <button onclick="AplicacaoPrincipal.salvarResumo('${resumoId}')" class="flex-1 btn-success"><i class="fas fa-save mr-1"></i>Salvar Resumo</button>
+                            <button onclick="AplicacaoPrincipal.fecharModal()" class="flex-1 btn-secondary">Cancelar</button>
+                            <button onclick="AplicacaoPrincipal.salvarResumo('${resumoId}')" class="flex-1 btn-success">Salvar Resumo</button>
                         </div>
                     </div>
                 `);
@@ -1376,19 +1383,21 @@
             salvarResumo(resumoId = null) {
                 const titulo = document.getElementById('resumo-titulo').value.trim();
                 const disciplina = document.getElementById('resumo-disciplina').value;
+                const topico = document.getElementById('resumo-topico').value.trim();
                 const conteudo = document.getElementById('resumo-conteudo').value.trim();
                 const tagsRaw = document.getElementById('resumo-tags').value;
                 const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(t => t !== '') : [];
 
-                if (!titulo || !disciplina || !conteudo) {
-                    this.mostrarNotificacao('Preencha título, disciplina e conteúdo', 'error');
+                if (!titulo || !disciplina || !conteudo || !topico) {
+                    this.mostrarNotificacao('Preencha todos os campos obrigatórios.', 'error');
                     return;
                 }
 
                 const novoResumo = {
-                    id: resumoId && resumoId !== 'null' ? resumoId : Date.now().toString(),
+                    id: (resumoId && resumoId !== 'null') ? resumoId : Date.now().toString(),
                     titulo,
                     disciplina,
+                    topico,
                     conteudo,
                     tags,
                     dataCriacao: new Date().toISOString()
@@ -1396,7 +1405,7 @@
 
                 if (resumoId && resumoId !== 'null') {
                     const index = this.dados.resumos.findIndex(r => r.id === resumoId);
-                    this.dados.resumos[index] = novoResumo;
+                    if (index !== -1) this.dados.resumos[index] = novoResumo;
                 } else {
                     this.dados.resumos.push(novoResumo);
                 }
@@ -1404,9 +1413,18 @@
                 this.salvarDadosUsuario();
                 this.fecharModal();
                 this.carregarResumos();
-                this.mostrarNotificacao('Resumo salvo com sucesso!', 'success');
+                this.mostrarNotificacao('Resumo salvo!', 'success');
             },
-
+		                
+            excluirResumo(id) {
+                if (confirm('Deseja excluir este resumo permanentemente?')) {
+                    this.dados.resumos = this.dados.resumos.filter(r => r.id !== id);
+                    this.salvarDadosUsuario();
+                    this.carregarResumos(); // Atualiza a lista principal
+                    this.mostrarNotificacao('Resumo removido.', 'success');
+                }
+            },
+                       
 	    async gerarResumoIA() {
                 const disciplina = document.getElementById('resumo-disciplina').value;
                 const tema = prompt("Sobre qual assunto você quer o resumo esquematizado?");
@@ -4112,70 +4130,84 @@ salvarTarefaRapida(dataString) {
 
             carregarResumos() {
                 const conteudo = document.getElementById('conteudo-principal');
+                
+                // Organiza: Disciplina -> Tópico -> Resumos
+                const bibliotecaResumos = {};
+                this.dados.resumos.forEach(r => {
+                    const d = r.disciplina || 'Outros';
+                    const t = r.topico || 'Geral';
+                    if (!bibliotecaResumos[d]) bibliotecaResumos[d] = {};
+                    if (!bibliotecaResumos[d][t]) bibliotecaResumos[d][t] = [];
+                    bibliotecaResumos[d][t].push(r);
+                });
+
+                const disciplinasOrdenadas = Object.keys(bibliotecaResumos).sort();
+                let htmlFinal = '';
+
+                if (this.dados.resumos.length === 0) {
+                    htmlFinal = `<div class="text-center py-20 glass-card rounded-xl">
+                        <i class="fas fa-sticky-note text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600">Nenhum resumo criado</h3>
+                        <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo()" class="btn-success mt-4">Criar Primeiro Resumo</button>
+                    </div>`;
+                } else {
+                    disciplinasOrdenadas.forEach((disc, dIdx) => {
+                        const cor = this.obterCorDisciplina(disc);
+                        const topicos = bibliotecaResumos[disc];
+                        
+                        htmlFinal += `
+                            <div class="mb-4">
+                                <div class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border-l-4 flex items-center" 
+                                     style="border-color: ${cor}" onclick="AplicacaoPrincipal.toggleBloco('res-disc-${dIdx}', 'icon-res-disc-${dIdx}')">
+                                    <i id="icon-res-disc-${dIdx}" class="fas fa-chevron-right text-gray-400 mr-4 transition-transform"></i>
+                                    <h3 class="text-xl font-bold text-gray-800 flex-1">${disc}</h3>
+                                    <span class="badge bg-gray-100 text-gray-600">${Object.keys(topicos).length} tópicos</span>
+                                </div>
+                                <div id="res-disc-${dIdx}" class="hidden pl-6 pt-4 space-y-4">
+                        `;
+
+                        Object.keys(topicos).sort().forEach((top, tIdx) => {
+                            const resumos = topicos[top];
+                            htmlFinal += `
+                                <div class="mb-2">
+                                    <div class="flex items-center p-2 bg-orange-50 rounded-lg cursor-pointer" onclick="AplicacaoPrincipal.toggleBloco('res-top-${dIdx}-${tIdx}', 'icon-res-top-${dIdx}-${tIdx}')">
+                                        <i id="icon-res-top-${dIdx}-${tIdx}" class="fas fa-chevron-right text-orange-400 mr-2 text-xs"></i>
+                                        <span class="font-bold text-orange-800 text-sm uppercase tracking-wider">${top}</span>
+                                    </div>
+                                    <div id="res-top-${dIdx}-${tIdx}" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                                        ${resumos.map(r => `
+                                            <div class="resumo-card glass-card p-5 rounded-xl border-t-2" style="border-color: ${cor}">
+                                                <div class="flex justify-between items-start mb-3">
+                                                    <h4 class="font-bold text-gray-800">${r.titulo}</h4>
+                                                    <div class="flex gap-1">
+                                                        <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo('${r.id}')" class="text-blue-500 p-1"><i class="fas fa-edit"></i></button>
+                                                        <button onclick="AplicacaoPrincipal.excluirResumo('${r.id}')" class="text-red-500 p-1"><i class="fas fa-trash"></i></button>
+                                                    </div>
+                                                </div>
+                                                <p class="text-sm text-gray-500 line-clamp-2 mb-4">${r.conteudo.substring(0, 80)}...</p>
+                                                <button onclick="AplicacaoPrincipal.visualizarResumo('${r.id}')" class="w-full btn-primary text-xs py-2">Abrir Resumo</button>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        htmlFinal += `</div></div>`;
+                    });
+                }
+
                 conteudo.innerHTML = `
-                    <div class="fade-in">
+                    <div class="fade-in pb-20">
                         <div class="flex justify-between items-center mb-8">
-                            <h2 class="text-3xl font-bold gradient-text">Resumos</h2>
-                            <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo()" class="btn-success">
+                            <h2 class="text-3xl font-bold gradient-text">Meus Resumos Estruturados</h2>
+                            <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo()" class="btn-success shadow-md">
                                 <i class="fas fa-plus mr-2"></i>Novo Resumo
                             </button>
                         </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            ${this.dados.resumos.map(resumo => `
-                                <div class="resumo-card glass-card rounded-xl p-6" style="border-left-color: ${this.obterCorDisciplina(resumo.disciplina)}">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <h3 class="text-xl font-semibold">${resumo.titulo}</h3>
-                                        <div class="action-buttons">
-                                            <button onclick="AplicacaoPrincipal.editarResumo('${resumo.id}')" class="btn-acao bg-blue-100 text-blue-600">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button onclick="AplicacaoPrincipal.excluirResumo('${resumo.id}')" class="btn-acao bg-red-100 text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-4">
-                                        <span class="badge" style="background-color: ${this.obterCorDisciplina(resumo.disciplina)}; color: white;">
-                                            ${resumo.disciplina}
-                                        </span>
-                                        <span class="text-sm text-gray-500 ml-2">
-                                            ${new Date(resumo.dataCriacao).toLocaleDateString('pt-BR')}
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="resumo-preview mb-4">
-                                        <p class="text-gray-600">${resumo.conteudo.substring(0, 100)}${resumo.conteudo.length > 100 ? '...' : ''}</p>
-                                    </div>
-                                    
-                                    <div class="flex flex-wrap gap-1 mb-4">
-                                        ${resumo.tags.map(tag => `
-                                            <span class="tag-resumo">${tag}</span>
-                                        `).join('')}
-                                    </div>
-                                    
-                                    <button onclick="AplicacaoPrincipal.visualizarResumo('${resumo.id}')" class="w-full btn-primary">
-                                        <i class="fas fa-eye mr-2"></i>Visualizar
-                                    </button>
-                                </div>
-                            `).join('')}
-                        </div>
-
-                        ${this.dados.resumos.length === 0 ? `
-                            <div class="text-center py-12">
-                                <i class="fas fa-sticky-note text-6xl text-gray-300 mb-4"></i>
-                                <h3 class="text-xl font-semibold text-gray-600 mb-2">Nenhum resumo criado</h3>
-                                <p class="text-gray-500 mb-6">Comece criando seu primeiro resumo de estudo</p>
-                                <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo()" class="btn-success">
-                                    <i class="fas fa-plus mr-2"></i>Criar Primeiro Resumo
-                                </button>
-                            </div>
-                        ` : ''}
+                        <div class="max-w-5xl">${htmlFinal}</div>
                     </div>
                 `;
             },
-
 	    // 👇 NOVA FUNÇÃO: Desenha os gráficos redondos em formato "Donut"
             // 👇 FÁBRICA DE GRÁFICOS ATUALIZADA 👇
             gerarMiniGraficoPizza(percentual, corHex, titulo, corFundoHex = '#e5e7eb') {
