@@ -1046,31 +1046,33 @@
                 }
             },
 
-            async gerarEstudoReverso(disciplina, tema, quantidade) {
+            async gerarEstudoReverso(disciplina, tema, quantidade, materialContexto = null) {
                 const instrucao = `Você é um professor especialista em concursos públicos.
-                O aluno quer fazer "Estudo Reverso" (aprender a teoria através de questões).
+                O aluno quer fazer "Estudo Reverso".
+                ${materialContexto ? 'IMPORTANTE: Baseie as questões e o resumo PRIORITARIAMENTE no MATERIAL FORNECIDO pelo aluno abaixo.' : 'Baseie-se no que é mais cobrado pelas bancas FGV/Cebraspe.'}
                 
-                REGRAS ESTRITAS:
-                1. Escreva um BREVE RESUMO do assunto (1 a 2 parágrafos) focado exclusivamente nas "pegadinhas" e no que é mais cobrado pelas bancas (FGV/Cebraspe).
-                2. Crie EXATAMENTE ${quantidade} questões inéditas de múltipla escolha (5 alternativas).
-                3. A dificuldade das questões deve ser alta, exigindo raciocínio.
+                REGRAS:
+                1. Resumo de 1 a 2 parágrafos focado em pontos de atenção.
+                2. Crie EXATAMENTE ${quantidade} questões de múltipla escolha (5 alternativas).
+                3. Nível de dificuldade alto.
                 
                 Retorne EXATAMENTE este formato JSON:
                 {
-                    "resumo": "Texto do resumo focado em provas...",
+                    "resumo": "Texto do resumo...",
                     "questoes": [
                         {
-                            "enunciado": "texto do enunciado da questão",
+                            "enunciado": "texto...",
                             "alternativas": ["alt A", "alt B", "alt C", "alt D", "alt E"],
                             "resposta": 0, 
-                            "comentario": "Explicação técnica detalhada justificando a correta e o erro das demais."
+                            "comentario": "Explicação técnica..."
                         }
                     ]
-                } (Garanta que a matriz "questoes" tenha exatamente ${quantidade} itens)`;
+                }
+                
+                ${materialContexto ? `--- MATERIAL DE BASE DO ALUNO ---\n${materialContexto}\n--- FIM DO MATERIAL ---` : ''}`;
 
-                return await this.callGemini(`Gere um estudo reverso com ${quantidade} questões sobre a disciplina '${disciplina}', abordando o tema: '${tema}'.`, instrucao);
+                return await this.callGemini(`Gere um estudo reverso sobre '${disciplina}' - Tema: '${tema}'.`, instrucao);
             },
-
             async gerarResumo(disciplina, tema) {
                 const instrucao = `Você é um professor especialista em concursos públicos.
                 Crie um resumo altamente esquematizado, focado apenas no que despenca em provas.
@@ -1149,61 +1151,73 @@
             },
 
            
-	    mostrarModalNovaQuestao(questaoId = null) {
+	    async mostrarModalNovaQuestao(questaoId = null) {
                 const questao = questaoId ? this.dados.questoes.find(q => q.id === questaoId) : null;
                 
-                this.mostrarModal(`
-                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold">
-                                <i class="fas ${questao ? 'fa-edit' : 'fa-plus-circle'} mr-2"></i>
-                                ${questao ? 'Editar Questão' : 'Nova Questão de Nível Alto'}
-                            </h3>
-                            ${!questao ? `
-                            <button type="button" onclick="AplicacaoPrincipal.gerarQuestaoIA()" id="btn-ia-questao" class="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold hover:bg-purple-200 transition-colors">
-                                ✨ Gerar Estudo Reverso
-                            </button>
-                            ` : ''}
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Disciplina:</label>
-                                <select id="questao-disciplina" class="w-full p-3 border rounded-xl" required>
-                                    <option value="">Selecione uma disciplina</option>
-                                    ${this.dados.disciplinas.map(d => `<option value="${d.nome}" ${questao && questao.disciplina === d.nome ? 'selected' : ''}>${d.nome}</option>`).join('')}
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Enunciado (Sem dicas contextuais):</label>
-                                <textarea id="questao-enunciado" class="w-full p-3 border rounded-xl" rows="4" required>${questao ? questao.enunciado : ''}</textarea>
-                            </div>
+                // Busca os materiais de teoria para oferecer como opção
+                let opcoesTeoria = '<option value="">IA Geral (Sem material base)</option>';
+                try {
+                    const snapshot = await db.collection('materiais_teoricos').get();
+                    snapshot.forEach(doc => {
+                        const m = doc.data();
+                        opcoesTeoria += `<option value="${doc.id}">${m.disciplina}: ${m.titulo}</option>`;
+                    });
+                } catch (e) { console.error("Erro ao carregar teorias", e); }
 
-                            <div class="space-y-2" id="container-alternativas">
-                                <label class="block text-sm font-semibold mb-2">Alternativas:</label>
-                                ${[0, 1, 2, 3, 4].map(i => `
-                                    <div class="flex items-center gap-2">
-                                        <input type="radio" name="questao-resposta" value="${i}" ${questao && questao.resposta === i ? 'checked' : ''} class="w-5 h-5 text-green-600">
-                                        <span class="font-bold w-6">${String.fromCharCode(65 + i)})</span>
-                                        <input type="text" id="alternativa-${i}" class="flex-1 p-2 border rounded-lg" value="${questao ? questao.alternativas[i] : ''}" placeholder="Texto da alternativa..." required>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-semibold mb-2">Comentário Técnico (Opcional):</label>
-                                <textarea id="questao-comentario" class="w-full p-3 border rounded-xl" rows="2">${questao ? questao.comentario || '' : ''}</textarea>
-                            </div>
+                this.mostrarModal(`
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">
+                            <i class="fas ${questao ? 'fa-edit' : 'fa-plus-circle'} mr-2 text-blue-600"></i>
+                            ${questao ? 'Editar Questão' : 'Nova Questão'}
+                        </h3>
+                        ${!questao ? `
+                            <button type="button" onclick="AplicacaoPrincipal.gerarQuestaoIA()" id="btn-ia-questao" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 transition-all shadow-md">
+                                ✨ Gerar Estudo Reverso com IA
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                            <label class="block text-xs font-bold text-purple-600 uppercase mb-2">Usar meu material como base? (Opcional)</label>
+                            <select id="questao-teoria-base" class="w-full p-2 border rounded-lg text-sm">
+                                ${opcoesTeoria}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-700">Disciplina:</label>
+                            <select id="questao-disciplina" class="w-full p-3 border rounded-xl">
+                                <option value="">Selecione uma disciplina</option>
+                                ${this.dados.disciplinas.map(d => `<option value="${d.nome}" ${questao && questao.disciplina === d.nome ? 'selected' : ''}>${d.nome}</option>`).join('')}
+                            </select>
                         </div>
                         
-                        <div class="flex gap-4 mt-6">
-                            <button onclick="AplicacaoPrincipal.fecharModal()" class="flex-1 btn-secondary">
-                                <i class="fas fa-times mr-1"></i>Cancelar
-                            </button>
-                            <button onclick="AplicacaoPrincipal.salvarQuestao('${questaoId}')" class="flex-1 btn-success">
-                                <i class="fas fa-save mr-1"></i>${questao ? 'Atualizar' : 'Salvar Questão'}
-                            </button>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-700">Enunciado:</label>
+                            <textarea id="questao-enunciado" class="w-full p-3 border rounded-xl" rows="4">${questao ? questao.enunciado : ''}</textarea>
                         </div>
+
+                        <div class="space-y-2" id="container-alternativas">
+                            <label class="block text-sm font-semibold mb-2 text-gray-700">Alternativas:</label>
+                            ${[0, 1, 2, 3, 4].map(i => `
+                                <div class="flex items-center gap-2">
+                                    <input type="radio" name="questao-resposta" value="${i}" ${questao && questao.resposta === i ? 'checked' : ''} class="w-5 h-5 text-green-600">
+                                    <span class="font-bold w-6 text-gray-500">${String.fromCharCode(65 + i)})</span>
+                                    <input type="text" id="alternativa-${i}" class="flex-1 p-2 border rounded-lg" value="${questao ? questao.alternativas[i] : ''}" required>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-700">Comentário Técnico:</label>
+                            <textarea id="questao-comentario" class="w-full p-3 border rounded-xl" rows="2">${questao ? questao.comentario || '' : ''}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 mt-6">
+                        <button onclick="AplicacaoPrincipal.fecharModal()" class="flex-1 btn-secondary">Cancelar</button>
+                        <button onclick="AplicacaoPrincipal.salvarQuestao('${questaoId}')" class="flex-1 btn-success">Salvar</button>
                     </div>
                 `);
             },
@@ -1252,74 +1266,63 @@
             },
 	    async gerarQuestaoIA() {
                 const disciplina = document.getElementById('questao-disciplina').value;
-                const tema = prompt("Qual o tema específico para o Estudo Reverso?");
+                const teoriaId = document.getElementById('questao-teoria-base').value; // Pega o ID da teoria
+                
+                let tema = "";
+                let materialTexto = null;
+
+                // Se selecionou uma teoria, busca o conteúdo dela no Firestore
+                if (teoriaId) {
+                    const docTeoria = await db.collection('materiais_teoricos').doc(teoriaId).get();
+                    if (docTeoria.exists) {
+                        const data = docTeoria.data();
+                        tema = data.titulo;
+                        materialTexto = data.conteudo;
+                    }
+                } else {
+                    tema = prompt("Qual o tema específico para o Estudo Reverso?");
+                }
+                
                 if (!disciplina || !tema) {
-                    this.mostrarNotificacao('Selecione a disciplina e informe o tema.', 'error');
+                    this.mostrarNotificacao('Informe a disciplina e o tema.', 'error');
                     return;
                 }
 
-                let quantidade = prompt("Quantas questões deseja gerar? (Digite um número, ex: 3, 5, 10)", "3");
-                quantidade = parseInt(quantidade);
-                if (isNaN(quantidade) || quantidade < 1 || quantidade > 20) {
-                    quantidade = 3; 
-                }
+                let quantidade = prompt("Quantas questões deseja gerar?", "3");
+                quantidade = parseInt(quantidade) || 3;
 
                 const btn = document.getElementById('btn-ia-questao');
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Gerando...';
+                const htmlOriginal = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Analisando Material...';
                 btn.disabled = true;
+
                 try {
-                    const resultado = await AIAssistant.gerarEstudoReverso(disciplina, tema, quantidade);
+                    // Chama a IA passando o texto do seu material se ele existir
+                    const resultado = await AIAssistant.gerarEstudoReverso(disciplina, tema, quantidade, materialTexto);
+                    
                     resultado.questoes.forEach(q => {
-                        const novaQuestao = {
+                        this.dados.questoes.push({
                             id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                            cadernoId: this.cadernoAtivo || 'geral', // 👈 VINCULA AO CONCURSO ATUAL
+                            cadernoId: this.cadernoAtivo || 'geral',
                             disciplina: disciplina,
-                            assunto: tema, 
+                            assunto: tema,
                             enunciado: q.enunciado,
                             alternativas: q.alternativas,
                             resposta: q.resposta,
                             comentario: q.comentario,
                             status: 'pendente',
                             data: new Date().toISOString()
-                        };
-                        this.dados.questoes.push(novaQuestao);
+                        });
                     });
+
                     this.salvarDadosUsuario();
                     this.fecharModal();
                     this.carregarQuestoes(); 
-                    
-                    this.mostrarModal(`
-                        <div class="p-8 max-w-3xl">
-                            <div class="flex items-center mb-6">
-                                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                                    <i class="fas fa-brain text-2xl text-purple-600"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-2xl font-bold gradient-text">Estudo Reverso Concluído</h3>
-                                    <p class="text-sm text-gray-500">Resumo + ${quantidade} Exercícios</p>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl mb-6 shadow-sm">
-                                <h4 class="font-bold text-blue-800 mb-2 uppercase text-sm tracking-wider">Resumo Focado em Provas: ${tema}</h4>
-                                <p class="text-gray-800 leading-relaxed font-serif">${resultado.resumo.replace(/\n/g, '<br>')}</p>
-                            </div>
-                            
-                            <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
-                                <i class="fas fa-tasks text-3xl text-green-500 mb-3"></i>
-                                <h4 class="font-semibold text-gray-800">Seu simulador foi atualizado!</h4>
-                                <p class="text-gray-600 mb-4 text-sm">Foram geradas <strong>${resultado.questoes.length} questões inéditas</strong> no seu banco.</p>
-                                <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-success px-8 py-3 w-full sm:w-auto shadow-md">
-                                    <i class="fas fa-check-circle mr-2"></i>Ir para as questões!
-                                </button>
-                            </div>
-                        </div>
-                    `);
-                    this.mostrarNotificacao('Pacote gerado com sucesso!', 'success');
+                    this.mostrarNotificacao('Questões baseadas no seu material geradas!', 'success');
                 } catch (error) {
-                    this.mostrarNotificacao(error.message || 'Erro ao gerar o estudo reverso.', 'error');
+                    this.mostrarNotificacao('Erro na IA: ' + error.message, 'error');
                 } finally {
-                    btn.innerHTML = '✨ Gerar Estudo Reverso';
+                    btn.innerHTML = htmlOriginal;
                     btn.disabled = false;
                 }
             },
