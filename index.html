@@ -988,7 +988,10 @@
 	// =========================
         // SERVIÇO DE IA (GEMINI API)
         // =========================
-        async callGemini(prompt, systemInstruction = "", tentativasMaximas = 3) {
+        
+	const AIAssistant = {
+
+	async callGemini(prompt, systemInstruction = "", tentativasMaximas = 3) {
                 const apiKey = localStorage.getItem('gfconcursos_gemini_key');
                 if (!apiKey) {
                     throw new Error("API Key não configurada. Vá a Configurações para adicionar a sua chave.");
