@@ -988,44 +988,58 @@
 	// =========================
         // SERVIÇO DE IA (GEMINI API)
         // =========================
-        const AIAssistant = {
-            async callGemini(prompt, systemInstruction = "") {
+        async callGemini(prompt, systemInstruction = "", tentativasMaximas = 3) {
                 const apiKey = localStorage.getItem('gfconcursos_gemini_key');
-                
                 if (!apiKey) {
                     throw new Error("API Key não configurada. Vá a Configurações para adicionar a sua chave.");
                 }
 
+                // Mantemos o modelo que estava a funcionar perfeitamente para si
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 
                 const body = {
                     contents: [{ parts: [{ text: prompt }] }],
                     systemInstruction: { parts: [{ text: systemInstruction }] },
                     generationConfig: {
-                        temperature: 0.2, // Baixa temperatura para respostas mais exatas e técnicas
-                        responseMimeType: "application/json" // Força retorno em JSON estruturado
+                        temperature: 0.2,
+                        responseMimeType: "application/json"
                     }
                 };
 
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
-                    });
+                // 👇 Loop de repetição automática
+                for (let tentativa = 1; tentativa <= tentativasMaximas; tentativa++) {
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
 
-                    // 👇 NOVA LÓGICA: Lê o motivo exato da recusa do Google
-                    if (!response.ok) {
-                        const erroGoogle = await response.json();
-                        console.error("Detalhes exatos do Google:", erroGoogle);
-                        throw new Error(`Recusado pelo Google: ${erroGoogle.error?.message || response.status}`);
+                        if (!response.ok) {
+                            const erroGoogle = await response.json();
+                            const status = response.status;
+                            
+                            // Se for erro 503 (Servidor lotado) ou 429 (Muitos pedidos), e não for a última tentativa...
+                            if ((status === 503 || status === 429) && tentativa < tentativasMaximas) {
+                                console.warn(`Google ocupado (Erro ${status}). Tentativa ${tentativa} falhou. Tentando de novo em 3 segundos...`);
+                                // Espera 3 segundos em silêncio antes de tentar de novo
+                                await new Promise(resolve => setTimeout(resolve, 3000));
+                                continue; // Volta ao início do loop e tenta outra vez!
+                            }
+                            
+                            throw new Error(`Recusado pelo Google: ${erroGoogle.error?.message || status}`);
+                        }
+                        
+                        const data = await response.json();
+                        return JSON.parse(data.candidates[0].content.parts[0].text);
+                        
+                    } catch (error) {
+                        // Se falhou e já era a última tentativa, aí sim mostramos o erro para você
+                        if (tentativa === tentativasMaximas) {
+                            console.error(`Erro no AIAssistant após ${tentativasMaximas} tentativas:`, error);
+                            throw error;
+                        }
                     }
-                    
-                    const data = await response.json();
-                    return JSON.parse(data.candidates[0].content.parts[0].text);
-                } catch (error) {
-                    console.error("Erro no AIAssistant:", error);
-                    throw error;
                 }
             },
 
