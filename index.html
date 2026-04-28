@@ -3268,72 +3268,172 @@ salvarTarefaRapida(dataString) {
                 const conteudo = document.getElementById('conteudo-principal');
                 const ehEditor = ['admin', 'monitor'].includes(this.usuario.cargo);
 
+                // Memoriza as sanfonas abertas antes de carregar
+                const paineisAbertos = [];
+                if (conteudo) {
+                    conteudo.querySelectorAll('div[id^="teo-disc-"], div[id^="teo-top-"]').forEach(el => {
+                        if (!el.classList.contains('hidden')) paineisAbertos.push(el.id);
+                    });
+                }
+
                 conteudo.innerHTML = `
                     <div class="fade-in">
                         <div class="flex justify-between items-center mb-8">
                             <h2 class="text-3xl font-bold gradient-text">Material Teórico</h2>
                             ${ehEditor ? `
-                                <button onclick="AplicacaoPrincipal.mostrarModalNovaTeoria()" class="btn-success">
+                                <button onclick="AplicacaoPrincipal.mostrarModalNovaTeoria()" class="btn-success shadow-md">
                                     <i class="fas fa-plus mr-2"></i>Novo Material
                                 </button>
                             ` : ''}
                         </div>
-                        
-                        <div id="lista-materiais" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div class="text-center py-12 col-span-full">
-                                <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
-                                <p class="text-gray-600">Sincronizando biblioteca com a nuvem...</p>
-                            </div>
+                        <div class="text-center py-12">
+                            <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+                            <p class="text-gray-600">Sincronizando biblioteca com a nuvem...</p>
                         </div>
                     </div>
                 `;
 
-                // Buscar materiais na coleção global
                 db.collection('materiais_teoricos').get().then((querySnapshot) => {
-                    const listaMateriais = document.getElementById('lista-materiais');
-                    
                     if (querySnapshot.empty) {
-                        listaMateriais.innerHTML = `
-                            <div class="text-center py-12 col-span-full glass-card rounded-xl">
-                                <i class="fas fa-books text-6xl text-gray-300 mb-4"></i>
-                                <h3 class="text-xl font-semibold text-gray-600 mb-2">Biblioteca Vazia</h3>
-                                <p class="text-gray-500">Nenhum conteúdo teórico foi publicado ainda.</p>
-                            </div>`;
-                        return;
-                    }
-
-                    let html = '';
-                    querySnapshot.forEach((doc) => {
-                        const material = doc.data();
-                        html += `
-                            <div class="glass-card rounded-xl p-6 border-t-4 border-blue-500 hover:shadow-lg transition-all flex flex-col">
-                                <div class="flex-1">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <span class="badge badge-primary text-xs">${material.disciplina}</span>
-                                        ${ehEditor ? `
-                                            <div class="flex gap-2">
-                                                <button onclick="AplicacaoPrincipal.mostrarModalNovaTeoria('${doc.id}')" class="text-blue-500 hover:text-blue-700" title="Editar"><i class="fas fa-edit"></i></button>
-                                                <button onclick="AplicacaoPrincipal.excluirTeoria('${doc.id}')" class="text-red-500 hover:text-red-700" title="Excluir"><i class="fas fa-trash"></i></button>
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                    <h3 class="text-xl font-bold text-gray-800 mb-3">${material.titulo}</h3>
-                                    <div class="resumo-preview mb-4 text-gray-600 text-sm">
-                                        ${material.conteudo.substring(0, 150)}...
-                                    </div>
+                        conteudo.innerHTML = `
+                            <div class="fade-in">
+                                <div class="flex justify-between items-center mb-8">
+                                    <h2 class="text-3xl font-bold gradient-text">Material Teórico</h2>
+                                    ${ehEditor ? `
+                                        <button onclick="AplicacaoPrincipal.mostrarModalNovaTeoria()" class="btn-success shadow-md">
+                                            <i class="fas fa-plus mr-2"></i>Novo Material
+                                        </button>
+                                    ` : ''}
                                 </div>
-                                <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                                    <div class="text-xs text-gray-500">
-                                        <p><i class="fas fa-pen-nib mr-1"></i>${material.autor}</p>
-                                    </div>
-                                    <button onclick="AplicacaoPrincipal.lerTeoria('${doc.id}')" class="btn-primary py-2 px-4 text-sm">
-                                        <i class="fas fa-book-reader mr-1"></i>Ler
-                                    </button>
+                                <div class="text-center py-12 glass-card rounded-xl">
+                                    <i class="fas fa-books text-6xl text-gray-300 mb-4"></i>
+                                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Biblioteca Vazia</h3>
+                                    <p class="text-gray-500">Nenhum conteúdo teórico foi publicado ainda.</p>
                                 </div>
                             </div>
                         `;
+                        return;
+                    }
+
+                    // 1. O "Cérebro" do Agrupamento: Disciplina -> Tópico -> Subtópicos(Aulas)
+                    const biblioteca = {};
+                    querySnapshot.forEach((doc) => {
+                        const m = doc.data();
+                        m.id = doc.id;
+                        const disc = m.disciplina || 'Sem Disciplina';
+                        const top = m.topico || 'Geral / Outros';
+                        
+                        if (!biblioteca[disc]) biblioteca[disc] = {};
+                        if (!biblioteca[disc][top]) biblioteca[disc][top] = [];
+                        biblioteca[disc][top].push(m);
                     });
-                    listaMateriais.innerHTML = html;
+
+                    const disciplinasOrdenadas = Object.keys(biblioteca).sort();
+                    let htmlFinal = '';
+
+                    // 2. Loop das Disciplinas (Nível 1)
+                    disciplinasOrdenadas.forEach((disc, discIndex) => {
+                        const corDisc = this.obterCorDisciplina(disc);
+                        const topicosDaDisciplina = biblioteca[disc];
+                        const totalMateriaisDisc = Object.values(topicosDaDisciplina).flat().length;
+
+                        htmlFinal += `
+                            <div class="mt-6 mb-2">
+                                <div class="cursor-pointer select-none bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex items-center" 
+                                     onclick="AplicacaoPrincipal.toggleBloco('teo-disc-${discIndex}', 'icon-teo-disc-${discIndex}')">
+                                    <i id="icon-teo-disc-${discIndex}" class="fas fa-chevron-right text-gray-400 mr-4 text-xl w-5 text-center transition-transform"></i>
+                                    <span class="w-3 h-8 rounded-full mr-4 shadow-sm" style="background-color: ${corDisc};"></span>
+                                    <h3 class="text-2xl font-extrabold text-gray-800 flex-1">${disc}</h3>
+                                    <span class="ml-3 text-[10px] bg-gray-100 text-gray-600 font-bold px-3 py-1.5 rounded-full border border-gray-200 uppercase tracking-tighter">
+                                        ${totalMateriaisDisc} aulas
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div id="teo-disc-${discIndex}" class="hidden pl-2 sm:pl-8 pt-4 pb-6 border-l-2 ml-6 sm:ml-10 mb-4" style="border-color: ${corDisc}40;">
+                        `;
+
+                        // 3. Loop dos Tópicos (Nível 2)
+                        const nomesTopicos = Object.keys(topicosDaDisciplina).sort();
+                        nomesTopicos.forEach((top, topIndex) => {
+                            const materiais = topicosDaDisciplina[top];
+                            
+                            htmlFinal += `
+                                <div class="mb-4">
+                                    <div class="flex items-center bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer select-none hover:bg-gray-100 transition-colors" 
+                                         onclick="AplicacaoPrincipal.toggleBloco('teo-top-${discIndex}-${topIndex}', 'icon-teo-top-${discIndex}-${topIndex}')">
+                                        <i id="icon-teo-top-${discIndex}-${topIndex}" class="fas fa-chevron-right text-gray-400 mr-3 text-sm w-4 text-center transition-transform"></i>
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-white border border-gray-100 shadow-sm">
+                                            <i class="fas fa-layer-group text-sm" style="color: ${corDisc};"></i>
+                                        </div>
+                                        <h4 class="font-bold text-gray-700 uppercase text-xs tracking-widest flex-1">${top}</h4>
+                                        <span class="text-[10px] font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">
+                                            ${materiais.length} SUBTÓPICOS
+                                        </span>
+                                    </div>
+
+                                    <div id="teo-top-${discIndex}-${topIndex}" class="hidden mt-4 ml-4 sm:ml-8 mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        ${materiais.map(m => `
+                                            <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden" style="border-left: 4px solid ${corDisc};">
+                                                <div class="flex justify-between items-start mb-2">
+                                                    <h5 class="text-lg font-bold text-gray-800 pr-8">${m.titulo}</h5>
+                                                    ${ehEditor ? `
+                                                        <div class="flex gap-2 absolute top-4 right-4 bg-white pl-2">
+                                                            <button onclick="AplicacaoPrincipal.mostrarModalNovaTeoria('${m.id}')" class="w-8 h-8 rounded bg-gray-50 hover:bg-gray-200 text-gray-600 flex justify-center items-center"><i class="fas fa-edit"></i></button>
+                                                            <button onclick="AplicacaoPrincipal.excluirTeoria('${m.id}')" class="w-8 h-8 rounded bg-red-50 hover:bg-red-100 text-red-500 flex justify-center items-center"><i class="fas fa-trash"></i></button>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                
+                                                <p class="text-sm text-gray-500 mb-4 h-10 overflow-hidden line-clamp-2">
+                                                    ${m.conteudo.replace(/<[^>]*>?/gm, '').substring(0, 100)}...
+                                                </p>
+                                                
+                                                <div class="flex justify-between items-center border-t border-gray-50 pt-3">
+                                                    <div class="text-[10px] font-bold uppercase text-gray-400">
+                                                        <i class="fas fa-pen-nib mr-1"></i>${m.autor}
+                                                    </div>
+                                                    <button onclick="AplicacaoPrincipal.lerTeoria('${m.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors px-4 py-1.5 rounded-lg text-sm font-semibold shadow-sm">
+                                                        <i class="fas fa-book-reader mr-1"></i>Ler Aula
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        htmlFinal += `</div>`;
+                    });
+
+                    conteudo.innerHTML = `
+                        <div class="fade-in pb-20">
+                            <div class="flex justify-between items-center mb-8">
+                                <h2 class="text-3xl font-bold gradient-text">Material Teórico</h2>
+                                ${ehEditor ? `
+                                    <button onclick="AplicacaoPrincipal.mostrarModalNovaTeoria()" class="btn-success shadow-md">
+                                        <i class="fas fa-plus mr-2"></i>Novo Material
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div class="max-w-5xl">
+                                ${htmlFinal}
+                            </div>
+                        </div>
+                    `;
+
+                    // Restaura estado das sanfonas
+                    paineisAbertos.forEach(id => {
+                        const el = document.getElementById(id);
+                        const icone = document.getElementById('icon-' + id);
+                        if (el && icone) {
+                            el.classList.remove('hidden');
+                            icone.classList.remove('fa-chevron-right');
+                            icone.classList.add('fa-chevron-down');
+                        }
+                    });
+
                 }).catch((error) => {
                     console.error("Erro ao buscar teoria:", error);
                     this.mostrarNotificacao('Erro ao carregar a biblioteca.', 'error');
@@ -3358,22 +3458,20 @@ salvarTarefaRapida(dataString) {
                             ${material ? 'Editar Material' : 'Publicar Novo Material Teórico'}
                         </h3>
                         <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-sm font-semibold mb-2">Disciplina:</label>
                                     <select id="teoria-disciplina" class="w-full p-3 border rounded-xl">
-                                        <option value="Português">Português</option>
-                                        <option value="RLM">RLM</option>
-                                        <option value="História e Geografia de RO">História e Geografia de RO</option>
-                                        <option value="Direito Constitucional">Direito Constitucional</option>
-                                        <option value="Direito Administrativo">Direito Administrativo</option>
-                                        <option value="Noções de Informática">Noções de Informática</option>
-                                        <option value="Administração Geral">Administração Geral</option>
+                                        ${this.dados.disciplinas.map(d => `<option value="${d.nome}">${d.nome}</option>`).join('')}
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-semibold mb-2">Título do Tópico:</label>
-                                    <input type="text" id="teoria-titulo" class="w-full p-3 border rounded-xl" value="${material ? material.titulo : ''}" placeholder="Ex: Princípios Fundamentais">
+                                    <label class="block text-sm font-semibold mb-2">Tópico Maior:</label>
+                                    <input type="text" id="teoria-topico" class="w-full p-3 border rounded-xl" value="${material ? (material.topico || '') : ''}" placeholder="Ex: Direitos Sociais" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold mb-2">Subtópico (Aula):</label>
+                                    <input type="text" id="teoria-titulo" class="w-full p-3 border rounded-xl" value="${material ? material.titulo : ''}" placeholder="Ex: O Artigo 5º" required>
                                 </div>
                             </div>
                             <div>
@@ -3383,11 +3481,10 @@ salvarTarefaRapida(dataString) {
                         </div>
                         <div class="flex gap-4 mt-6">
                             <button onclick="AplicacaoPrincipal.fecharModal()" class="flex-1 btn-secondary"><i class="fas fa-times mr-1"></i>Cancelar</button>
-                            <button onclick="AplicacaoPrincipal.salvarTeoria('${id}')" class="flex-1 btn-success"><i class="fas fa-cloud-upload-alt mr-1"></i>${material ? 'Atualizar Nuvem' : 'Publicar'}</button>
+                            <button onclick="AplicacaoPrincipal.salvarTeoria('${id || 'null'}')" class="flex-1 btn-success"><i class="fas fa-cloud-upload-alt mr-1"></i>${material ? 'Atualizar Nuvem' : 'Publicar'}</button>
                         </div>
                     </div>
                 `);
-
                 if (material) {
                     document.getElementById('teoria-disciplina').value = material.disciplina;
                 }
@@ -3395,16 +3492,18 @@ salvarTarefaRapida(dataString) {
 
             salvarTeoria(materialId) {
                 const disciplina = document.getElementById('teoria-disciplina').value;
-                const titulo = document.getElementById('teoria-titulo').value.trim();
+                const topico = document.getElementById('teoria-topico').value.trim() || 'Geral'; // NOVO
+                const titulo = document.getElementById('teoria-titulo').value.trim(); // Subtópico
                 const conteudo = document.getElementById('teoria-conteudo').value.trim();
 
-                if (!titulo || !conteudo) {
-                    this.mostrarNotificacao('Preencha título e conteúdo.', 'error');
+                if (!titulo || !conteudo || !topico) {
+                    this.mostrarNotificacao('Preencha tópico, subtópico e conteúdo.', 'error');
                     return;
                 }
 
                 const materialData = {
                     disciplina,
+                    topico,
                     titulo,
                     conteudo,
                     autor: this.usuario.nome,
@@ -3430,21 +3529,23 @@ salvarTarefaRapida(dataString) {
                 db.collection('materiais_teoricos').doc(materialId).get().then(doc => {
                     if (doc.exists) {
                         const m = doc.data();
-                        // Formatar quebras de linha para HTML
-                        const conteudoFormatado = m.conteudo.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+                        const conteudoFormatado = m.conteudo.replace(/\n/g, '<br>');
                         
                         this.mostrarModal(`
                             <div class="p-8 max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
                                 <div class="mb-6 border-b pb-4">
-                                    <span class="badge badge-primary mb-2">${m.disciplina}</span>
+                                    <div class="flex gap-2 mb-3">
+                                        <span class="badge badge-primary">${m.disciplina}</span>
+                                        <span class="badge bg-gray-100 text-gray-600 border border-gray-200">${m.topico || 'Geral'}</span>
+                                    </div>
                                     <h2 class="text-3xl font-bold text-gray-800">${m.titulo}</h2>
-                                    <p class="text-sm text-gray-500 mt-2">Atualizado por ${m.autor} em ${new Date(m.dataAtualizacao).toLocaleDateString('pt-BR')}</p>
+                                    <p class="text-sm text-gray-500 mt-2">Publicado por ${m.autor} em ${new Date(m.dataAtualizacao).toLocaleDateString('pt-BR')}</p>
                                 </div>
                                 <div class="font-serif text-lg text-gray-800 leading-loose">
                                     ${conteudoFormatado}
                                 </div>
                                 <div class="mt-8 flex justify-end pt-4 border-t">
-                                    <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-primary px-8">
+                                    <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-primary px-8 shadow-md">
                                         <i class="fas fa-check mr-2"></i>Concluir Leitura
                                     </button>
                                 </div>
@@ -3453,7 +3554,6 @@ salvarTarefaRapida(dataString) {
                     }
                 });
             },
-
             excluirTeoria(materialId) {
                 if (confirm('Tem certeza que deseja apagar este material de todos os usuários?')) {
                     db.collection('materiais_teoricos').doc(materialId).delete().then(() => {
