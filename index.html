@@ -4675,11 +4675,17 @@ salvarTarefaRapida(dataString) {
                 const classesOriginais = elemento.className;
                 const estiloOriginal = elemento.style.cssText;
                 
-                // 2. O TRUQUE: Forçamos temporariamente a largura perfeita de uma folha A4 (800px)
-                // Isto impede que o texto "ziguezagueie" ao tentar alinhar-se com a barra de rolagem!
-                elemento.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'max-w-3xl');
-                elemento.style.width = '800px'; 
+                // 2. O TRUQUE DEFINITIVO: Trava o elemento no canto superior esquerdo!
+                // Isto impede que o sistema de centralização empurre o lado esquerdo para fora do ecrã
+                elemento.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'max-w-3xl', 'max-w-2xl', 'max-w-md', 'max-w-sm', 'max-w-lg');
+                elemento.style.position = 'fixed';
+                elemento.style.top = '0';
+                elemento.style.left = '0';
+                elemento.style.width = '800px'; // Força a largura perfeita do papel A4
                 elemento.style.maxWidth = '800px';
+                elemento.style.zIndex = '99999';
+                elemento.style.margin = '0';
+                elemento.style.transform = 'none';
                 
                 // 3. Escondemos os botões da vista
                 const botoes = elemento.querySelectorAll('button');
@@ -4689,11 +4695,12 @@ salvarTarefaRapida(dataString) {
                     margin:       [15, 15, 15, 15],
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
+                    // Adicionamos o windowWidth para forçar o canvas a ler os 800px inteiros
+                    html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800, letterRendering: true },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Gerando PDF justificado e alinhado...', 'info');
+                this.mostrarNotificacao('Alinhando texto e gerando PDF...', 'info');
 
                 // 4. Gera o PDF e volta a colocar a janela ao normal de imediato
                 html2pdf().set(opt).from(elemento).save().then(() => {
