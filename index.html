@@ -4669,30 +4669,43 @@ salvarTarefaRapida(dataString) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (!resumo) return;
 
-                // Limpa e formata as quebras de linha
-                let conteudoFormatado = resumo.conteudo;
-                if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
-                    conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br>');
-                }
+                // 1. FILTRO DE LIMPEZA PROFUNDA (Corrige o bug do alinhamento do editor)
+                let conteudoFormatado = resumo.conteudo
+                    .replace(/<div[^>]*>/gi, '<p>')       // Transforma os blocos do editor em Parágrafos
+                    .replace(/<\/div>/gi, '</p>')
+                    .replace(/<br\s*\/?>/gi, '</p><p>')   // Transforma quebras manuais em Parágrafos
+                    .replace(/\n/g, '</p><p>')
+                    .replace(/&nbsp;/g, ' ');             // Remove os espaços "fantasmas" que empurram o texto
 
-                // O Documento Virtual com a correção CSS (Style)
+                // Envolve tudo no primeiro parágrafo
+                conteudoFormatado = `<p>${conteudoFormatado}</p>`;
+                // Remove qualquer parágrafo vazio que tenha sobrado
+                conteudoFormatado = conteudoFormatado.replace(/<p>\s*<\/p>/g, '');
+
+                // 2. O Documento Virtual Blindado
                 const htmlParaPDF = `
                     <div style="font-family: Arial, sans-serif; color: #333; padding: 10px;">
                         
                         <style>
-                            .texto-pdf {
+                            /* Estilos rigorosos para os parágrafos não se moverem */
+                            .texto-pdf p {
                                 font-family: Georgia, serif; 
                                 font-size: 16px; 
                                 line-height: 1.8; 
-                                text-align: justify; /* Mantém o texto reto nas bordas */
+                                text-align: justify !important;
+                                text-align-last: left !important; /* 👈 GARANTE a última linha à esquerda */
+                                margin-top: 0;
+                                margin-bottom: 12px;
                             }
-                            /* Força os textos coloridos a não quebrarem a matemática do alinhamento */
+                            
+                            /* Protege o marca-texto para não quebrar a matemática da linha */
                             .texto-pdf span, .texto-pdf font, .texto-pdf b, .texto-pdf u, .texto-pdf i, .texto-pdf mark {
                                 font-family: inherit !important;
                                 font-size: inherit !important;
                                 line-height: inherit !important;
                                 letter-spacing: normal !important;
                                 word-spacing: normal !important;
+                                display: inline !important;
                             }
                         </style>
                         
@@ -4722,9 +4735,9 @@ salvarTarefaRapida(dataString) {
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Formatando o texto e a cor. Gerando PDF...', 'info');
+                this.mostrarNotificacao('Ajustando parágrafos e gerando PDF...', 'info');
 
-                // Gera o PDF a partir do Documento Virtual
+                // 3. Gera o PDF perfeitamente estruturado
                 html2pdf().set(opt).from(htmlParaPDF).save().then(() => {
                     this.mostrarNotificacao('PDF baixado com sucesso!', 'success');
                 });
