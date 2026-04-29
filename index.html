@@ -4674,11 +4674,12 @@ salvarTarefaRapida(dataString) {
                     conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br><br>');
                 }
 
-                const containerPDF = document.createElement('div');
-                // 👇 O SEGREDO: z-index gigante para a folha ficar à frente de tudo e ser fotografada com sucesso!
-                containerPDF.style.cssText = 'position: fixed; top: 0; left: 0; width: 794px; background-color: #ffffff; padding: 40px 50px; box-sizing: border-box; z-index: 9999999; margin: 0; text-align: left;';
+                // 1. Cria a folha física
+                const folha = document.createElement('div');
+                // Alterado para absolute para não bugar o motor, e com z-index gigante
+                folha.style.cssText = 'position: absolute; top: 0; left: 0; width: 794px; background-color: #ffffff; padding: 40px 50px; z-index: 9999999; text-align: left; box-sizing: border-box; margin: 0;';
 
-                containerPDF.innerHTML = `
+                folha.innerHTML = `
                     <style>
                         .pdf-justificado { font-family: Georgia, serif; font-size: 16px; line-height: 1.8; text-align: justify !important; color: #333; }
                         .pdf-justificado p, .pdf-justificado div { margin-bottom: 12px; text-align: justify !important; }
@@ -4692,24 +4693,31 @@ salvarTarefaRapida(dataString) {
                     <div class="pdf-justificado">${conteudoFormatado}</div>
                 `;
 
-                // Coloca a folha na tela
-                document.body.appendChild(containerPDF);
+                document.body.appendChild(folha);
+
+                // 👇 SEGREDO 1: Rolar o ecrã para o topo absoluto para a câmara do PDF alinhar perfeito
+                window.scrollTo(0, 0);
 
                 const opt = {
-                    margin:       [10, 0, 10, 0], // As margens laterais já são feitas pelo 'padding'
+                    margin:       [10, 0, 10, 0], 
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
+                    html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('A fazer o scan ao documento...', 'info');
+                this.mostrarNotificacao('A desenhar o documento, por favor aguarde...', 'info');
 
-                // Tira a fotografia perfeita e depois destrói o elemento
-                html2pdf().set(opt).from(containerPDF).save().then(() => {
-                    document.body.removeChild(containerPDF);
-                    this.mostrarNotificacao('PDF descarregado com sucesso!', 'success');
-                });
+                // 👇 SEGREDO 2: O atraso mágico de 500ms para o navegador "pintar" o texto antes da foto!
+                setTimeout(() => {
+                    html2pdf().set(opt).from(folha).save().then(() => {
+                        document.body.removeChild(folha);
+                        this.mostrarNotificacao('PDF descarregado com sucesso!', 'success');
+                    }).catch(err => {
+                        console.error(err);
+                        document.body.removeChild(folha);
+                    });
+                }, 500);
             },
             responderQuestao(id) {
                 const selecionado = document.querySelector(`input[name="resp-${id}"]:checked`);
