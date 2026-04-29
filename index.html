@@ -4669,55 +4669,67 @@ salvarTarefaRapida(dataString) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (!resumo) return;
 
-                let conteudoFormatado = resumo.conteudo.replace(/&nbsp;/g, ' ');
+                // 1. A VACINA DO ZIGUEZAGUE: Limpeza extrema do código HTML
+                let conteudoFormatado = resumo.conteudo;
+                
+                // Transforma o texto normal em blocos perfeitos se não for HTML
                 if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
-                    conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br><br>');
+                    conteudoFormatado = conteudoFormatado.split('\n').map(linha => `<p>${linha}</p>`).join('');
                 }
 
-                // 1. Cria a folha física
-                const folha = document.createElement('div');
-                // Alterado para absolute para não bugar o motor, e com z-index gigante
-                folha.style.cssText = 'position: absolute; top: 0; left: 0; width: 794px; background-color: #ffffff; padding: 40px 50px; z-index: 9999999; text-align: left; box-sizing: border-box; margin: 0;';
+                // Remove os espaços fantasmas e quebras de linha que enlouquecem o "Justificado" do PDF
+                conteudoFormatado = conteudoFormatado
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/\n/g, ' ') // 👈 Isso mata o bug do desalinhamento!
+                    .replace(/\r/g, ' ')
+                    .replace(/\t/g, ' ')
+                    .replace(/\s{2,}/g, ' ');
 
-                folha.innerHTML = `
-                    <style>
-                        .pdf-justificado { font-family: Georgia, serif; font-size: 16px; line-height: 1.8; text-align: justify !important; color: #333; }
-                        .pdf-justificado p, .pdf-justificado div { margin-bottom: 12px; text-align: justify !important; }
-                        .pdf-justificado span, .pdf-justificado mark, .pdf-justificado font { display: inline !important; line-height: 1.8; }
-                    </style>
-                    <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 25px; font-family: Arial, sans-serif;">
-                        <span style="background-color: #f3e8ff; color: #6b21a8; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">${resumo.disciplina}</span>
-                        <h1 style="font-size: 26px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0;">${resumo.titulo}</h1>
-                        <span style="color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase;">${resumo.topico || 'Geral'}</span>
+                // 2. DOCUMENTO VIRTUAL SEGURO: Sem "width" fixo, para não cortar o lado esquerdo
+                const htmlString = `
+                    <div style="width: 100%; box-sizing: border-box; padding: 10px; background-color: #fff;">
+                        <style>
+                            .pdf-gerado { font-family: Arial, sans-serif; color: #333; }
+                            .pdf-header { border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 25px; }
+                            .pdf-disciplina { background-color: #f3e8ff; color: #6b21a8; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold; }
+                            .pdf-titulo { font-size: 26px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0; }
+                            .pdf-topico { color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+                            
+                            /* Força o alinhamento impecável */
+                            .pdf-texto { font-family: Georgia, serif; font-size: 16px; line-height: 1.8; text-align: justify !important; }
+                            .pdf-texto p, .pdf-texto div { margin: 0 0 15px 0; text-align: justify !important; }
+                        </style>
+                        
+                        <div class="pdf-gerado">
+                            <div class="pdf-header">
+                                <span class="pdf-disciplina">${resumo.disciplina}</span>
+                                <h1 class="pdf-titulo">${resumo.titulo}</h1>
+                                <span class="pdf-topico">${resumo.topico || 'Geral'}</span>
+                            </div>
+                            <div class="pdf-texto">
+                                ${conteudoFormatado}
+                            </div>
+                        </div>
                     </div>
-                    <div class="pdf-justificado">${conteudoFormatado}</div>
                 `;
 
-                document.body.appendChild(folha);
-
-                // 👇 SEGREDO 1: Rolar o ecrã para o topo absoluto para a câmara do PDF alinhar perfeito
-                window.scrollTo(0, 0);
-
+                // 3. Configurações perfeitas para folha A4 (margin 15 cria a borda branca natural)
                 const opt = {
-                    margin:       [10, 0, 10, 0], 
+                    margin:       15,
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('A desenhar o documento, por favor aguarde...', 'info');
+                this.mostrarNotificacao('Preparando o PDF, aguarde...', 'info');
 
-                // 👇 SEGREDO 2: O atraso mágico de 500ms para o navegador "pintar" o texto antes da foto!
-                setTimeout(() => {
-                    html2pdf().set(opt).from(folha).save().then(() => {
-                        document.body.removeChild(folha);
-                        this.mostrarNotificacao('PDF descarregado com sucesso!', 'success');
-                    }).catch(err => {
-                        console.error(err);
-                        document.body.removeChild(folha);
-                    });
-                }, 500);
+                // 4. Gera direto da Memória. IMPOSSÍVEL dar tela branca porque não mexe com os Modais!
+                html2pdf().set(opt).from(htmlString).save().then(() => {
+                    this.mostrarNotificacao('PDF descarregado com sucesso!', 'success');
+                }).catch(err => {
+                    this.mostrarNotificacao('Erro ao gerar o PDF.', 'error');
+                });
             },
             responderQuestao(id) {
                 const selecionado = document.querySelector(`input[name="resp-${id}"]:checked`);
