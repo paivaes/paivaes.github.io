@@ -4669,44 +4669,46 @@ salvarTarefaRapida(dataString) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (!resumo) return;
 
-                const elemento = document.getElementById('area-impressao-pdf');
-                
-                // 1. Guardamos o estado original da janela
-                const classesOriginais = elemento.className;
-                const estiloOriginal = elemento.style.cssText;
-                
-                // 2. O TRUQUE DEFINITIVO: Trava o elemento no canto superior esquerdo!
-                // Isto impede que o sistema de centralização empurre o lado esquerdo para fora do ecrã
-                elemento.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'max-w-3xl', 'max-w-2xl', 'max-w-md', 'max-w-sm', 'max-w-lg');
-                elemento.style.position = 'fixed';
-                elemento.style.top = '0';
-                elemento.style.left = '0';
-                elemento.style.width = '800px'; // Força a largura perfeita do papel A4
-                elemento.style.maxWidth = '800px';
-                elemento.style.zIndex = '99999';
-                elemento.style.margin = '0';
-                elemento.style.transform = 'none';
-                
-                // 3. Escondemos os botões da vista
-                const botoes = elemento.querySelectorAll('button');
-                botoes.forEach(btn => btn.style.display = 'none');
+                // 1. Limpa e formata o texto
+                let conteudoFormatado = resumo.conteudo;
+                if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
+                    conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br>');
+                }
+
+                // 2. O TRUQUE MESTRE: Criamos um "Documento Virtual" apenas para o PDF!
+                // Assim não mexemos na tela e garantimos o alinhamento justificado perfeito nas laterais.
+                const htmlParaPDF = `
+                    <div style="font-family: Arial, sans-serif; color: #333; padding: 10px;">
+                        <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px;">
+                            <span style="background-color: #f3e8ff; color: #6b21a8; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">
+                                ${resumo.disciplina}
+                            </span>
+                            <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0;">
+                                ${resumo.titulo}
+                            </h1>
+                            <span style="color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase;">
+                                ${resumo.topico || 'Geral'}
+                            </span>
+                        </div>
+                        
+                        <div style="font-family: Georgia, serif; font-size: 16px; line-height: 1.8; text-align: justify;">
+                            ${conteudoFormatado}
+                        </div>
+                    </div>
+                `;
 
                 const opt = {
                     margin:       [15, 15, 15, 15],
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    // Adicionamos o windowWidth para forçar o canvas a ler os 800px inteiros
-                    html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800, letterRendering: true },
+                    html2canvas:  { scale: 2, useCORS: true },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Alinhando texto e gerando PDF...', 'info');
+                this.mostrarNotificacao('Formatando PDF perfeitamente alinhado...', 'info');
 
-                // 4. Gera o PDF e volta a colocar a janela ao normal de imediato
-                html2pdf().set(opt).from(elemento).save().then(() => {
-                    elemento.className = classesOriginais;
-                    elemento.style.cssText = estiloOriginal;
-                    botoes.forEach(btn => btn.style.display = '');
+                // 3. Gera o PDF diretamente do Documento Virtual nos bastidores
+                html2pdf().set(opt).from(htmlParaPDF).save().then(() => {
                     this.mostrarNotificacao('PDF baixado com sucesso!', 'success');
                 });
             },
