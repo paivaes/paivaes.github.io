@@ -4669,29 +4669,46 @@ salvarTarefaRapida(dataString) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (!resumo) return;
 
-                // 1. Limpa e formata o texto
+                // Limpa e formata as quebras de linha
                 let conteudoFormatado = resumo.conteudo;
                 if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
                     conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br>');
                 }
 
-                // 2. O TRUQUE MESTRE: Criamos um "Documento Virtual" apenas para o PDF!
-                // Assim não mexemos na tela e garantimos o alinhamento justificado perfeito nas laterais.
+                // O Documento Virtual com a correção CSS (Style)
                 const htmlParaPDF = `
                     <div style="font-family: Arial, sans-serif; color: #333; padding: 10px;">
+                        
+                        <style>
+                            .texto-pdf {
+                                font-family: Georgia, serif; 
+                                font-size: 16px; 
+                                line-height: 1.8; 
+                                text-align: justify; /* Mantém o texto reto nas bordas */
+                            }
+                            /* Força os textos coloridos a não quebrarem a matemática do alinhamento */
+                            .texto-pdf span, .texto-pdf font, .texto-pdf b, .texto-pdf u, .texto-pdf i, .texto-pdf mark {
+                                font-family: inherit !important;
+                                font-size: inherit !important;
+                                line-height: inherit !important;
+                                letter-spacing: normal !important;
+                                word-spacing: normal !important;
+                            }
+                        </style>
+                        
                         <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px;">
-                            <span style="background-color: #f3e8ff; color: #6b21a8; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">
+                            <span style="background-color: #f3e8ff; color: #6b21a8; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;">
                                 ${resumo.disciplina}
                             </span>
-                            <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0;">
+                            <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0; font-family: Arial, sans-serif;">
                                 ${resumo.titulo}
                             </h1>
-                            <span style="color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase;">
+                            <span style="color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase; font-family: Arial, sans-serif;">
                                 ${resumo.topico || 'Geral'}
                             </span>
                         </div>
                         
-                        <div style="font-family: Georgia, serif; font-size: 16px; line-height: 1.8; text-align: justify;">
+                        <div class="texto-pdf">
                             ${conteudoFormatado}
                         </div>
                     </div>
@@ -4705,9 +4722,9 @@ salvarTarefaRapida(dataString) {
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Formatando PDF perfeitamente alinhado...', 'info');
+                this.mostrarNotificacao('Formatando o texto e a cor. Gerando PDF...', 'info');
 
-                // 3. Gera o PDF diretamente do Documento Virtual nos bastidores
+                // Gera o PDF a partir do Documento Virtual
                 html2pdf().set(opt).from(htmlParaPDF).save().then(() => {
                     this.mostrarNotificacao('PDF baixado com sucesso!', 'success');
                 });
