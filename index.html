@@ -4671,13 +4671,17 @@ salvarTarefaRapida(dataString) {
 
                 const elemento = document.getElementById('area-impressao-pdf');
                 
-                // 1. Guardamos as classes originais para repor no fim
+                // 1. Guardamos o estado original da janela
                 const classesOriginais = elemento.className;
+                const estiloOriginal = elemento.style.cssText;
                 
-                // 2. Removemos os limites de altura temporariamente para o PDF capturar tudo
-                elemento.classList.remove('max-h-[90vh]', 'overflow-y-auto');
+                // 2. O TRUQUE: Forçamos temporariamente a largura perfeita de uma folha A4 (800px)
+                // Isto impede que o texto "ziguezagueie" ao tentar alinhar-se com a barra de rolagem!
+                elemento.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'max-w-3xl');
+                elemento.style.width = '800px'; 
+                elemento.style.maxWidth = '800px';
                 
-                // 3. Escondemos os botões para não saírem na impressão
+                // 3. Escondemos os botões da vista
                 const botoes = elemento.querySelectorAll('button');
                 botoes.forEach(btn => btn.style.display = 'none');
 
@@ -4685,16 +4689,17 @@ salvarTarefaRapida(dataString) {
                     margin:       [15, 15, 15, 15],
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+                    html2canvas:  { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Gerando PDF justificado, por favor aguarde...', 'info');
+                this.mostrarNotificacao('Gerando PDF justificado e alinhado...', 'info');
 
-                // 4. Gera o PDF e, quando terminar, restaura a janela ao normal imediatamente
+                // 4. Gera o PDF e volta a colocar a janela ao normal de imediato
                 html2pdf().set(opt).from(elemento).save().then(() => {
-                    elemento.className = classesOriginais; // Devolve a barra de rolagem
-                    botoes.forEach(btn => btn.style.display = ''); // Mostra os botões novamente
+                    elemento.className = classesOriginais;
+                    elemento.style.cssText = estiloOriginal;
+                    botoes.forEach(btn => btn.style.display = '');
                     this.mostrarNotificacao('PDF baixado com sucesso!', 'success');
                 });
             },
