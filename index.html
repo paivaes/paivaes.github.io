@@ -4665,20 +4665,15 @@ salvarTarefaRapida(dataString) {
 
                 const elemento = document.getElementById('area-impressao-pdf');
                 
-                // 👇 O TRUQUE: Cria um clone oculto para evitar o corte de margem/scroll 👇
-                const clone = elemento.cloneNode(true);
-                clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'max-w-3xl'); 
-                clone.style.position = 'absolute';
-                clone.style.top = '-9999px'; 
-                clone.style.left = '0';
-                clone.style.width = '800px'; // Força a largura perfeita para papel A4
-                clone.style.backgroundColor = 'white';
+                // 1. Guardamos as classes originais para repor no fim
+                const classesOriginais = elemento.className;
                 
-                // Remove os botões ("PDF" e "Fechar") para não saírem na impressão
-                clone.querySelectorAll('button').forEach(btn => btn.remove());
-
-                // Joga o clone invisível no ecrã
-                document.body.appendChild(clone);
+                // 2. Removemos os limites de altura temporariamente para o PDF capturar tudo
+                elemento.classList.remove('max-h-[90vh]', 'overflow-y-auto');
+                
+                // 3. Escondemos os botões para não saírem na impressão
+                const botoes = elemento.querySelectorAll('button');
+                botoes.forEach(btn => btn.style.display = 'none');
 
                 const opt = {
                     margin:       [15, 15, 15, 15],
@@ -4688,15 +4683,15 @@ salvarTarefaRapida(dataString) {
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Formatando e gerando PDF...', 'info');
+                this.mostrarNotificacao('Gerando PDF justificado, por favor aguarde...', 'info');
 
-                // Gera o PDF a partir do clone e destrói o clone logo de seguida
-                html2pdf().set(opt).from(clone).save().then(() => {
-                    document.body.removeChild(clone);
+                // 4. Gera o PDF e, quando terminar, restaura a janela ao normal imediatamente
+                html2pdf().set(opt).from(elemento).save().then(() => {
+                    elemento.className = classesOriginais; // Devolve a barra de rolagem
+                    botoes.forEach(btn => btn.style.display = ''); // Mostra os botões novamente
                     this.mostrarNotificacao('PDF baixado com sucesso!', 'success');
                 });
             },
-
             responderQuestao(id) {
                 const selecionado = document.querySelector(`input[name="resp-${id}"]:checked`);
                 if (!selecionado) {
