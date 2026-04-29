@@ -4517,10 +4517,7 @@ salvarTarefaRapida(dataString) {
 
                 // 👇 PREPARA A LISTA DE DISCIPLINAS QUE TÊM RESUMOS PARA O DROPDOWN
                 const disciplinasComResumo = Array.from(new Set((this.dados.resumos || []).map(r => r.disciplina))).sort();
-
-                // 👇 PREPARA A LISTA DE DISCIPLINAS PARA O DROPDOWN
-                const disciplinasComResumo = Array.from(new Set((this.dados.resumos || []).map(r => r.disciplina))).sort();
-
+                
                 conteudo.innerHTML = `
                     <div class="fade-in pb-20">
                         <div class="flex justify-between items-center mb-8">
