@@ -4669,65 +4669,79 @@ salvarTarefaRapida(dataString) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (!resumo) return;
 
-                // 1. Limpeza segura (apenas remove os espaços fantasmas que empurram o texto)
+                // 1. Limpeza segura
                 let conteudoFormatado = resumo.conteudo.replace(/&nbsp;/g, ' ');
-                
                 if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
                     conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br><br>');
                 }
 
-                // 2. Documento Virtual SEM largura fixa. 
-                // O motor do PDF vai adaptar 100% ao tamanho da folha A4.
-                const htmlParaPDF = `
-                    <div style="font-family: Arial, sans-serif; color: #333; padding: 5px;">
-                        <style>
-                            .pdf-conteudo {
-                                font-family: Georgia, serif; 
-                                font-size: 16px; 
-                                line-height: 1.8; 
-                                text-align: justify !important; /* Mantém o alinhamento reto */
-                            }
-                            .pdf-conteudo p, .pdf-conteudo div {
-                                margin-bottom: 12px;
-                            }
-                            /* Proteção para os marca-textos não quebrarem o layout */
-                            .pdf-conteudo span, .pdf-conteudo font, .pdf-conteudo mark {
-                                padding: 2px 0;
-                                line-height: 1.8;
-                            }
-                        </style>
-                        
-                        <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px;">
-                            <span style="background-color: #f3e8ff; color: #6b21a8; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">
-                                ${resumo.disciplina}
-                            </span>
-                            <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0;">
-                                ${resumo.titulo}
-                            </h1>
-                            <span style="color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase;">
-                                ${resumo.topico || 'Geral'}
-                            </span>
-                        </div>
-                        
-                        <div class="pdf-conteudo">
-                            ${conteudoFormatado}
-                        </div>
+                // 2. A SOLUÇÃO MÁXIMA: Criamos um elemento físico e pregamo-lo no Pixel Zero (top:0, left:0)
+                const containerPDF = document.createElement('div');
+                // 794px é a largura de um A4. O padding de 50px faz as vezes da margem do papel.
+                containerPDF.style.cssText = 'position: absolute; top: 0; left: 0; width: 794px; background-color: #ffffff; padding: 40px 50px; box-sizing: border-box; z-index: -9999; text-align: left; margin: 0;';
+
+                containerPDF.innerHTML = `
+                    <style>
+                        .pdf-justificado {
+                            font-family: Georgia, serif; 
+                            font-size: 16px; 
+                            line-height: 1.8; 
+                            text-align: justify !important; 
+                            color: #333;
+                        }
+                        .pdf-justificado p, .pdf-justificado div {
+                            margin-bottom: 12px;
+                            text-align: justify !important;
+                        }
+                        /* Protege as cores do marca-texto sem estragar o espaçamento */
+                        .pdf-justificado span, .pdf-justificado mark, .pdf-justificado font {
+                            display: inline !important;
+                            line-height: 1.8;
+                        }
+                    </style>
+                    
+                    <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 25px; font-family: Arial, sans-serif;">
+                        <span style="background-color: #f3e8ff; color: #6b21a8; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;">
+                            ${resumo.disciplina}
+                        </span>
+                        <h1 style="font-size: 26px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0;">
+                            ${resumo.titulo}
+                        </h1>
+                        <span style="color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase;">
+                            ${resumo.topico || 'Geral'}
+                        </span>
+                    </div>
+                    
+                    <div class="pdf-justificado">
+                        ${conteudoFormatado}
                     </div>
                 `;
 
-                // 3. Configurações com as margens clássicas de um documento Word
+                // Anexa o documento fisicamente ao ecrã (mas invisível aos seus olhos)
+                document.body.appendChild(containerPDF);
+
                 const opt = {
-                    margin:       [15, 15, 15, 15], 
+                    margin:       [10, 0, 10, 0], // Margem lateral a zero (o padding cuida disso)
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+                    html2canvas:  { 
+                        scale: 2, 
+                        useCORS: true, 
+                        letterRendering: true,
+                        x: 0,           // 👈 O SEGREDO: Obriga a câmara do PDF a começar a fotografia no pixel zero
+                        y: 0,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: 794
+                    },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Gerando PDF justificado e ajustado à folha...', 'info');
+                this.mostrarNotificacao('Ancorando coordenadas e gerando PDF...', 'info');
 
-                // 4. Criação do arquivo
-                html2pdf().set(opt).from(htmlParaPDF).save().then(() => {
+                // 3. Tira a fotografia perfeita e depois destrói o elemento
+                html2pdf().set(opt).from(containerPDF).save().then(() => {
+                    document.body.removeChild(containerPDF);
                     this.mostrarNotificacao('PDF baixado com sucesso!', 'success');
                 });
             },
