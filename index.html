@@ -4669,43 +4669,35 @@ salvarTarefaRapida(dataString) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (!resumo) return;
 
-                // 1. FILTRO DE LIMPEZA PROFUNDA (Corrige o bug do alinhamento do editor)
-                let conteudoFormatado = resumo.conteudo
-                    .replace(/<div[^>]*>/gi, '<p>')       // Transforma os blocos do editor em Parágrafos
-                    .replace(/<\/div>/gi, '</p>')
-                    .replace(/<br\s*\/?>/gi, '</p><p>')   // Transforma quebras manuais em Parágrafos
-                    .replace(/\n/g, '</p><p>')
-                    .replace(/&nbsp;/g, ' ');             // Remove os espaços "fantasmas" que empurram o texto
+                // 1. Limpeza segura (apenas retira espaços fantasmas, sem quebrar o seu editor)
+                let conteudoFormatado = resumo.conteudo.replace(/&nbsp;/g, ' ');
+                
+                if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
+                    conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br><br>');
+                }
 
-                // Envolve tudo no primeiro parágrafo
-                conteudoFormatado = `<p>${conteudoFormatado}</p>`;
-                // Remove qualquer parágrafo vazio que tenha sobrado
-                conteudoFormatado = conteudoFormatado.replace(/<p>\s*<\/p>/g, '');
-
-                // 2. O Documento Virtual Blindado
+                // 2. O Documento Virtual com LARGURA FIXA ESTRITA (O Segredo para o Justificado funcionar!)
                 const htmlParaPDF = `
-                    <div style="font-family: Arial, sans-serif; color: #333; padding: 10px;">
-                        
+                    <div style="width: 750px; max-width: 750px; font-family: Arial, sans-serif; color: #333; background-color: #ffffff; padding: 10px; box-sizing: border-box;">
                         <style>
-                            /* Estilos rigorosos para os parágrafos não se moverem */
-                            .texto-pdf p {
+                            .texto-pdf {
                                 font-family: Georgia, serif; 
                                 font-size: 16px; 
                                 line-height: 1.8; 
                                 text-align: justify !important;
-                                text-align-last: left !important; /* 👈 GARANTE a última linha à esquerda */
-                                margin-top: 0;
-                                margin-bottom: 12px;
+                                text-justify: inter-word !important; /* Obriga o espaço a ser distribuído uniformemente entre as palavras */
+                                word-wrap: break-word !important;
                             }
-                            
-                            /* Protege o marca-texto para não quebrar a matemática da linha */
-                            .texto-pdf span, .texto-pdf font, .texto-pdf b, .texto-pdf u, .texto-pdf i, .texto-pdf mark {
-                                font-family: inherit !important;
-                                font-size: inherit !important;
-                                line-height: inherit !important;
-                                letter-spacing: normal !important;
-                                word-spacing: normal !important;
+                            /* Evita que linhas soltas percam o alinhamento */
+                            .texto-pdf div, .texto-pdf p {
+                                margin-bottom: 12px;
+                                text-align: justify !important;
+                            }
+                            /* Protege os seus marca-textos e negritos para não entortarem a linha */
+                            .texto-pdf span, .texto-pdf mark, .texto-pdf font, .texto-pdf b, .texto-pdf u, .texto-pdf i {
                                 display: inline !important;
+                                line-height: normal !important;
+                                letter-spacing: normal !important;
                             }
                         </style>
                         
@@ -4727,17 +4719,19 @@ salvarTarefaRapida(dataString) {
                     </div>
                 `;
 
+                // 3. Configurações ajustadas para encaixar os 750px perfeitamente na folha A4
                 const opt = {
-                    margin:       [15, 15, 15, 15],
+                    margin:       [15, 10, 15, 10], // Margem lateral ligeiramente menor
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true },
+                    // O windowWidth força o motor a ler a nossa largura fixa sem pestanejar
+                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Ajustando parágrafos e gerando PDF...', 'info');
+                this.mostrarNotificacao('Calculando margens estritas e gerando PDF...', 'info');
 
-                // 3. Gera o PDF perfeitamente estruturado
+                // 4. Criação do arquivo
                 html2pdf().set(opt).from(htmlParaPDF).save().then(() => {
                     this.mostrarNotificacao('PDF baixado com sucesso!', 'success');
                 });
