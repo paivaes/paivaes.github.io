@@ -4669,23 +4669,66 @@ salvarTarefaRapida(dataString) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (!resumo) return;
 
-                // 1. A VACINA DO ZIGUEZAGUE: Limpeza extrema do código HTML
+                // 1. Limpeza inicial
                 let conteudoFormatado = resumo.conteudo;
-                
-                // Transforma o texto normal em blocos perfeitos se não for HTML
                 if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
                     conteudoFormatado = conteudoFormatado.split('\n').map(linha => `<p>${linha}</p>`).join('');
                 }
 
-                // Remove os espaços fantasmas e quebras de linha que enlouquecem o "Justificado" do PDF
                 conteudoFormatado = conteudoFormatado
                     .replace(/&nbsp;/g, ' ')
-                    .replace(/\n/g, ' ') // 👈 Isso mata o bug do desalinhamento!
+                    .replace(/\n/g, ' ')
                     .replace(/\r/g, ' ')
                     .replace(/\t/g, ' ')
                     .replace(/\s{2,}/g, ' ');
 
-                // 2. DOCUMENTO VIRTUAL SEGURO: Sem "width" fixo, para não cortar o lado esquerdo
+                // 👇 2. A CIRURGIA DO MARCA-TEXTO (Pinta palavra por palavra) 👇
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = conteudoFormatado;
+
+                function processarMarcadores(node, corAtiva) {
+                    if (node.nodeType === 3) { // Nó de texto
+                        if (corAtiva && node.nodeValue.trim() !== '') {
+                            // Divide o texto, mas guarda os espaços!
+                            const partes = node.nodeValue.split(/(\s+)/);
+                            const fragment = document.createDocumentFragment();
+                            
+                            partes.forEach(parte => {
+                                if (parte.trim() === '') {
+                                    // Se for espaço, deixa o espaço livre para o Justificado funcionar
+                                    fragment.appendChild(document.createTextNode(parte)); 
+                                } else {
+                                    // Se for palavra, pinta o fundo
+                                    const span = document.createElement('span');
+                                    span.style.backgroundColor = corAtiva;
+                                    span.textContent = parte;
+                                    fragment.appendChild(span);
+                                }
+                            });
+                            node.parentNode.replaceChild(fragment, node);
+                        }
+                    } else if (node.nodeType === 1) { // Elemento HTML (como o Span do seu editor)
+                        let novaCor = corAtiva;
+                        
+                        // Se apanhar uma cor de fundo, rouba a cor e limpa o elemento pai
+                        if (node.style && node.style.backgroundColor && node.style.backgroundColor !== 'transparent') {
+                            novaCor = node.style.backgroundColor;
+                            node.style.backgroundColor = 'transparent';
+                        } else if (node.tagName.toLowerCase() === 'mark') {
+                            novaCor = 'yellow';
+                            node.style.backgroundColor = 'transparent';
+                        }
+                        
+                        // Processa o que está lá dentro com a cor roubada
+                        Array.from(node.childNodes).forEach(filho => processarMarcadores(filho, novaCor));
+                    }
+                }
+
+                // Inicia a cirurgia em todo o texto
+                Array.from(tempDiv.childNodes).forEach(filho => processarMarcadores(filho, null));
+                conteudoFormatado = tempDiv.innerHTML;
+
+                // 3. Documento Virtual Impecável
                 const htmlString = `
                     <div style="width: 100%; box-sizing: border-box; padding: 10px; background-color: #fff;">
                         <style>
@@ -4695,9 +4738,12 @@ salvarTarefaRapida(dataString) {
                             .pdf-titulo { font-size: 26px; font-weight: bold; color: #1f2937; margin: 15px 0 5px 0; }
                             .pdf-topico { color: #9ca3af; font-size: 12px; font-weight: bold; text-transform: uppercase; }
                             
-                            /* Força o alinhamento impecável */
+                            /* Alinhamento reto para os textos */
                             .pdf-texto { font-family: Georgia, serif; font-size: 16px; line-height: 1.8; text-align: justify !important; }
                             .pdf-texto p, .pdf-texto div { margin: 0 0 15px 0; text-align: justify !important; }
+                            
+                            /* Um charme extra: arredonda as pontinhas da cor de cada palavra */
+                            .pdf-texto span { border-radius: 2px; padding: 1px 0; }
                         </style>
                         
                         <div class="pdf-gerado">
@@ -4713,7 +4759,6 @@ salvarTarefaRapida(dataString) {
                     </div>
                 `;
 
-                // 3. Configurações perfeitas para folha A4 (margin 15 cria a borda branca natural)
                 const opt = {
                     margin:       15,
                     filename:     `Resumo_${resumo.disciplina.replace(/\s+/g, '_')}_${resumo.titulo.replace(/\s+/g, '_')}.pdf`,
@@ -4722,15 +4767,15 @@ salvarTarefaRapida(dataString) {
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                this.mostrarNotificacao('Preparando o PDF, aguarde...', 'info');
+                this.mostrarNotificacao('Processando as marcações e gerando o PDF...', 'info');
 
-                // 4. Gera direto da Memória. IMPOSSÍVEL dar tela branca porque não mexe com os Modais!
                 html2pdf().set(opt).from(htmlString).save().then(() => {
                     this.mostrarNotificacao('PDF descarregado com sucesso!', 'success');
                 }).catch(err => {
                     this.mostrarNotificacao('Erro ao gerar o PDF.', 'error');
                 });
             },
+
             responderQuestao(id) {
                 const selecionado = document.querySelector(`input[name="resp-${id}"]:checked`);
                 if (!selecionado) {
