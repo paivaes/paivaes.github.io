@@ -4629,6 +4629,12 @@ salvarTarefaRapida(dataString) {
             visualizarResumo(id) {
                 const resumo = (this.dados.resumos || []).find(r => r.id === id);
                 if (resumo) {
+                    // 👇 CORREÇÃO: Evita linhas fantasmas em resumos que já vêm do editor formatado
+                    let conteudoFormatado = resumo.conteudo;
+                    if (!conteudoFormatado.includes('<div') && !conteudoFormatado.includes('<br') && !conteudoFormatado.includes('<p')) {
+                        conteudoFormatado = conteudoFormatado.replace(/\n/g, '<br>');
+                    }
+
                     this.mostrarModal(`
                         <div class="p-8 max-w-3xl max-h-[90vh] overflow-y-auto bg-white" id="area-impressao-pdf">
                             <div class="mb-6 border-b pb-4">
@@ -4645,11 +4651,11 @@ salvarTarefaRapida(dataString) {
                                 </div>
                             </div>
                             
-                            <div class="font-serif text-lg text-gray-800 leading-loose text-justify break-words">
-                                ${resumo.conteudo.replace(/\n/g, '<br>')}
+                            <div class="font-serif text-lg text-gray-800 leading-relaxed text-justify">
+                                ${conteudoFormatado}
                             </div>
                             
-                            <div class="mt-8 flex justify-end pt-4 border-t">
+                            <div class="mt-8 flex justify-end pt-4 border-t no-print">
                                 <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-primary px-8 shadow-md">
                                     <i class="fas fa-check mr-2"></i>Fechar
                                 </button>
