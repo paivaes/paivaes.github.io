@@ -4474,6 +4474,9 @@ salvarTarefaRapida(dataString) {
                     });
                 }
 
+                // 👇 PREPARA A LISTA DE DISCIPLINAS QUE TÊM RESUMOS PARA O DROPDOWN
+                const disciplinasComResumo = Array.from(new Set((this.dados.resumos || []).map(r => r.disciplina))).sort();
+
                 conteudo.innerHTML = `
                     <div class="fade-in pb-20">
                         <div class="flex justify-between items-center mb-8">
@@ -4530,8 +4533,35 @@ salvarTarefaRapida(dataString) {
                             </div>
                         </div>
 
-                        <div class="max-w-5xl">
-                            ${htmlFinal}
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            
+                            <div class="lg:col-span-2">
+                                ${htmlFinal}
+                            </div>
+                            
+                            <div class="lg:col-span-1">
+                                <div class="glass-card rounded-xl p-6 sticky top-6 border-t-4 border-purple-500 shadow-lg">
+                                    <h3 class="text-xl font-bold mb-2 flex items-center text-gray-800">
+                                        <i class="fas fa-sticky-note text-purple-500 mr-2"></i>Apoio Teórico
+                                    </h3>
+                                    <p class="text-xs text-gray-500 mb-4">Consulte seus resumos sem sair das questões.</p>
+                                    
+                                    <div class="bg-purple-50 p-1 rounded-xl mb-4 border border-purple-100">
+                                        <select id="filtro-widget-resumo" class="w-full p-2 border-0 bg-transparent text-sm font-bold text-purple-800 focus:ring-0 cursor-pointer outline-none" onchange="AplicacaoPrincipal.atualizarWidgetResumos(this.value)">
+                                            <option value="">📚 Escolha a matéria...</option>
+                                            ${disciplinasComResumo.map(d => `<option value="${d}">${d}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    
+                                    <div id="conteudo-widget-resumos" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                                        <div class="text-center py-10 text-gray-400">
+                                            <i class="fas fa-hand-pointer text-4xl mb-3 opacity-40"></i>
+                                            <p class="text-sm font-medium">Selecione uma matéria acima para carregar.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 `;
@@ -4546,9 +4576,8 @@ salvarTarefaRapida(dataString) {
                         icone.classList.add('fa-chevron-down');
                     }
                 });
-            }, // <--- A carregarQuestoes tem que acabar apenas UMA vez aqui!
-
-            // 👇 NOVA FUNÇÃO: Controla o Abre/Fecha dos Menus Sanfona 👇
+            }, 
+            
             toggleBloco(conteudoId, iconeId) {	    
                 const conteudo = document.getElementById(conteudoId);
                 const icone = document.getElementById(iconeId);
@@ -4569,8 +4598,66 @@ salvarTarefaRapida(dataString) {
                     }
                 }
             },
+	  
+            atualizarWidgetResumos(disciplina) {
+                const container = document.getElementById('conteudo-widget-resumos');
+                if (!container) return;
 
-            // 👇 COLE ESTAS DUAS FUNÇÕES LOGO ABAIXO DA carregarQuestoes 👇
+                if (!disciplina) {
+                    container.innerHTML = `
+                        <div class="text-center py-10 text-gray-400">
+                            <i class="fas fa-hand-pointer text-4xl mb-3 opacity-40"></i>
+                            <p class="text-sm font-medium">Selecione uma matéria acima para carregar.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const resumosFiltrados = (this.dados.resumos || []).filter(r => r.disciplina === disciplina);
+
+                if (resumosFiltrados.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-10 text-gray-400">
+                            <i class="fas fa-folder-open text-4xl mb-3 opacity-40"></i>
+                            <p class="text-sm">Nenhum resumo encontrado para ${disciplina}.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = resumosFiltrados.map(resumo => `
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group">
+                        <h4 class="font-bold text-gray-800 text-sm mb-2 group-hover:text-purple-600 transition-colors">${resumo.titulo}</h4>
+                        <p class="text-xs text-gray-500 line-clamp-3 mb-3 leading-relaxed">${resumo.conteudo.replace(/<[^>]*>?/gm, '').replace(/\n/g, ' ')}</p>
+                        <button onclick="AplicacaoPrincipal.visualizarResumo('${resumo.id}')" class="w-full py-2 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-100 transition-colors">
+                            <i class="fas fa-external-link-alt mr-1"></i>Ler Completo
+                        </button>
+                    </div>
+                `).join('');
+            },
+
+            visualizarResumo(id) {
+                const resumo = (this.dados.resumos || []).find(r => r.id === id);
+                if (resumo) {
+                    this.mostrarModal(`
+                        <div class="p-8 max-w-3xl max-h-[90vh] overflow-y-auto bg-white">
+                            <div class="mb-6 border-b pb-4">
+                                <span class="badge bg-purple-100 text-purple-800 mb-2">${resumo.disciplina}</span>
+                                <h2 class="text-3xl font-bold text-gray-800">${resumo.titulo}</h2>
+                            </div>
+                            <div class="font-serif text-lg text-gray-800 leading-loose">
+                                ${resumo.conteudo.replace(/\n/g, '<br>')}
+                            </div>
+                            <div class="mt-8 flex justify-end pt-4 border-t">
+                                <button onclick="AplicacaoPrincipal.fecharModal()" class="btn-primary px-8 shadow-md">
+                                    <i class="fas fa-check mr-2"></i>Fechar Leitura
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                }
+            },
+            
             responderQuestao(id) {
                 const selecionado = document.querySelector(`input[name="resp-${id}"]:checked`);
                 if (!selecionado) {
