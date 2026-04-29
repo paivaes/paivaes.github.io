@@ -4844,9 +4844,10 @@ salvarTarefaRapida(dataString) {
 
             salvarDadosUsuario() {
                 this.usuario.dados = this.dados;
-                
                 // Sincroniza com a nuvem (Firestore) silenciosamente no background
                 db.collection('usuarios').doc(this.usuario.id).update({
+                    nome: this.usuario.nome,   // 👈 AGORA SALVA O NOME NA NUVEM
+                    email: this.usuario.email, // 👈 AGORA SALVA O EMAIL NA NUVEM
                     dados: this.dados
                 }).catch(error => {
                     console.error("Erro de sincronização com a nuvem: ", error);
