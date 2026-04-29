@@ -1463,7 +1463,12 @@
                 if (confirm('Deseja excluir este resumo permanentemente?')) {
                     this.dados.resumos = this.dados.resumos.filter(r => r.id !== id);
                     this.salvarDadosUsuario();
-                    this.carregarResumos(); // Atualiza a lista principal
+                    // 👇 ATUALIZA A TELA ONDE VOCÊ ESTIVER 👇
+                    if (this.currentTab === 'resumos') {
+                        this.carregarResumos(); 
+                    } else if (this.currentTab === 'questoes') {
+                        this.carregarQuestoes(); 
+                    }
                     this.mostrarNotificacao('Resumo removido.', 'success');
                 }
             },
@@ -4173,8 +4178,6 @@ salvarTarefaRapida(dataString) {
 
             carregarResumos() {
                 const conteudo = document.getElementById('conteudo-principal');
-                
-                // Organiza: Disciplina -> Tópico -> Resumos
                 const bibliotecaResumos = {};
                 this.dados.resumos.forEach(r => {
                     const d = r.disciplina || 'Outros';
@@ -4188,27 +4191,20 @@ salvarTarefaRapida(dataString) {
                 let htmlFinal = '';
 
                 if (this.dados.resumos.length === 0) {
-                    htmlFinal = `<div class="text-center py-20 glass-card rounded-xl">
-                        <i class="fas fa-sticky-note text-6xl text-gray-300 mb-4"></i>
-                        <h3 class="text-xl font-semibold text-gray-600">Nenhum resumo criado</h3>
-                        <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo()" class="btn-success mt-4">Criar Primeiro Resumo</button>
-                    </div>`;
+                    htmlFinal = `<div class="text-center py-20 glass-card rounded-xl"><i class="fas fa-sticky-note text-6xl text-gray-300 mb-4"></i><h3 class="text-xl font-semibold text-gray-600">Nenhum resumo criado</h3></div>`;
                 } else {
                     disciplinasOrdenadas.forEach((disc, dIdx) => {
                         const cor = this.obterCorDisciplina(disc);
                         const topicos = bibliotecaResumos[disc];
-                        
                         htmlFinal += `
                             <div class="mb-4">
-                                <div class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border-l-4 flex items-center" 
-                                     style="border-color: ${cor}" onclick="AplicacaoPrincipal.toggleBloco('res-disc-${dIdx}', 'icon-res-disc-${dIdx}')">
+                                <div class="cursor-pointer bg-white p-4 rounded-xl shadow-sm border-l-4 flex items-center" style="border-color: ${cor}" onclick="AplicacaoPrincipal.toggleBloco('res-disc-${dIdx}', 'icon-res-disc-${dIdx}')">
                                     <i id="icon-res-disc-${dIdx}" class="fas fa-chevron-right text-gray-400 mr-4 transition-transform"></i>
                                     <h3 class="text-xl font-bold text-gray-800 flex-1">${disc}</h3>
                                     <span class="badge bg-gray-100 text-gray-600">${Object.keys(topicos).length} tópicos</span>
                                 </div>
                                 <div id="res-disc-${dIdx}" class="hidden pl-6 pt-4 space-y-4">
                         `;
-
                         Object.keys(topicos).sort().forEach((top, tIdx) => {
                             const resumos = topicos[top];
                             htmlFinal += `
@@ -4223,11 +4219,11 @@ salvarTarefaRapida(dataString) {
                                                 <div class="flex justify-between items-start mb-3">
                                                     <h4 class="font-bold text-gray-800">${r.titulo}</h4>
                                                     <div class="flex gap-1">
-                                                        <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo('${r.id}')" class="text-blue-500 p-1"><i class="fas fa-edit"></i></button>
-                                                        <button onclick="AplicacaoPrincipal.excluirResumo('${r.id}')" class="text-red-500 p-1"><i class="fas fa-trash"></i></button>
+                                                        <button onclick="AplicacaoPrincipal.mostrarModalEdicaoResumoLateral('${r.id}')" class="text-blue-500 p-1 hover:bg-blue-50 rounded"><i class="fas fa-edit text-xs"></i></button>
+                                                        <button onclick="AplicacaoPrincipal.excluirResumo('${r.id}')" class="text-red-500 p-1 hover:bg-red-50 rounded"><i class="fas fa-trash text-xs"></i></button>
                                                     </div>
                                                 </div>
-                                                <p class="text-sm text-gray-500 line-clamp-2 mb-4">${r.conteudo.substring(0, 80)}...</p>
+                                                <p class="text-sm text-gray-500 line-clamp-2 mb-4">${r.conteudo.replace(/<[^>]*>?/gm, '').substring(0, 80)}...</p>
                                                 <button onclick="AplicacaoPrincipal.visualizarResumo('${r.id}')" class="w-full btn-primary text-xs py-2">Abrir Resumo</button>
                                             </div>
                                         `).join('')}
@@ -4238,21 +4234,9 @@ salvarTarefaRapida(dataString) {
                         htmlFinal += `</div></div>`;
                     });
                 }
-
-                conteudo.innerHTML = `
-                    <div class="fade-in pb-20">
-                        <div class="flex justify-between items-center mb-8">
-                            <h2 class="text-3xl font-bold gradient-text">Meus Resumos Estruturados</h2>
-                            <button onclick="AplicacaoPrincipal.mostrarModalNovoResumo()" class="btn-success shadow-md">
-                                <i class="fas fa-plus mr-2"></i>Novo Resumo
-                            </button>
-                        </div>
-                        <div class="max-w-5xl">${htmlFinal}</div>
-                    </div>
-                `;
+                conteudo.innerHTML = `<div class="fade-in pb-20"><div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-bold gradient-text">Meus Resumos Estruturados</h2><button onclick="AplicacaoPrincipal.mostrarModalNovoResumo()" class="btn-success shadow-md"><i class="fas fa-plus mr-2"></i>Novo Resumo</button></div><div class="max-w-5xl">${htmlFinal}</div></div>`;
             },
-	    // 👇 NOVA FUNÇÃO: Desenha os gráficos redondos em formato "Donut"
-            // 👇 FÁBRICA DE GRÁFICOS ATUALIZADA 👇
+	    
             gerarMiniGraficoPizza(percentual, corHex, titulo, corFundoHex = '#e5e7eb') {
                 return `
                     <div class="flex flex-col items-center ml-3 sm:ml-4" title="${titulo}: ${percentual}%">
@@ -4265,8 +4249,7 @@ salvarTarefaRapida(dataString) {
                     </div>
                 `;
             },
-
-            // 👇 NOVAS FUNÇÕES PARA GERENCIAR CADERNOS POR CONCURSO 👇
+            
             mudarCadernoAtivo(id) {
                 this.cadernoAtivo = id;
                 this.carregarQuestoes();
@@ -4617,37 +4600,27 @@ salvarTarefaRapida(dataString) {
 	  
             atualizarWidgetResumos(disciplina) {
                 const container = document.getElementById('conteudo-widget-resumos');
-                if (!container) return;
-
-                if (!disciplina) {
-                    container.innerHTML = `
-                        <div class="text-center py-10 text-gray-400">
-                            <i class="fas fa-hand-pointer text-4xl mb-3 opacity-40"></i>
-                            <p class="text-sm font-medium">Selecione uma matéria acima para carregar.</p>
-                        </div>
-                    `;
+                if (!container || !disciplina) {
+                    if (container) container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-sm font-medium">Selecione uma matéria acima.</p></div>`;
                     return;
                 }
-
                 const resumosFiltrados = (this.dados.resumos || []).filter(r => r.disciplina === disciplina);
-
                 if (resumosFiltrados.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-10 text-gray-400">
-                            <i class="fas fa-folder-open text-4xl mb-3 opacity-40"></i>
-                            <p class="text-sm">Nenhum resumo encontrado para ${disciplina}.</p>
-                        </div>
-                    `;
+                    container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-sm">Nenhum resumo encontrado.</p></div>`;
                     return;
                 }
-
+                // 👇 BOTÕES DE GESTÃO NO CARD LATERAL 👇
                 container.innerHTML = resumosFiltrados.map(resumo => `
-                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group">
-                        <h4 class="font-bold text-gray-800 text-sm mb-2 group-hover:text-purple-600 transition-colors">${resumo.titulo}</h4>
-                        <p class="text-xs text-gray-500 line-clamp-3 mb-3 leading-relaxed">${resumo.conteudo.replace(/<[^>]*>?/gm, '').replace(/\n/g, ' ')}</p>
-                        <button onclick="AplicacaoPrincipal.visualizarResumo('${resumo.id}')" class="w-full py-2 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-100 transition-colors">
-                            <i class="fas fa-external-link-alt mr-1"></i>Ler Completo
-                        </button>
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group relative">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-bold text-gray-800 text-sm group-hover:text-purple-600 transition-colors pr-10">${resumo.titulo}</h4>
+                            <div class="flex gap-1 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="AplicacaoPrincipal.mostrarModalEdicaoResumoLateral('${resumo.id}')" class="text-blue-500 p-1 hover:bg-blue-50 rounded"><i class="fas fa-edit text-xs"></i></button>
+                                <button onclick="AplicacaoPrincipal.excluirResumo('${resumo.id}')" class="text-red-500 p-1 hover:bg-red-50 rounded"><i class="fas fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-gray-500 line-clamp-2 mb-3 leading-relaxed">${resumo.conteudo.replace(/<[^>]*>?/gm, '').replace(/\n/g, ' ')}</p>
+                        <button onclick="AplicacaoPrincipal.visualizarResumo('${resumo.id}')" class="w-full py-1.5 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold hover:bg-purple-600 hover:text-white transition-colors">Ler Completo</button>
                     </div>
                 `).join('');
             },
